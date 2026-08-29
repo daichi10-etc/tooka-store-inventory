@@ -993,6 +993,11 @@
       document.getElementById("stokLokasi").value;
 
 
+    document.getElementById(
+      "hasilStok"
+    ).innerHTML = "";
+
+
     if (!produkId) {
 
       showStatus(
@@ -1018,11 +1023,13 @@
       });
 
 
-      if (!hasil.success) {
+      if (!hasil || hasil.success !== true) {
 
         showStatus(
           "statusStok",
-          hasil.message,
+          (hasil && hasil.message)
+            ? hasil.message
+            : "Data stok tidak ditemukan.",
           false
         );
 
@@ -1031,7 +1038,191 @@
       }
 
 
-      const data = hasil.data;
+      /*
+       * Backend dapat mengembalikan data dalam beberapa bentuk:
+       *
+       * 1. data = object
+       * 2. data = array berisi beberapa stok
+       *
+       * Kita normalisasi dulu supaya frontend tidak lagi
+       * membaca object sebagai array atau sebaliknya.
+       */
+
+      let dataList = [];
+
+
+      if (Array.isArray(hasil.data)) {
+
+        dataList = hasil.data;
+
+      } else if (
+        hasil.data &&
+        typeof hasil.data === "object"
+      ) {
+
+        dataList = [hasil.data];
+
+      }
+
+
+      if (dataList.length === 0) {
+
+        showStatus(
+          "statusStok",
+          "Data stok tidak ditemukan.",
+          false
+        );
+
+        return;
+
+      }
+
+
+      /*
+       * Cari data yang paling sesuai dengan:
+       * - ID Produk
+       * - Lokasi
+       *
+       * Jika backend hanya mengembalikan satu object,
+       * object tersebut tetap akan dipakai.
+       */
+
+      const produkCari =
+        String(produkId).trim().toUpperCase();
+
+      const lokasiCari =
+        String(lokasiId).trim().toUpperCase();
+
+
+      let data =
+        dataList.find(item => {
+
+          if (!item || typeof item !== "object") {
+            return false;
+          }
+
+
+          const itemProduk =
+            String(
+              item.produkId ??
+              item.idProduk ??
+              item.ID_PRODUK ??
+              item.ID ||
+              ""
+            )
+            .trim()
+            .toUpperCase();
+
+
+          const itemLokasi =
+            String(
+              item.lokasiId ??
+              item.idLokasi ??
+              item.LOKASI_ID ??
+              item.LOKASI ||
+              ""
+            )
+            .trim()
+            .toUpperCase();
+
+
+          return (
+            itemProduk === produkCari &&
+            itemLokasi === lokasiCari
+          );
+
+        });
+
+
+      /*
+       * Kalau backend hanya mengirim satu baris tetapi
+       * nama field lokasinya berbeda, gunakan pencocokan
+       * produk sebagai fallback.
+       */
+
+      if (!data && dataList.length === 1) {
+
+        const item = dataList[0];
+
+        const itemProduk =
+          String(
+            item.produkId ??
+            item.idProduk ??
+            item.ID_PRODUK ??
+            item.ID ||
+            ""
+          )
+          .trim()
+          .toUpperCase();
+
+
+        if (itemProduk === produkCari) {
+          data = item;
+        }
+
+      }
+
+
+      if (!data) {
+
+        showStatus(
+          "statusStok",
+          "Stok untuk produk dan lokasi tersebut tidak ditemukan.",
+          false
+        );
+
+        return;
+
+      }
+
+
+      /*
+       * Normalisasi nama field supaya tampilan tidak
+       * lagi menghasilkan "undefined".
+       */
+
+      const nama =
+        data.nama ??
+        data.namaProduk ??
+        data.produkNama ??
+        data.NAMA_PRODUK ??
+        data.produk ??
+        data.produkId ??
+        data.idProduk ??
+        produkId;
+
+
+      const tampilProduk =
+        data.produkId ??
+        data.idProduk ??
+        data.ID_PRODUK ??
+        produkId;
+
+
+      const tampilLokasi =
+        data.lokasi ??
+        data.namaLokasi ??
+        data.lokasiNama ??
+        data.LOKASI ??
+        data.lokasiId ??
+        data.idLokasi ??
+        lokasiId;
+
+
+      const stok =
+        data.stok ??
+        data.stock ??
+        data.STOK ??
+        data.qty ??
+        data.QTY ??
+        0;
+
+
+      const satuan =
+        data.satuan ??
+        data.unit ??
+        data.SATUAN ??
+        "";
 
 
       document.getElementById("hasilStok").innerHTML = `
@@ -1039,19 +1230,23 @@
         <div class="lokasi-card">
 
           <h3>
-            ${data.nama || data.produkId}
+            ${escapeHtml(nama)}
           </h3>
 
           <div class="muted">
-            ${data.lokasi || data.lokasiId}
-          </div>
-
-          <div class="stok-number">
-            ${data.stok}
+            ${escapeHtml(tampilProduk)}
           </div>
 
           <div class="muted">
-            ${data.satuan || ""}
+            ${escapeHtml(tampilLokasi)}
+          </div>
+
+          <div class="stok-number">
+            ${escapeHtml(stok)}
+          </div>
+
+          <div class="muted">
+            ${escapeHtml(satuan)}
           </div>
 
         </div>
@@ -1070,11 +1265,31 @@
 
       showStatus(
         "statusStok",
-        error.message,
+        error.message || "Gagal mengambil data stok.",
         false
       );
 
+      document.getElementById(
+        "hasilStok"
+      ).innerHTML = "";
+
     }
+
+  }
+
+
+  // =====================================================
+  // ESCAPE HTML
+  // =====================================================
+
+  function escapeHtml(value) {
+
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
 
   }
 
