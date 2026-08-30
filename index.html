@@ -6,6 +6,7 @@
   <title>TOOKA Store Inventory</title>
 
   <style>
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -65,6 +66,11 @@
     nav button.active {
       background: #111827;
       color: white;
+    }
+
+    nav button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
     }
 
     main {
@@ -150,6 +156,14 @@
       border: 1px solid #d1d5db;
       border-radius: 8px;
       background: white;
+      font-size: 14px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #6b7280;
     }
 
     textarea {
@@ -184,6 +198,10 @@
       padding: 11px 12px;
       cursor: pointer;
       border-bottom: 1px solid #f0f0f0;
+    }
+
+    .product-option:last-child {
+      border-bottom: none;
     }
 
     .product-option:hover {
@@ -223,33 +241,41 @@
       border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
+      font-size: 14px;
     }
 
-    .btn-primary {
-      background: #111827;
-      color: white;
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
     }
 
     .btn-success {
-      background: #15803d;
+      background: #22c55e;
       color: white;
     }
 
     .btn-danger {
-      background: #b91c1c;
+      background: #ef4444;
       color: white;
     }
 
     .btn-warning {
-      background: #ca8a04;
+      background: #f59e0b;
+      color: white;
+    }
+
+    .btn-primary {
+      background: #2563eb;
       color: white;
     }
 
     .status {
-      padding: 12px;
+      display: none;
+      padding: 12px 15px;
       border-radius: 8px;
       margin-bottom: 15px;
-      display: none;
+      font-weight: bold;
+      font-size: 14px;
     }
 
     .status.show {
@@ -257,13 +283,23 @@
     }
 
     .status.success {
-      background: #dcfce7;
-      color: #166534;
+      background: #d1fae5;
+      color: #065f46;
     }
 
     .status.error {
       background: #fee2e2;
       color: #991b1b;
+    }
+
+    .status.loading {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
     }
 
     .lokasi-grid {
@@ -276,7 +312,7 @@
       background: white;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
-      padding: 18px;
+      padding: 20px;
     }
 
     .lokasi-card h3 {
@@ -284,17 +320,13 @@
     }
 
     .stok-number {
-      font-size: 32px;
+      font-size: 42px;
       font-weight: bold;
+      margin: 12px 0 4px;
     }
 
-    .muted {
-      color: #6b7280;
-      font-size: 13px;
-    }
-
-    .loading {
-      opacity: 0.6;
+    .saving {
+      opacity: 0.65;
       pointer-events: none;
     }
 
@@ -306,6 +338,7 @@
     }
 
     @media (max-width: 700px) {
+
       .cards,
       .form-grid,
       .lokasi-grid {
@@ -319,7 +352,9 @@
       header h1 {
         font-size: 20px;
       }
+
     }
+
   </style>
 </head>
 
@@ -332,74 +367,140 @@
     <p>Sistem Inventory & Pergerakan Stok</p>
   </header>
 
+
   <nav>
-    <button class="nav-btn active" onclick="showPage('dashboard', this)">
+
+    <button
+      class="nav-btn active"
+      onclick="showPage('dashboard', this)"
+    >
       Dashboard
     </button>
 
-    <button class="nav-btn" onclick="showPage('masuk', this)">
+    <button
+      class="nav-btn"
+      onclick="showPage('masuk', this)"
+    >
       Barang Masuk
     </button>
 
-    <button class="nav-btn" onclick="showPage('keluar', this)">
+    <button
+      class="nav-btn"
+      onclick="showPage('keluar', this)"
+    >
       Barang Keluar
     </button>
 
-    <button class="nav-btn" onclick="showPage('transfer', this)">
+    <button
+      class="nav-btn"
+      onclick="showPage('transfer', this)"
+    >
       Transfer
     </button>
 
-    <button class="nav-btn" onclick="showPage('stok', this)">
+    <button
+      class="nav-btn"
+      onclick="showPage('stok', this)"
+    >
       Cek Stok
     </button>
+
   </nav>
+
 
   <main>
 
-    <!-- ================= DASHBOARD ================= -->
+
+    <!-- ================================================= -->
+    <!-- DASHBOARD -->
+    <!-- ================================================= -->
 
     <section id="dashboard" class="page active">
 
       <div class="title">
+
         <h2>Dashboard</h2>
-        <p>Ringkasan inventory TOOKA</p>
+
+        <p>
+          Ringkasan inventory TOOKA
+        </p>
+
       </div>
+
 
       <div class="cards">
 
         <div class="card">
+
           <small>Status Backend</small>
-          <strong id="backendStatus">Checking...</strong>
+
+          <strong id="backendStatus">
+            Checking...
+          </strong>
+
         </div>
 
+
         <div class="card">
+
           <small>Lokasi</small>
+
           <strong>2</strong>
-          <span class="muted">Metro & Jepara</span>
+
+          <span class="muted">
+            Metro & Jepara
+          </span>
+
         </div>
 
+
         <div class="card">
+
           <small>Sistem</small>
-          <strong>V1.1</strong>
-          <span class="muted">Inventory</span>
+
+          <strong>V1.2</strong>
+
+          <span class="muted">
+            Inventory Control
+          </span>
+
         </div>
 
       </div>
 
+
       <div class="panel">
 
-        <h3>Lokasi Inventory</h3>
+        <h3>
+          Lokasi Inventory
+        </h3>
+
 
         <div class="lokasi-grid">
 
           <div class="lokasi-card">
-            <h3>TOOKA HUB METRO</h3>
-            <div class="muted">LOC001</div>
+
+            <h3>
+              TOOKA HUB METRO
+            </h3>
+
+            <div class="muted">
+              LOC001
+            </div>
+
           </div>
 
+
           <div class="lokasi-card">
-            <h3>TOOKA STORE JEPARA</h3>
-            <div class="muted">LOC002</div>
+
+            <h3>
+              TOOKA STORE JEPARA
+            </h3>
+
+            <div class="muted">
+              LOC002
+            </div>
+
           </div>
 
         </div>
@@ -409,25 +510,47 @@
     </section>
 
 
-    <!-- ================= BARANG MASUK ================= -->
+    <!-- ================================================= -->
+    <!-- BARANG MASUK -->
+    <!-- ================================================= -->
 
     <section id="masuk" class="page">
 
       <div class="title">
-        <h2>Barang Masuk</h2>
-        <p>Catat barang yang masuk ke lokasi inventory.</p>
+
+        <h2>
+          Barang Masuk
+        </h2>
+
+        <p>
+          Catat barang yang masuk ke lokasi inventory.
+        </p>
+
       </div>
 
-      <div id="statusMasuk" class="status"></div>
+
+      <div
+        id="statusMasuk"
+        class="status"
+      ></div>
+
 
       <div class="panel">
 
-        <h3>Input Barang Masuk</h3>
+        <h3>
+          Input Barang Masuk
+        </h3>
+
 
         <div class="form-grid">
 
+
           <div>
-            <label>Produk</label>
+
+            <label>
+              Produk
+            </label>
+
 
             <div class="product-picker">
 
@@ -439,6 +562,7 @@
                 onfocus="showProdukResults('masuk')"
               >
 
+
               <div
                 id="masukProdukResults"
                 class="product-results"
@@ -446,10 +570,12 @@
 
             </div>
 
+
             <input
               id="masukProduk"
               type="hidden"
             >
+
 
             <div
               id="masukProdukInfo"
@@ -458,8 +584,12 @@
 
           </div>
 
+
           <div>
-            <label>Lokasi</label>
+
+            <label>
+              Lokasi
+            </label>
 
             <select id="masukLokasi">
 
@@ -475,44 +605,85 @@
 
           </div>
 
+
           <div>
-            <label>Qty</label>
+
+            <label>
+              Qty
+            </label>
+
             <input
               id="masukQty"
               type="number"
               min="0.01"
               step="0.01"
             >
+
           </div>
 
+
           <div>
-            <label>Harga</label>
+
+            <label>
+              Harga
+            </label>
+
             <input
               id="masukHarga"
               type="number"
               min="0"
             >
+
           </div>
 
-          <div>
-            <label>Sumber</label>
-            <input
-              id="masukSumber"
-              value="Supplier"
-            >
-          </div>
 
           <div>
-            <label>User</label>
-            <input
-              id="masukUser"
-              value="OWNER"
-            >
+
+            <label>
+              Sumber
+            </label>
+
+            <select id="masukSumber">
+
+              <option value="SUPPLIER">
+                SUPPLIER
+              </option>
+
+            </select>
+
           </div>
+
+
+          <div>
+
+            <label>
+              User / PIC
+            </label>
+
+            <select id="masukUser">
+
+              <option value="OWNER">
+                OWNER
+              </option>
+
+              <option value="PIC METRO">
+                PIC METRO
+              </option>
+
+              <option value="PIC JEPARA">
+                PIC JEPARA
+              </option>
+
+            </select>
+
+          </div>
+
 
           <div class="full">
 
-            <label>Keterangan</label>
+            <label>
+              Keterangan
+            </label>
 
             <textarea
               id="masukKeterangan"
@@ -520,9 +691,11 @@
 
           </div>
 
+
           <div class="full">
 
             <button
+              id="btnMasuk"
               class="btn btn-success"
               onclick="barangMasuk()"
             >
@@ -538,26 +711,47 @@
     </section>
 
 
-    <!-- ================= BARANG KELUAR ================= -->
+    <!-- ================================================= -->
+    <!-- BARANG KELUAR -->
+    <!-- ================================================= -->
 
     <section id="keluar" class="page">
 
       <div class="title">
-        <h2>Barang Keluar</h2>
-        <p>Catat barang yang keluar dari lokasi inventory.</p>
+
+        <h2>
+          Barang Keluar
+        </h2>
+
+        <p>
+          Catat barang yang keluar dari lokasi inventory.
+        </p>
+
       </div>
 
-      <div id="statusKeluar" class="status"></div>
+
+      <div
+        id="statusKeluar"
+        class="status"
+      ></div>
+
 
       <div class="panel">
 
-        <h3>Input Barang Keluar</h3>
+        <h3>
+          Input Barang Keluar
+        </h3>
+
 
         <div class="form-grid">
 
+
           <div>
 
-            <label>Produk</label>
+            <label>
+              Produk
+            </label>
+
 
             <div class="product-picker">
 
@@ -569,6 +763,7 @@
                 onfocus="showProdukResults('keluar')"
               >
 
+
               <div
                 id="keluarProdukResults"
                 class="product-results"
@@ -576,10 +771,12 @@
 
             </div>
 
+
             <input
               id="keluarProduk"
               type="hidden"
             >
+
 
             <div
               id="keluarProdukInfo"
@@ -588,9 +785,12 @@
 
           </div>
 
+
           <div>
 
-            <label>Lokasi</label>
+            <label>
+              Lokasi
+            </label>
 
             <select id="keluarLokasi">
 
@@ -606,9 +806,12 @@
 
           </div>
 
+
           <div>
 
-            <label>Qty</label>
+            <label>
+              Qty
+            </label>
 
             <input
               id="keluarQty"
@@ -619,9 +822,12 @@
 
           </div>
 
+
           <div>
 
-            <label>Harga</label>
+            <label>
+              Harga
+            </label>
 
             <input
               id="keluarHarga"
@@ -631,31 +837,62 @@
 
           </div>
 
-          <div>
-
-            <label>Tujuan</label>
-
-            <input
-              id="keluarTujuan"
-              placeholder="Contoh: DKJ Metro"
-            >
-
-          </div>
 
           <div>
 
-            <label>User</label>
+            <label>
+              Tujuan
+            </label>
 
-            <input
-              id="keluarUser"
-              value="OWNER"
-            >
+            <select id="keluarTujuan">
+
+              <option value="KONSUMEN">
+                KONSUMEN
+              </option>
+
+              <option value="DKJ METRO">
+                DKJ METRO
+              </option>
+
+              <option value="DKJ JEPARA">
+                DKJ JEPARA
+              </option>
+
+            </select>
 
           </div>
+
+
+          <div>
+
+            <label>
+              User / PIC
+            </label>
+
+            <select id="keluarUser">
+
+              <option value="OWNER">
+                OWNER
+              </option>
+
+              <option value="PIC METRO">
+                PIC METRO
+              </option>
+
+              <option value="PIC JEPARA">
+                PIC JEPARA
+              </option>
+
+            </select>
+
+          </div>
+
 
           <div class="full">
 
-            <label>Keterangan</label>
+            <label>
+              Keterangan
+            </label>
 
             <textarea
               id="keluarKeterangan"
@@ -663,9 +900,11 @@
 
           </div>
 
+
           <div class="full">
 
             <button
+              id="btnKeluar"
               class="btn btn-danger"
               onclick="barangKeluar()"
             >
@@ -681,13 +920,17 @@
     </section>
 
 
-    <!-- ================= TRANSFER ================= -->
+    <!-- ================================================= -->
+    <!-- TRANSFER -->
+    <!-- ================================================= -->
 
     <section id="transfer" class="page">
 
       <div class="title">
 
-        <h2>Transfer Barang</h2>
+        <h2>
+          Transfer Barang
+        </h2>
 
         <p>
           Pindahkan stok dari satu lokasi ke lokasi lain.
@@ -695,20 +938,29 @@
 
       </div>
 
+
       <div
         id="statusTransfer"
         class="status"
       ></div>
 
+
       <div class="panel">
 
-        <h3>Transfer Antar Lokasi</h3>
+        <h3>
+          Transfer Antar Lokasi
+        </h3>
+
 
         <div class="form-grid">
 
+
           <div>
 
-            <label>Produk</label>
+            <label>
+              Produk
+            </label>
+
 
             <div class="product-picker">
 
@@ -720,6 +972,7 @@
                 onfocus="showProdukResults('transfer')"
               >
 
+
               <div
                 id="transferProdukResults"
                 class="product-results"
@@ -727,10 +980,12 @@
 
             </div>
 
+
             <input
               id="transferProduk"
               type="hidden"
             >
+
 
             <div
               id="transferProdukInfo"
@@ -739,9 +994,12 @@
 
           </div>
 
+
           <div>
 
-            <label>Qty</label>
+            <label>
+              Qty
+            </label>
 
             <input
               id="transferQty"
@@ -752,9 +1010,12 @@
 
           </div>
 
+
           <div>
 
-            <label>Lokasi Asal</label>
+            <label>
+              Lokasi Asal
+            </label>
 
             <select id="transferAsal">
 
@@ -770,9 +1031,12 @@
 
           </div>
 
+
           <div>
 
-            <label>Lokasi Tujuan</label>
+            <label>
+              Lokasi Tujuan
+            </label>
 
             <select id="transferTujuan">
 
@@ -788,20 +1052,36 @@
 
           </div>
 
+
           <div>
 
-            <label>User</label>
+            <label>
+              User / PIC
+            </label>
 
-            <input
-              id="transferUser"
-              value="OWNER"
-            >
+            <select id="transferUser">
+
+              <option value="OWNER">
+                OWNER
+              </option>
+
+              <option value="PIC METRO">
+                PIC METRO
+              </option>
+
+              <option value="PIC JEPARA">
+                PIC JEPARA
+              </option>
+
+            </select>
 
           </div>
+
 
           <div class="full">
 
             <button
+              id="btnTransfer"
               class="btn btn-warning"
               onclick="transferBarang()"
             >
@@ -817,13 +1097,17 @@
     </section>
 
 
-    <!-- ================= CEK STOK ================= -->
+    <!-- ================================================= -->
+    <!-- CEK STOK -->
+    <!-- ================================================= -->
 
     <section id="stok" class="page">
 
       <div class="title">
 
-        <h2>Cek Stok</h2>
+        <h2>
+          Cek Stok
+        </h2>
 
         <p>
           Lihat posisi stok berdasarkan produk dan lokasi.
@@ -831,20 +1115,29 @@
 
       </div>
 
+
       <div
         id="statusStok"
         class="status"
       ></div>
 
+
       <div class="panel">
 
-        <h3>Cari Stok</h3>
+        <h3>
+          Cari Stok
+        </h3>
+
 
         <div class="form-grid">
 
+
           <div>
 
-            <label>Produk</label>
+            <label>
+              Produk
+            </label>
+
 
             <div class="product-picker">
 
@@ -856,6 +1149,7 @@
                 onfocus="showProdukResults('stok')"
               >
 
+
               <div
                 id="stokProdukResults"
                 class="product-results"
@@ -863,10 +1157,12 @@
 
             </div>
 
+
             <input
               id="stokProduk"
               type="hidden"
             >
+
 
             <div
               id="stokProdukInfo"
@@ -875,9 +1171,12 @@
 
           </div>
 
+
           <div>
 
-            <label>Lokasi</label>
+            <label>
+              Lokasi
+            </label>
 
             <select id="stokLokasi">
 
@@ -893,9 +1192,11 @@
 
           </div>
 
+
           <div class="full">
 
             <button
+              id="btnStok"
               class="btn btn-primary"
               onclick="cekStok()"
             >
@@ -908,11 +1209,14 @@
 
       </div>
 
+
       <div id="hasilStok"></div>
 
     </section>
 
+
   </main>
+
 
   <footer>
     TOOKA Store Inventory System — Backend Apps Script
@@ -923,6 +1227,7 @@
 
 <script>
 
+
   // =====================================================
   // API BACKEND TOOKA
   // =====================================================
@@ -932,7 +1237,7 @@
 
 
   // =====================================================
-  // MASTER PRODUK / PRODUCT PICKER
+  // MASTER PRODUK
   // =====================================================
 
   let produkMaster = [];
@@ -945,9 +1250,7 @@
   async function loadProduk() {
 
     if (produkLoaded) {
-
       return produkMaster;
-
     }
 
 
@@ -956,11 +1259,7 @@
       while (produkLoading) {
 
         await new Promise(
-          resolve =>
-            setTimeout(
-              resolve,
-              100
-            )
+          resolve => setTimeout(resolve, 100)
         );
 
       }
@@ -977,9 +1276,7 @@
 
       const hasil =
         await apiRequest({
-
           action: "PRODUK"
-
         });
 
 
@@ -989,14 +1286,9 @@
       ) {
 
         throw new Error(
-
-          hasil &&
-          hasil.message
-
+          hasil && hasil.message
             ? hasil.message
-
             : "Master produk gagal dimuat."
-
         );
 
       }
@@ -1004,9 +1296,7 @@
 
       produkMaster =
         Array.isArray(hasil.data)
-
           ? hasil.data
-
           : [];
 
 
@@ -1025,9 +1315,20 @@
   }
 
 
-  async function showProdukResults(type) {
+  function showProdukResults(type) {
 
-    await filterProduk(type);
+    const results =
+      document.getElementById(
+        type + "ProdukResults"
+      );
+
+
+    if (!results) {
+      return;
+    }
+
+
+    filterProduk(type);
 
   }
 
@@ -1056,15 +1357,13 @@
     }
 
 
-    results.classList.add(
-      "show"
-    );
-
-
     const keyword =
       searchInput.value
         .trim()
         .toLowerCase();
+
+
+    results.classList.add("show");
 
 
     try {
@@ -1075,7 +1374,6 @@
 
       const filtered =
         products
-
           .filter(product => {
 
             const id =
@@ -1100,29 +1398,14 @@
 
 
             return (
-
               !keyword ||
-
-              id.includes(
-                keyword
-              ) ||
-
-              nama.includes(
-                keyword
-              ) ||
-
-              kategori.includes(
-                keyword
-              )
-
+              id.includes(keyword) ||
+              nama.includes(keyword) ||
+              kategori.includes(keyword)
             );
 
           })
-
-          .slice(
-            0,
-            50
-          );
+          .slice(0, 50);
 
 
       if (
@@ -1130,10 +1413,7 @@
       ) {
 
         results.innerHTML =
-
-          '<div class="product-empty">' +
-          'Produk tidak ditemukan.' +
-          '</div>';
+          '<div class="product-empty">Produk tidak ditemukan.</div>';
 
         return;
 
@@ -1141,60 +1421,44 @@
 
 
       results.innerHTML =
-
         filtered
+          .map(product => `
 
-          .map(product => {
+            <div
+              class="product-option"
+              onclick="selectProduk(
+                '${type}',
+                '${escapeJs(product.id)}'
+              )"
+            >
 
-            const productId =
-              escapeJs(
-                product.id
-              );
+              <strong>
+                ${escapeHtml(product.id)}
+                —
+                ${escapeHtml(product.nama)}
+              </strong>
 
+              <span>
+                ${escapeHtml(
+                  product.kategori ||
+                  "Tanpa kategori"
+                )}
+                ·
+                ${escapeHtml(
+                  product.satuan || "-"
+                )}
+              </span>
 
-            return `
+            </div>
 
-              <div
-                class="product-option"
-                onclick="selectProduk('${type}', '${productId}')"
-              >
-
-                <strong>
-                  ${escapeHtml(product.id)}
-                  —
-                  ${escapeHtml(product.nama)}
-                </strong>
-
-                <span>
-                  ${escapeHtml(
-                    product.kategori ||
-                    "Tanpa kategori"
-                  )}
-
-                  ·
-
-                  ${escapeHtml(
-                    product.satuan ||
-                    "-"
-                  )}
-                </span>
-
-              </div>
-
-            `;
-
-          })
-
+          `)
           .join("");
 
 
     } catch (error) {
 
       results.innerHTML =
-
-        '<div class="product-empty">' +
-        'Gagal memuat master produk.' +
-        '</div>';
+        '<div class="product-empty">Gagal memuat master produk.</div>';
 
     }
 
@@ -1209,22 +1473,13 @@
     const product =
       produkMaster.find(
         item =>
-
-          String(
-            item.id
-          ).trim() ===
-
-          String(
-            produkId
-          ).trim()
-
+          String(item.id).trim() ===
+          String(produkId).trim()
       );
 
 
     if (!product) {
-
       return;
-
     }
 
 
@@ -1263,7 +1518,6 @@
     if (searchInput) {
 
       searchInput.value =
-
         product.id +
         " — " +
         product.nama;
@@ -1274,19 +1528,11 @@
     if (info) {
 
       info.textContent =
-
         "Satuan: " +
-
-        (
-          product.satuan ||
-          "-"
-        ) +
-
+        (product.satuan || "-") +
         " · Minimum stok: " +
-
         Number(
-          product.stokMinimum ||
-          0
+          product.stokMinimum || 0
         );
 
     }
@@ -1294,8 +1540,7 @@
 
     if (results) {
 
-      results.innerHTML =
-        "";
+      results.innerHTML = "";
 
       results.classList.remove(
         "show"
@@ -1306,32 +1551,29 @@
   }
 
 
+  // =====================================================
+  // ESCAPE
+  // =====================================================
+
   function escapeHtml(value) {
 
-    return String(
-      value ?? ""
-    )
-
+    return String(value ?? "")
       .replace(
         /&/g,
         "&amp;"
       )
-
       .replace(
         /</g,
         "&lt;"
       )
-
       .replace(
         />/g,
         "&gt;"
       )
-
       .replace(
         /"/g,
         "&quot;"
       )
-
       .replace(
         /'/g,
         "&#039;"
@@ -1342,15 +1584,11 @@
 
   function escapeJs(value) {
 
-    return String(
-      value ?? ""
-    )
-
+    return String(value ?? "")
       .replace(
         /\\/g,
         "\\\\"
       )
-
       .replace(
         /'/g,
         "\\'"
@@ -1358,6 +1596,10 @@
 
   }
 
+
+  // =====================================================
+  // TUTUP PRODUCT DROPDOWN
+  // =====================================================
 
   document.addEventListener(
     "click",
@@ -1370,18 +1612,14 @@
       ) {
 
         document
-
           .querySelectorAll(
             ".product-results"
           )
-
           .forEach(
             element =>
-
               element.classList.remove(
                 "show"
               )
-
           );
 
       }
@@ -1400,18 +1638,12 @@
   ) {
 
     document
-
-      .querySelectorAll(
-        ".page"
-      )
-
+      .querySelectorAll(".page")
       .forEach(
         page =>
-
           page.classList.remove(
             "active"
           )
-
       );
 
 
@@ -1422,9 +1654,7 @@
 
 
     if (!page) {
-
       return;
-
     }
 
 
@@ -1434,18 +1664,14 @@
 
 
     document
-
       .querySelectorAll(
         ".nav-btn"
       )
-
       .forEach(
         btn =>
-
           btn.classList.remove(
             "active"
           )
-
       );
 
 
@@ -1464,29 +1690,21 @@
   // REQUEST API
   // =====================================================
 
-  async function apiRequest(
-    data
-  ) {
+  async function apiRequest(data) {
 
     const response =
       await fetch(
         API_URL,
         {
-
           method: "POST",
 
           headers: {
-
             "Content-Type":
               "text/plain;charset=utf-8"
-
           },
 
           body:
-            JSON.stringify(
-              data
-            )
-
+            JSON.stringify(data)
         }
       );
 
@@ -1494,11 +1712,8 @@
     if (!response.ok) {
 
       throw new Error(
-
         "Server API gagal merespons. HTTP " +
-
         response.status
-
       );
 
     }
@@ -1510,18 +1725,13 @@
 
     try {
 
-      return JSON.parse(
-        text
-      );
-
+      return JSON.parse(text);
 
     } catch (error) {
 
       throw new Error(
-
         "Response API tidak valid: " +
         text
-
       );
 
     }
@@ -1536,7 +1746,7 @@
   function showStatus(
     elementId,
     message,
-    success
+    type
   ) {
 
     const element =
@@ -1546,9 +1756,7 @@
 
 
     if (!element) {
-
       return;
-
     }
 
 
@@ -1557,14 +1765,244 @@
 
 
     element.className =
-
       "status show " +
-
       (
-        success
-          ? "success"
-          : "error"
+        type === "loading"
+          ? "loading"
+          : type
+            ? type
+            : "error"
       );
+
+  }
+
+
+  // =====================================================
+  // BUTTON LOCK
+  // =====================================================
+
+  function lockButton(
+    buttonId,
+    text
+  ) {
+
+    const button =
+      document.getElementById(
+        buttonId
+      );
+
+
+    if (!button) {
+      return;
+    }
+
+
+    button.disabled = true;
+
+    button.dataset.originalText =
+      button.textContent;
+
+    button.textContent =
+      text || "MENYIMPAN...";
+
+  }
+
+
+  function unlockButton(
+    buttonId
+  ) {
+
+    const button =
+      document.getElementById(
+        buttonId
+      );
+
+
+    if (!button) {
+      return;
+    }
+
+
+    button.disabled = false;
+
+
+    if (
+      button.dataset.originalText
+    ) {
+
+      button.textContent =
+        button.dataset.originalText;
+
+    }
+
+  }
+
+
+  // =====================================================
+  // RESET PRODUCT
+  // =====================================================
+
+  function resetProductPicker(
+    type
+  ) {
+
+    const search =
+      document.getElementById(
+        type + "ProdukCari"
+      );
+
+
+    const hidden =
+      document.getElementById(
+        type + "Produk"
+      );
+
+
+    const info =
+      document.getElementById(
+        type + "ProdukInfo"
+      );
+
+
+    const results =
+      document.getElementById(
+        type + "ProdukResults"
+      );
+
+
+    if (search) {
+      search.value = "";
+    }
+
+
+    if (hidden) {
+      hidden.value = "";
+    }
+
+
+    if (info) {
+      info.textContent = "";
+    }
+
+
+    if (results) {
+
+      results.innerHTML = "";
+
+      results.classList.remove(
+        "show"
+      );
+
+    }
+
+  }
+
+
+  // =====================================================
+  // RESET FORM BARANG MASUK
+  // =====================================================
+
+  function resetFormMasuk() {
+
+    resetProductPicker(
+      "masuk"
+    );
+
+
+    document.getElementById(
+      "masukQty"
+    ).value = "";
+
+
+    document.getElementById(
+      "masukHarga"
+    ).value = "";
+
+
+    document.getElementById(
+      "masukSumber"
+    ).value = "SUPPLIER";
+
+
+    document.getElementById(
+      "masukUser"
+    ).value = "OWNER";
+
+
+    document.getElementById(
+      "masukKeterangan"
+    ).value = "";
+
+  }
+
+
+  // =====================================================
+  // RESET FORM BARANG KELUAR
+  // =====================================================
+
+  function resetFormKeluar() {
+
+    resetProductPicker(
+      "keluar"
+    );
+
+
+    document.getElementById(
+      "keluarQty"
+    ).value = "";
+
+
+    document.getElementById(
+      "keluarHarga"
+    ).value = "";
+
+
+    document.getElementById(
+      "keluarTujuan"
+    ).value = "KONSUMEN";
+
+
+    document.getElementById(
+      "keluarUser"
+    ).value = "OWNER";
+
+
+    document.getElementById(
+      "keluarKeterangan"
+    ).value = "";
+
+  }
+
+
+  // =====================================================
+  // RESET FORM TRANSFER
+  // =====================================================
+
+  function resetFormTransfer() {
+
+    resetProductPicker(
+      "transfer"
+    );
+
+
+    document.getElementById(
+      "transferQty"
+    ).value = "";
+
+
+    document.getElementById(
+      "transferAsal"
+    ).value = "LOC001";
+
+
+    document.getElementById(
+      "transferTujuan"
+    ).value = "LOC002";
+
+
+    document.getElementById(
+      "transferUser"
+    ).value = "OWNER";
 
   }
 
@@ -1573,75 +2011,68 @@
   // BARANG MASUK
   // =====================================================
 
+  let sedangMasuk = false;
+
+
   async function barangMasuk() {
+
+    if (sedangMasuk) {
+      return;
+    }
+
 
     const produkId =
       document.getElementById(
         "masukProduk"
-      )
-      .value
-      .trim();
+      ).value.trim();
 
 
     const lokasiId =
       document.getElementById(
         "masukLokasi"
-      )
-      .value;
+      ).value;
 
 
     const qty =
       Number(
         document.getElementById(
           "masukQty"
-        )
-        .value
+        ).value
       );
 
 
     const harga =
       Number(
-
         document.getElementById(
           "masukHarga"
-        )
-        .value || 0
-
+        ).value || 0
       );
 
 
     const sumber =
       document.getElementById(
         "masukSumber"
-      )
-      .value;
+      ).value;
 
 
     const user =
       document.getElementById(
         "masukUser"
-      )
-      .value ||
-      "OWNER";
+      ).value;
 
 
     const keterangan =
       document.getElementById(
         "masukKeterangan"
-      )
-      .value;
+      ).value.trim();
 
 
     if (!produkId) {
 
       showStatus(
-
         "statusMasuk",
-
-        "Silakan pilih produk terlebih dahulu.",
-
-        false
-
+        "Produk wajib dipilih.",
+        "error"
       );
 
       return;
@@ -1652,13 +2083,9 @@
     if (!qty || qty <= 0) {
 
       showStatus(
-
         "statusMasuk",
-
         "Qty harus lebih dari 0.",
-
-        false
-
+        "error"
       );
 
       return;
@@ -1666,59 +2093,85 @@
     }
 
 
+    sedangMasuk = true;
+
+    lockButton(
+      "btnMasuk",
+      "MENYIMPAN..."
+    );
+
+
+    showStatus(
+      "statusMasuk",
+      "Sedang menyimpan barang masuk...",
+      "loading"
+    );
+
+
     try {
 
       const hasil =
         await apiRequest({
 
-          action:
-            "MASUK",
+          action: "MASUK",
 
-          produkId:
-            produkId,
+          produkId: produkId,
 
-          lokasiId:
-            lokasiId,
+          lokasiId: lokasiId,
 
-          qty:
-            qty,
+          qty: qty,
 
-          user:
-            user,
+          user: user,
 
-          tujuan:
-            sumber,
+          tujuan: sumber,
 
-          harga:
-            harga,
+          harga: harga,
 
-          keterangan:
-            keterangan
+          keterangan: keterangan
 
         });
 
 
+      if (
+        !hasil ||
+        hasil.success !== true
+      ) {
+
+        throw new Error(
+          hasil && hasil.message
+            ? hasil.message
+            : "Barang masuk gagal disimpan."
+        );
+
+      }
+
+
       showStatus(
-
         "statusMasuk",
-
-        hasil.message,
-
-        hasil.success
-
+        hasil.message ||
+          "Barang masuk berhasil disimpan.",
+        "success"
       );
+
+
+      resetFormMasuk();
 
 
     } catch (error) {
 
       showStatus(
-
         "statusMasuk",
+        error.message ||
+          "Barang masuk gagal disimpan.",
+        "error"
+      );
 
-        error.message,
+    } finally {
 
-        false
+      sedangMasuk = false;
 
+      unlockButton(
+        "btnMasuk"
       );
 
     }
@@ -1730,75 +2183,68 @@
   // BARANG KELUAR
   // =====================================================
 
+  let sedangKeluar = false;
+
+
   async function barangKeluar() {
+
+    if (sedangKeluar) {
+      return;
+    }
+
 
     const produkId =
       document.getElementById(
         "keluarProduk"
-      )
-      .value
-      .trim();
+      ).value.trim();
 
 
     const lokasiId =
       document.getElementById(
         "keluarLokasi"
-      )
-      .value;
+      ).value;
 
 
     const qty =
       Number(
         document.getElementById(
           "keluarQty"
-        )
-        .value
+        ).value
       );
 
 
     const harga =
       Number(
-
         document.getElementById(
           "keluarHarga"
-        )
-        .value || 0
-
+        ).value || 0
       );
 
 
     const tujuan =
       document.getElementById(
         "keluarTujuan"
-      )
-      .value;
+      ).value;
 
 
     const user =
       document.getElementById(
         "keluarUser"
-      )
-      .value ||
-      "OWNER";
+      ).value;
 
 
     const keterangan =
       document.getElementById(
         "keluarKeterangan"
-      )
-      .value;
+      ).value.trim();
 
 
     if (!produkId) {
 
       showStatus(
-
         "statusKeluar",
-
-        "Silakan pilih produk terlebih dahulu.",
-
-        false
-
+        "Produk wajib dipilih.",
+        "error"
       );
 
       return;
@@ -1809,13 +2255,9 @@
     if (!qty || qty <= 0) {
 
       showStatus(
-
         "statusKeluar",
-
         "Qty harus lebih dari 0.",
-
-        false
-
+        "error"
       );
 
       return;
@@ -1823,74 +2265,95 @@
     }
 
 
+    sedangKeluar = true;
+
+    lockButton(
+      "btnKeluar",
+      "MENYIMPAN..."
+    );
+
+
+    showStatus(
+      "statusKeluar",
+      "Sedang menyimpan barang keluar...",
+      "loading"
+    );
+
+
     try {
 
       const hasil =
         await apiRequest({
 
-          action:
-            "KELUAR",
+          action: "KELUAR",
 
-          produkId:
-            produkId,
+          produkId: produkId,
 
-          lokasiId:
-            lokasiId,
+          lokasiId: lokasiId,
 
-          qty:
-            qty,
+          qty: qty,
 
-          user:
-            user,
+          user: user,
 
-          tujuan:
-            tujuan,
+          tujuan: tujuan,
 
-          harga:
-            harga,
+          harga: harga,
 
-          keterangan:
-            keterangan
+          keterangan: keterangan
 
         });
 
 
+      if (
+        !hasil ||
+        hasil.success !== true
+      ) {
+
+        throw new Error(
+          hasil && hasil.message
+            ? hasil.message
+            : "Barang keluar gagal disimpan."
+        );
+
+      }
+
+
+      const stokSisa =
+        hasil.data &&
+        hasil.data.stokSisa !== undefined
+          ? " Stok sisa: " +
+            hasil.data.stokSisa
+          : "";
+
+
       showStatus(
-
         "statusKeluar",
-
-        hasil.message +
-
         (
-
-          hasil.data &&
-
-          hasil.data.stokSisa !==
-            undefined
-
-            ? " Stok sisa: " +
-
-              hasil.data.stokSisa
-
-            : ""
-
-        ),
-
-        hasil.success
-
+          hasil.message ||
+          "Barang keluar berhasil disimpan."
+        ) + stokSisa,
+        "success"
       );
+
+
+      resetFormKeluar();
 
 
     } catch (error) {
 
       showStatus(
-
         "statusKeluar",
+        error.message ||
+          "Barang keluar gagal disimpan.",
+        "error"
+      );
 
-        error.message,
+    } finally {
 
-        false
+      sedangKeluar = false;
 
+      unlockButton(
+        "btnKeluar"
       );
 
     }
@@ -1902,57 +2365,54 @@
   // TRANSFER
   // =====================================================
 
+  let sedangTransfer = false;
+
+
   async function transferBarang() {
+
+    if (sedangTransfer) {
+      return;
+    }
+
 
     const produkId =
       document.getElementById(
         "transferProduk"
-      )
-      .value
-      .trim();
+      ).value.trim();
 
 
     const qty =
       Number(
         document.getElementById(
           "transferQty"
-        )
-        .value
+        ).value
       );
 
 
     const lokasiAsal =
       document.getElementById(
         "transferAsal"
-      )
-      .value;
+      ).value;
 
 
     const lokasiTujuan =
       document.getElementById(
         "transferTujuan"
-      )
-      .value;
+      ).value;
 
 
     const user =
       document.getElementById(
         "transferUser"
-      )
-      .value ||
-      "OWNER";
+      ).value;
 
 
     if (!produkId) {
 
       showStatus(
-
         "statusTransfer",
-
-        "Silakan pilih produk terlebih dahulu.",
-
-        false
-
+        "Produk wajib dipilih.",
+        "error"
       );
 
       return;
@@ -1963,13 +2423,9 @@
     if (!qty || qty <= 0) {
 
       showStatus(
-
         "statusTransfer",
-
         "Qty harus lebih dari 0.",
-
-        false
-
+        "error"
       );
 
       return;
@@ -1983,13 +2439,9 @@
     ) {
 
       showStatus(
-
         "statusTransfer",
-
         "Lokasi asal dan tujuan tidak boleh sama.",
-
-        false
-
+        "error"
       );
 
       return;
@@ -1997,16 +2449,29 @@
     }
 
 
+    sedangTransfer = true;
+
+    lockButton(
+      "btnTransfer",
+      "MEMPROSES..."
+    );
+
+
+    showStatus(
+      "statusTransfer",
+      "Sedang memproses transfer...",
+      "loading"
+    );
+
+
     try {
 
       const hasil =
         await apiRequest({
 
-          action:
-            "TRANSFER",
+          action: "TRANSFER",
 
-          produkId:
-            produkId,
+          produkId: produkId,
 
           lokasiAsal:
             lokasiAsal,
@@ -2014,36 +2479,53 @@
           lokasiTujuan:
             lokasiTujuan,
 
-          qty:
-            qty,
+          qty: qty,
 
-          user:
-            user
+          user: user
 
         });
 
 
+      if (
+        !hasil ||
+        hasil.success !== true
+      ) {
+
+        throw new Error(
+          hasil && hasil.message
+            ? hasil.message
+            : "Transfer gagal disimpan."
+        );
+
+      }
+
+
       showStatus(
-
         "statusTransfer",
-
-        hasil.message,
-
-        hasil.success
-
+        hasil.message ||
+          "Transfer berhasil disimpan.",
+        "success"
       );
+
+
+      resetFormTransfer();
 
 
     } catch (error) {
 
       showStatus(
-
         "statusTransfer",
+        error.message ||
+          "Transfer gagal disimpan.",
+        "error"
+      );
 
-        error.message,
+    } finally {
 
-        false
+      sedangTransfer = false;
 
+      unlockButton(
+        "btnTransfer"
       );
 
     }
@@ -2055,39 +2537,39 @@
   // CEK STOK
   // =====================================================
 
+  let sedangCekStok = false;
+
+
   async function cekStok() {
+
+    if (sedangCekStok) {
+      return;
+    }
+
 
     const produkId =
       document.getElementById(
         "stokProduk"
-      )
-      .value
-      .trim();
+      ).value.trim();
 
 
     const lokasiId =
       document.getElementById(
         "stokLokasi"
-      )
-      .value;
+      ).value;
 
 
     document.getElementById(
       "hasilStok"
-    )
-    .innerHTML = "";
+    ).innerHTML = "";
 
 
     if (!produkId) {
 
       showStatus(
-
         "statusStok",
-
-        "Silakan pilih produk terlebih dahulu.",
-
-        false
-
+        "Produk wajib dipilih.",
+        "error"
       );
 
       return;
@@ -2095,13 +2577,27 @@
     }
 
 
+    sedangCekStok = true;
+
+    lockButton(
+      "btnStok",
+      "MEMERIKSA..."
+    );
+
+
+    showStatus(
+      "statusStok",
+      "Sedang mengambil data stok...",
+      "loading"
+    );
+
+
     try {
 
       const hasil =
         await apiRequest({
 
-          action:
-            "STOK",
+          action: "STOK",
 
           produkId:
             produkId,
@@ -2117,25 +2613,11 @@
         hasil.success !== true
       ) {
 
-        showStatus(
-
-          "statusStok",
-
-          (
-            hasil &&
-            hasil.message
-
-          )
-
+        throw new Error(
+          hasil && hasil.message
             ? hasil.message
-
-            : "Data stok tidak ditemukan.",
-
-          false
-
+            : "Data stok tidak ditemukan."
         );
-
-        return;
 
       }
 
@@ -2152,20 +2634,14 @@
         dataList =
           hasil.data;
 
-
       } else if (
-
         hasil.data &&
-
         typeof hasil.data ===
           "object"
-
       ) {
 
         dataList =
-          [
-            hasil.data
-          ];
+          [hasil.data];
 
       }
 
@@ -2174,17 +2650,9 @@
         dataList.length === 0
       ) {
 
-        showStatus(
-
-          "statusStok",
-
-          "Data stok tidak ditemukan.",
-
-          false
-
+        throw new Error(
+          "Data stok tidak ditemukan."
         );
-
-        return;
 
       }
 
@@ -2222,17 +2690,11 @@
 
             const itemProduk =
               String(
-
                 item.produkId ??
-
                 item.idProduk ??
-
                 item.ID_PRODUK ??
-
                 item.ID ??
-
                 ""
-
               )
               .trim()
               .toUpperCase();
@@ -2240,30 +2702,20 @@
 
             const itemLokasi =
               String(
-
                 item.lokasiId ??
-
                 item.idLokasi ??
-
                 item.LOKASI_ID ??
-
-                item.LOKASI ??
-
                 ""
-
               )
               .trim()
               .toUpperCase();
 
 
             return (
-
               itemProduk ===
                 produkCari &&
-
               itemLokasi ===
                 lokasiCari
-
             );
 
           }
@@ -2281,17 +2733,11 @@
 
         const itemProduk =
           String(
-
             item.produkId ??
-
             item.idProduk ??
-
             item.ID_PRODUK ??
-
             item.ID ??
-
             ""
-
           )
           .trim()
           .toUpperCase();
@@ -2311,98 +2757,59 @@
 
       if (!data) {
 
-        showStatus(
-
-          "statusStok",
-
-          "Stok untuk produk dan lokasi tersebut tidak ditemukan.",
-
-          false
-
+        throw new Error(
+          "Stok untuk produk dan lokasi tersebut tidak ditemukan."
         );
-
-        return;
 
       }
 
 
       const nama =
-
         data.nama ??
-
         data.namaProduk ??
-
         data.produkNama ??
-
         data.NAMA_PRODUK ??
-
         data.produk ??
-
         data.produkId ??
-
-        data.idProduk ??
-
         produkId;
 
 
       const tampilProduk =
-
         data.produkId ??
-
         data.idProduk ??
-
         data.ID_PRODUK ??
-
         produkId;
 
 
       const tampilLokasi =
-
         data.lokasi ??
-
         data.namaLokasi ??
-
         data.lokasiNama ??
-
         data.LOKASI ??
-
         data.lokasiId ??
-
         data.idLokasi ??
-
         lokasiId;
 
 
       const stok =
-
         data.stok ??
-
         data.stock ??
-
         data.STOK ??
-
         data.qty ??
-
         data.QTY ??
-
         0;
 
 
       const satuan =
-
         data.satuan ??
-
         data.unit ??
-
         data.SATUAN ??
-
         "";
 
 
       document.getElementById(
         "hasilStok"
-      )
-      .innerHTML = `
+      ).innerHTML = `
 
         <div class="lokasi-card">
 
@@ -2432,34 +2839,33 @@
 
 
       showStatus(
-
         "statusStok",
-
         "Stok berhasil ditemukan.",
-
-        true
-
+        "success"
       );
 
 
     } catch (error) {
 
       showStatus(
-
         "statusStok",
-
         error.message ||
           "Gagal mengambil data stok.",
-
-        false
-
+        "error"
       );
 
 
       document.getElementById(
         "hasilStok"
-      )
-      .innerHTML = "";
+      ).innerHTML = "";
+
+    } finally {
+
+      sedangCekStok = false;
+
+      unlockButton(
+        "btnStok"
+      );
 
     }
 
@@ -2479,9 +2885,7 @@
 
 
     if (!statusElement) {
-
       return;
-
     }
 
 
@@ -2493,19 +2897,11 @@
 
       const response =
         await fetch(
-
           API_URL,
-
           {
-
-            method:
-              "GET",
-
-            cache:
-              "no-store"
-
+            method: "GET",
+            cache: "no-store"
           }
-
         );
 
 
@@ -2529,10 +2925,7 @@
       try {
 
         data =
-          JSON.parse(
-            text
-          );
-
+          JSON.parse(text);
 
       } catch (error) {
 
@@ -2551,7 +2944,6 @@
 
         statusElement.textContent =
           "ONLINE";
-
 
       } else {
 
@@ -2576,9 +2968,7 @@
   // =====================================================
 
   document.addEventListener(
-
     "DOMContentLoaded",
-
     function() {
 
       cekBackend();
@@ -2587,17 +2977,13 @@
       loadProduk()
         .catch(
           function() {
-
-            // Jika preload gagal,
-            // picker akan mencoba lagi
-            // saat digunakan.
-
+            // Error ditampilkan saat picker digunakan.
           }
         );
 
     }
-
   );
+
 
 </script>
 
