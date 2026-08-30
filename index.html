@@ -157,6 +157,62 @@
       resize: vertical;
     }
 
+    .product-picker {
+      position: relative;
+    }
+
+    .product-results {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      z-index: 50;
+      display: none;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .product-results.show {
+      display: block;
+    }
+
+    .product-option {
+      padding: 11px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .product-option:hover {
+      background: #f5f6f8;
+    }
+
+    .product-option strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .product-option span {
+      display: block;
+      margin-top: 3px;
+      color: #6b7280;
+      font-size: 12px;
+    }
+
+    .product-empty {
+      padding: 12px;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .product-info {
+      margin-top: 6px;
+      min-height: 16px;
+    }
+
     .full {
       grid-column: 1 / -1;
     }
@@ -324,7 +380,7 @@
 
         <div class="card">
           <small>Sistem</small>
-          <strong>V1</strong>
+          <strong>V1.1</strong>
           <span class="muted">Inventory</span>
         </div>
 
@@ -371,47 +427,108 @@
         <div class="form-grid">
 
           <div>
-            <label>ID Produk</label>
-            <input id="masukProduk" placeholder="Contoh: GLP001">
+            <label>Produk</label>
+
+            <div class="product-picker">
+
+              <input
+                id="masukProdukCari"
+                placeholder="Ketik ID atau nama produk..."
+                autocomplete="off"
+                oninput="filterProduk('masuk')"
+                onfocus="showProdukResults('masuk')"
+              >
+
+              <div
+                id="masukProdukResults"
+                class="product-results"
+              ></div>
+
+            </div>
+
+            <input
+              id="masukProduk"
+              type="hidden"
+            >
+
+            <div
+              id="masukProdukInfo"
+              class="product-info muted"
+            ></div>
+
           </div>
 
           <div>
             <label>Lokasi</label>
+
             <select id="masukLokasi">
-              <option value="LOC001">TOOKA HUB METRO</option>
-              <option value="LOC002">TOOKA STORE JEPARA</option>
+
+              <option value="LOC001">
+                TOOKA HUB METRO
+              </option>
+
+              <option value="LOC002">
+                TOOKA STORE JEPARA
+              </option>
+
             </select>
+
           </div>
 
           <div>
             <label>Qty</label>
-            <input id="masukQty" type="number" min="0.01" step="0.01">
+            <input
+              id="masukQty"
+              type="number"
+              min="0.01"
+              step="0.01"
+            >
           </div>
 
           <div>
             <label>Harga</label>
-            <input id="masukHarga" type="number" min="0">
+            <input
+              id="masukHarga"
+              type="number"
+              min="0"
+            >
           </div>
 
           <div>
             <label>Sumber</label>
-            <input id="masukSumber" value="Supplier">
+            <input
+              id="masukSumber"
+              value="Supplier"
+            >
           </div>
 
           <div>
             <label>User</label>
-            <input id="masukUser" value="OWNER">
+            <input
+              id="masukUser"
+              value="OWNER"
+            >
           </div>
 
           <div class="full">
+
             <label>Keterangan</label>
-            <textarea id="masukKeterangan"></textarea>
+
+            <textarea
+              id="masukKeterangan"
+            ></textarea>
+
           </div>
 
           <div class="full">
-            <button class="btn btn-success" onclick="barangMasuk()">
+
+            <button
+              class="btn btn-success"
+              onclick="barangMasuk()"
+            >
               SIMPAN BARANG MASUK
             </button>
+
           </div>
 
         </div>
@@ -439,47 +556,122 @@
         <div class="form-grid">
 
           <div>
-            <label>ID Produk</label>
-            <input id="keluarProduk" placeholder="Contoh: GLP001">
+
+            <label>Produk</label>
+
+            <div class="product-picker">
+
+              <input
+                id="keluarProdukCari"
+                placeholder="Ketik ID atau nama produk..."
+                autocomplete="off"
+                oninput="filterProduk('keluar')"
+                onfocus="showProdukResults('keluar')"
+              >
+
+              <div
+                id="keluarProdukResults"
+                class="product-results"
+              ></div>
+
+            </div>
+
+            <input
+              id="keluarProduk"
+              type="hidden"
+            >
+
+            <div
+              id="keluarProdukInfo"
+              class="product-info muted"
+            ></div>
+
           </div>
 
           <div>
+
             <label>Lokasi</label>
+
             <select id="keluarLokasi">
-              <option value="LOC001">TOOKA HUB METRO</option>
-              <option value="LOC002">TOOKA STORE JEPARA</option>
+
+              <option value="LOC001">
+                TOOKA HUB METRO
+              </option>
+
+              <option value="LOC002">
+                TOOKA STORE JEPARA
+              </option>
+
             </select>
+
           </div>
 
           <div>
+
             <label>Qty</label>
-            <input id="keluarQty" type="number" min="0.01" step="0.01">
+
+            <input
+              id="keluarQty"
+              type="number"
+              min="0.01"
+              step="0.01"
+            >
+
           </div>
 
           <div>
+
             <label>Harga</label>
-            <input id="keluarHarga" type="number" min="0">
+
+            <input
+              id="keluarHarga"
+              type="number"
+              min="0"
+            >
+
           </div>
 
           <div>
+
             <label>Tujuan</label>
-            <input id="keluarTujuan" placeholder="Contoh: DKJ Metro">
+
+            <input
+              id="keluarTujuan"
+              placeholder="Contoh: DKJ Metro"
+            >
+
           </div>
 
           <div>
+
             <label>User</label>
-            <input id="keluarUser" value="OWNER">
+
+            <input
+              id="keluarUser"
+              value="OWNER"
+            >
+
           </div>
 
           <div class="full">
+
             <label>Keterangan</label>
-            <textarea id="keluarKeterangan"></textarea>
+
+            <textarea
+              id="keluarKeterangan"
+            ></textarea>
+
           </div>
 
           <div class="full">
-            <button class="btn btn-danger" onclick="barangKeluar()">
+
+            <button
+              class="btn btn-danger"
+              onclick="barangKeluar()"
+            >
               SIMPAN BARANG KELUAR
             </button>
+
           </div>
 
         </div>
@@ -494,11 +686,19 @@
     <section id="transfer" class="page">
 
       <div class="title">
+
         <h2>Transfer Barang</h2>
-        <p>Pindahkan stok dari satu lokasi ke lokasi lain.</p>
+
+        <p>
+          Pindahkan stok dari satu lokasi ke lokasi lain.
+        </p>
+
       </div>
 
-      <div id="statusTransfer" class="status"></div>
+      <div
+        id="statusTransfer"
+        class="status"
+      ></div>
 
       <div class="panel">
 
@@ -507,40 +707,107 @@
         <div class="form-grid">
 
           <div>
-            <label>ID Produk</label>
-            <input id="transferProduk" placeholder="Contoh: GLP001">
+
+            <label>Produk</label>
+
+            <div class="product-picker">
+
+              <input
+                id="transferProdukCari"
+                placeholder="Ketik ID atau nama produk..."
+                autocomplete="off"
+                oninput="filterProduk('transfer')"
+                onfocus="showProdukResults('transfer')"
+              >
+
+              <div
+                id="transferProdukResults"
+                class="product-results"
+              ></div>
+
+            </div>
+
+            <input
+              id="transferProduk"
+              type="hidden"
+            >
+
+            <div
+              id="transferProdukInfo"
+              class="product-info muted"
+            ></div>
+
           </div>
 
           <div>
+
             <label>Qty</label>
-            <input id="transferQty" type="number" min="0.01" step="0.01">
+
+            <input
+              id="transferQty"
+              type="number"
+              min="0.01"
+              step="0.01"
+            >
+
           </div>
 
           <div>
+
             <label>Lokasi Asal</label>
+
             <select id="transferAsal">
-              <option value="LOC001">TOOKA HUB METRO</option>
-              <option value="LOC002">TOOKA STORE JEPARA</option>
+
+              <option value="LOC001">
+                TOOKA HUB METRO
+              </option>
+
+              <option value="LOC002">
+                TOOKA STORE JEPARA
+              </option>
+
             </select>
+
           </div>
 
           <div>
+
             <label>Lokasi Tujuan</label>
+
             <select id="transferTujuan">
-              <option value="LOC002">TOOKA STORE JEPARA</option>
-              <option value="LOC001">TOOKA HUB METRO</option>
+
+              <option value="LOC002">
+                TOOKA STORE JEPARA
+              </option>
+
+              <option value="LOC001">
+                TOOKA HUB METRO
+              </option>
+
             </select>
+
           </div>
 
           <div>
+
             <label>User</label>
-            <input id="transferUser" value="OWNER">
+
+            <input
+              id="transferUser"
+              value="OWNER"
+            >
+
           </div>
 
           <div class="full">
-            <button class="btn btn-warning" onclick="transferBarang()">
+
+            <button
+              class="btn btn-warning"
+              onclick="transferBarang()"
+            >
               TRANSFER BARANG
             </button>
+
           </div>
 
         </div>
@@ -555,11 +822,19 @@
     <section id="stok" class="page">
 
       <div class="title">
+
         <h2>Cek Stok</h2>
-        <p>Lihat posisi stok berdasarkan produk dan lokasi.</p>
+
+        <p>
+          Lihat posisi stok berdasarkan produk dan lokasi.
+        </p>
+
       </div>
 
-      <div id="statusStok" class="status"></div>
+      <div
+        id="statusStok"
+        class="status"
+      ></div>
 
       <div class="panel">
 
@@ -568,22 +843,65 @@
         <div class="form-grid">
 
           <div>
-            <label>ID Produk</label>
-            <input id="stokProduk" placeholder="Contoh: GLP001">
+
+            <label>Produk</label>
+
+            <div class="product-picker">
+
+              <input
+                id="stokProdukCari"
+                placeholder="Ketik ID atau nama produk..."
+                autocomplete="off"
+                oninput="filterProduk('stok')"
+                onfocus="showProdukResults('stok')"
+              >
+
+              <div
+                id="stokProdukResults"
+                class="product-results"
+              ></div>
+
+            </div>
+
+            <input
+              id="stokProduk"
+              type="hidden"
+            >
+
+            <div
+              id="stokProdukInfo"
+              class="product-info muted"
+            ></div>
+
           </div>
 
           <div>
+
             <label>Lokasi</label>
+
             <select id="stokLokasi">
-              <option value="LOC001">TOOKA HUB METRO</option>
-              <option value="LOC002">TOOKA STORE JEPARA</option>
+
+              <option value="LOC001">
+                TOOKA HUB METRO
+              </option>
+
+              <option value="LOC002">
+                TOOKA STORE JEPARA
+              </option>
+
             </select>
+
           </div>
 
           <div class="full">
-            <button class="btn btn-primary" onclick="cekStok()">
+
+            <button
+              class="btn btn-primary"
+              onclick="cekStok()"
+            >
               CEK STOK
             </button>
+
           </div>
 
         </div>
@@ -614,27 +932,529 @@
 
 
   // =====================================================
+  // MASTER PRODUK / PRODUCT PICKER
+  // =====================================================
+
+  let produkMaster = [];
+
+  let produkLoaded = false;
+
+  let produkLoading = false;
+
+
+  async function loadProduk() {
+
+    if (produkLoaded) {
+
+      return produkMaster;
+
+    }
+
+
+    if (produkLoading) {
+
+      while (produkLoading) {
+
+        await new Promise(
+          resolve =>
+            setTimeout(
+              resolve,
+              100
+            )
+        );
+
+      }
+
+      return produkMaster;
+
+    }
+
+
+    produkLoading = true;
+
+
+    try {
+
+      const hasil =
+        await apiRequest({
+
+          action: "PRODUK"
+
+        });
+
+
+      if (
+        !hasil ||
+        hasil.success !== true
+      ) {
+
+        throw new Error(
+
+          hasil &&
+          hasil.message
+
+            ? hasil.message
+
+            : "Master produk gagal dimuat."
+
+        );
+
+      }
+
+
+      produkMaster =
+        Array.isArray(hasil.data)
+
+          ? hasil.data
+
+          : [];
+
+
+      produkLoaded = true;
+
+
+      return produkMaster;
+
+
+    } finally {
+
+      produkLoading = false;
+
+    }
+
+  }
+
+
+  async function showProdukResults(type) {
+
+    await filterProduk(type);
+
+  }
+
+
+  async function filterProduk(type) {
+
+    const searchInput =
+      document.getElementById(
+        type + "ProdukCari"
+      );
+
+
+    const results =
+      document.getElementById(
+        type + "ProdukResults"
+      );
+
+
+    if (
+      !searchInput ||
+      !results
+    ) {
+
+      return;
+
+    }
+
+
+    results.classList.add(
+      "show"
+    );
+
+
+    const keyword =
+      searchInput.value
+        .trim()
+        .toLowerCase();
+
+
+    try {
+
+      const products =
+        await loadProduk();
+
+
+      const filtered =
+        products
+
+          .filter(product => {
+
+            const id =
+              String(
+                product.id || ""
+              )
+              .toLowerCase();
+
+
+            const nama =
+              String(
+                product.nama || ""
+              )
+              .toLowerCase();
+
+
+            const kategori =
+              String(
+                product.kategori || ""
+              )
+              .toLowerCase();
+
+
+            return (
+
+              !keyword ||
+
+              id.includes(
+                keyword
+              ) ||
+
+              nama.includes(
+                keyword
+              ) ||
+
+              kategori.includes(
+                keyword
+              )
+
+            );
+
+          })
+
+          .slice(
+            0,
+            50
+          );
+
+
+      if (
+        filtered.length === 0
+      ) {
+
+        results.innerHTML =
+
+          '<div class="product-empty">' +
+          'Produk tidak ditemukan.' +
+          '</div>';
+
+        return;
+
+      }
+
+
+      results.innerHTML =
+
+        filtered
+
+          .map(product => {
+
+            const productId =
+              escapeJs(
+                product.id
+              );
+
+
+            return `
+
+              <div
+                class="product-option"
+                onclick="selectProduk('${type}', '${productId}')"
+              >
+
+                <strong>
+                  ${escapeHtml(product.id)}
+                  —
+                  ${escapeHtml(product.nama)}
+                </strong>
+
+                <span>
+                  ${escapeHtml(
+                    product.kategori ||
+                    "Tanpa kategori"
+                  )}
+
+                  ·
+
+                  ${escapeHtml(
+                    product.satuan ||
+                    "-"
+                  )}
+                </span>
+
+              </div>
+
+            `;
+
+          })
+
+          .join("");
+
+
+    } catch (error) {
+
+      results.innerHTML =
+
+        '<div class="product-empty">' +
+        'Gagal memuat master produk.' +
+        '</div>';
+
+    }
+
+  }
+
+
+  function selectProduk(
+    type,
+    produkId
+  ) {
+
+    const product =
+      produkMaster.find(
+        item =>
+
+          String(
+            item.id
+          ).trim() ===
+
+          String(
+            produkId
+          ).trim()
+
+      );
+
+
+    if (!product) {
+
+      return;
+
+    }
+
+
+    const hiddenInput =
+      document.getElementById(
+        type + "Produk"
+      );
+
+
+    const searchInput =
+      document.getElementById(
+        type + "ProdukCari"
+      );
+
+
+    const results =
+      document.getElementById(
+        type + "ProdukResults"
+      );
+
+
+    const info =
+      document.getElementById(
+        type + "ProdukInfo"
+      );
+
+
+    if (hiddenInput) {
+
+      hiddenInput.value =
+        product.id;
+
+    }
+
+
+    if (searchInput) {
+
+      searchInput.value =
+
+        product.id +
+        " — " +
+        product.nama;
+
+    }
+
+
+    if (info) {
+
+      info.textContent =
+
+        "Satuan: " +
+
+        (
+          product.satuan ||
+          "-"
+        ) +
+
+        " · Minimum stok: " +
+
+        Number(
+          product.stokMinimum ||
+          0
+        );
+
+    }
+
+
+    if (results) {
+
+      results.innerHTML =
+        "";
+
+      results.classList.remove(
+        "show"
+      );
+
+    }
+
+  }
+
+
+  function escapeHtml(value) {
+
+    return String(
+      value ?? ""
+    )
+
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+
+      .replace(
+        /</g,
+        "&lt;"
+      )
+
+      .replace(
+        />/g,
+        "&gt;"
+      )
+
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+
+      .replace(
+        /'/g,
+        "&#039;"
+      );
+
+  }
+
+
+  function escapeJs(value) {
+
+    return String(
+      value ?? ""
+    )
+
+      .replace(
+        /\\/g,
+        "\\\\"
+      )
+
+      .replace(
+        /'/g,
+        "\\'"
+      );
+
+  }
+
+
+  document.addEventListener(
+    "click",
+    function(event) {
+
+      if (
+        !event.target.closest(
+          ".product-picker"
+        )
+      ) {
+
+        document
+
+          .querySelectorAll(
+            ".product-results"
+          )
+
+          .forEach(
+            element =>
+
+              element.classList.remove(
+                "show"
+              )
+
+          );
+
+      }
+
+    }
+  );
+
+
+  // =====================================================
   // NAVIGASI
   // =====================================================
 
-  function showPage(pageId, button) {
+  function showPage(
+    pageId,
+    button
+  ) {
 
-    document.querySelectorAll(".page")
-      .forEach(page => page.classList.remove("active"));
+    document
 
-    const page = document.getElementById(pageId);
+      .querySelectorAll(
+        ".page"
+      )
+
+      .forEach(
+        page =>
+
+          page.classList.remove(
+            "active"
+          )
+
+      );
+
+
+    const page =
+      document.getElementById(
+        pageId
+      );
+
 
     if (!page) {
+
       return;
+
     }
 
-    page.classList.add("active");
 
-    document.querySelectorAll(".nav-btn")
-      .forEach(btn => btn.classList.remove("active"));
+    page.classList.add(
+      "active"
+    );
+
+
+    document
+
+      .querySelectorAll(
+        ".nav-btn"
+      )
+
+      .forEach(
+        btn =>
+
+          btn.classList.remove(
+            "active"
+          )
+
+      );
+
 
     if (button) {
-      button.classList.add("active");
+
+      button.classList.add(
+        "active"
+      );
+
     }
 
   }
@@ -644,37 +1464,64 @@
   // REQUEST API
   // =====================================================
 
-  async function apiRequest(data) {
+  async function apiRequest(
+    data
+  ) {
 
-    const response = await fetch(API_URL, {
+    const response =
+      await fetch(
+        API_URL,
+        {
 
-      method: "POST",
+          method: "POST",
 
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
+          headers: {
 
-      body: JSON.stringify(data)
+            "Content-Type":
+              "text/plain;charset=utf-8"
 
-    });
+          },
+
+          body:
+            JSON.stringify(
+              data
+            )
+
+        }
+      );
+
 
     if (!response.ok) {
+
       throw new Error(
+
         "Server API gagal merespons. HTTP " +
+
         response.status
+
       );
+
     }
 
-    const text = await response.text();
+
+    const text =
+      await response.text();
+
 
     try {
 
-      return JSON.parse(text);
+      return JSON.parse(
+        text
+      );
+
 
     } catch (error) {
 
       throw new Error(
-        "Response API tidak valid: " + text
+
+        "Response API tidak valid: " +
+        text
+
       );
 
     }
@@ -686,21 +1533,38 @@
   // STATUS
   // =====================================================
 
-  function showStatus(elementId, message, success) {
+  function showStatus(
+    elementId,
+    message,
+    success
+  ) {
 
     const element =
-      document.getElementById(elementId);
+      document.getElementById(
+        elementId
+      );
+
 
     if (!element) {
+
       return;
+
     }
+
 
     element.textContent =
       message || "";
 
+
     element.className =
+
       "status show " +
-      (success ? "success" : "error");
+
+      (
+        success
+          ? "success"
+          : "error"
+      );
 
   }
 
@@ -712,87 +1576,149 @@
   async function barangMasuk() {
 
     const produkId =
-      document.getElementById("masukProduk").value.trim();
+      document.getElementById(
+        "masukProduk"
+      )
+      .value
+      .trim();
+
 
     const lokasiId =
-      document.getElementById("masukLokasi").value;
+      document.getElementById(
+        "masukLokasi"
+      )
+      .value;
+
 
     const qty =
-      Number(document.getElementById("masukQty").value);
+      Number(
+        document.getElementById(
+          "masukQty"
+        )
+        .value
+      );
+
 
     const harga =
-      Number(document.getElementById("masukHarga").value || 0);
+      Number(
+
+        document.getElementById(
+          "masukHarga"
+        )
+        .value || 0
+
+      );
+
 
     const sumber =
-      document.getElementById("masukSumber").value;
+      document.getElementById(
+        "masukSumber"
+      )
+      .value;
+
 
     const user =
-      document.getElementById("masukUser").value || "OWNER";
+      document.getElementById(
+        "masukUser"
+      )
+      .value ||
+      "OWNER";
+
 
     const keterangan =
-      document.getElementById("masukKeterangan").value;
+      document.getElementById(
+        "masukKeterangan"
+      )
+      .value;
 
 
     if (!produkId) {
 
       showStatus(
+
         "statusMasuk",
-        "ID Produk wajib diisi.",
+
+        "Silakan pilih produk terlebih dahulu.",
+
         false
+
       );
 
       return;
+
     }
 
 
     if (!qty || qty <= 0) {
 
       showStatus(
+
         "statusMasuk",
+
         "Qty harus lebih dari 0.",
+
         false
+
       );
 
       return;
+
     }
 
 
     try {
 
-      const hasil = await apiRequest({
+      const hasil =
+        await apiRequest({
 
-        action: "MASUK",
+          action:
+            "MASUK",
 
-        produkId: produkId,
+          produkId:
+            produkId,
 
-        lokasiId: lokasiId,
+          lokasiId:
+            lokasiId,
 
-        qty: qty,
+          qty:
+            qty,
 
-        user: user,
+          user:
+            user,
 
-        tujuan: sumber,
+          tujuan:
+            sumber,
 
-        harga: harga,
+          harga:
+            harga,
 
-        keterangan: keterangan
+          keterangan:
+            keterangan
 
-      });
+        });
 
 
       showStatus(
+
         "statusMasuk",
+
         hasil.message,
+
         hasil.success
+
       );
 
 
     } catch (error) {
 
       showStatus(
+
         "statusMasuk",
+
         error.message,
+
         false
+
       );
 
     }
@@ -807,94 +1733,164 @@
   async function barangKeluar() {
 
     const produkId =
-      document.getElementById("keluarProduk").value.trim();
+      document.getElementById(
+        "keluarProduk"
+      )
+      .value
+      .trim();
+
 
     const lokasiId =
-      document.getElementById("keluarLokasi").value;
+      document.getElementById(
+        "keluarLokasi"
+      )
+      .value;
+
 
     const qty =
-      Number(document.getElementById("keluarQty").value);
+      Number(
+        document.getElementById(
+          "keluarQty"
+        )
+        .value
+      );
+
 
     const harga =
-      Number(document.getElementById("keluarHarga").value || 0);
+      Number(
+
+        document.getElementById(
+          "keluarHarga"
+        )
+        .value || 0
+
+      );
+
 
     const tujuan =
-      document.getElementById("keluarTujuan").value;
+      document.getElementById(
+        "keluarTujuan"
+      )
+      .value;
+
 
     const user =
-      document.getElementById("keluarUser").value || "OWNER";
+      document.getElementById(
+        "keluarUser"
+      )
+      .value ||
+      "OWNER";
+
 
     const keterangan =
-      document.getElementById("keluarKeterangan").value;
+      document.getElementById(
+        "keluarKeterangan"
+      )
+      .value;
 
 
     if (!produkId) {
 
       showStatus(
+
         "statusKeluar",
-        "ID Produk wajib diisi.",
+
+        "Silakan pilih produk terlebih dahulu.",
+
         false
+
       );
 
       return;
+
     }
 
 
     if (!qty || qty <= 0) {
 
       showStatus(
+
         "statusKeluar",
+
         "Qty harus lebih dari 0.",
+
         false
+
       );
 
       return;
+
     }
 
 
     try {
 
-      const hasil = await apiRequest({
+      const hasil =
+        await apiRequest({
 
-        action: "KELUAR",
+          action:
+            "KELUAR",
 
-        produkId: produkId,
+          produkId:
+            produkId,
 
-        lokasiId: lokasiId,
+          lokasiId:
+            lokasiId,
 
-        qty: qty,
+          qty:
+            qty,
 
-        user: user,
+          user:
+            user,
 
-        tujuan: tujuan,
+          tujuan:
+            tujuan,
 
-        harga: harga,
+          harga:
+            harga,
 
-        keterangan: keterangan
+          keterangan:
+            keterangan
 
-      });
+        });
 
 
       showStatus(
+
         "statusKeluar",
+
         hasil.message +
+
         (
+
           hasil.data &&
-          hasil.data.stokSisa !== undefined
+
+          hasil.data.stokSisa !==
+            undefined
+
             ? " Stok sisa: " +
+
               hasil.data.stokSisa
+
             : ""
+
         ),
+
         hasil.success
+
       );
 
 
     } catch (error) {
 
       showStatus(
+
         "statusKeluar",
+
         error.message,
+
         false
+
       );
 
     }
@@ -909,89 +1905,145 @@
   async function transferBarang() {
 
     const produkId =
-      document.getElementById("transferProduk").value.trim();
+      document.getElementById(
+        "transferProduk"
+      )
+      .value
+      .trim();
+
 
     const qty =
-      Number(document.getElementById("transferQty").value);
+      Number(
+        document.getElementById(
+          "transferQty"
+        )
+        .value
+      );
+
 
     const lokasiAsal =
-      document.getElementById("transferAsal").value;
+      document.getElementById(
+        "transferAsal"
+      )
+      .value;
+
 
     const lokasiTujuan =
-      document.getElementById("transferTujuan").value;
+      document.getElementById(
+        "transferTujuan"
+      )
+      .value;
+
 
     const user =
-      document.getElementById("transferUser").value || "OWNER";
+      document.getElementById(
+        "transferUser"
+      )
+      .value ||
+      "OWNER";
 
 
     if (!produkId) {
 
       showStatus(
+
         "statusTransfer",
-        "ID Produk wajib diisi.",
+
+        "Silakan pilih produk terlebih dahulu.",
+
         false
+
       );
 
       return;
+
     }
 
 
     if (!qty || qty <= 0) {
 
       showStatus(
+
         "statusTransfer",
+
         "Qty harus lebih dari 0.",
+
         false
+
       );
 
       return;
+
     }
 
 
-    if (lokasiAsal === lokasiTujuan) {
+    if (
+      lokasiAsal ===
+      lokasiTujuan
+    ) {
 
       showStatus(
+
         "statusTransfer",
+
         "Lokasi asal dan tujuan tidak boleh sama.",
+
         false
+
       );
 
       return;
+
     }
 
 
     try {
 
-      const hasil = await apiRequest({
+      const hasil =
+        await apiRequest({
 
-        action: "TRANSFER",
+          action:
+            "TRANSFER",
 
-        produkId: produkId,
+          produkId:
+            produkId,
 
-        lokasiAsal: lokasiAsal,
+          lokasiAsal:
+            lokasiAsal,
 
-        lokasiTujuan: lokasiTujuan,
+          lokasiTujuan:
+            lokasiTujuan,
 
-        qty: qty,
+          qty:
+            qty,
 
-        user: user
+          user:
+            user
 
-      });
+        });
 
 
       showStatus(
+
         "statusTransfer",
+
         hasil.message,
+
         hasil.success
+
       );
 
 
     } catch (error) {
 
       showStatus(
+
         "statusTransfer",
+
         error.message,
+
         false
+
       );
 
     }
@@ -1006,177 +2058,252 @@
   async function cekStok() {
 
     const produkId =
-      document.getElementById("stokProduk").value.trim();
+      document.getElementById(
+        "stokProduk"
+      )
+      .value
+      .trim();
+
 
     const lokasiId =
-      document.getElementById("stokLokasi").value;
+      document.getElementById(
+        "stokLokasi"
+      )
+      .value;
 
 
     document.getElementById(
       "hasilStok"
-    ).innerHTML = "";
+    )
+    .innerHTML = "";
 
 
     if (!produkId) {
 
       showStatus(
+
         "statusStok",
-        "ID Produk wajib diisi.",
+
+        "Silakan pilih produk terlebih dahulu.",
+
         false
+
       );
 
       return;
+
     }
 
 
     try {
 
-      const hasil = await apiRequest({
+      const hasil =
+        await apiRequest({
 
-        action: "STOK",
+          action:
+            "STOK",
 
-        produkId: produkId,
+          produkId:
+            produkId,
 
-        lokasiId: lokasiId
-
-      });
-
-
-      if (!hasil || hasil.success !== true) {
-
-        showStatus(
-          "statusStok",
-          (hasil && hasil.message)
-            ? hasil.message
-            : "Data stok tidak ditemukan.",
-          false
-        );
-
-        return;
-
-      }
-
-
-      /*
-       * Backend dapat mengembalikan data dalam beberapa bentuk:
-       *
-       * 1. data = object
-       * 2. data = array berisi beberapa stok
-       *
-       * Kita normalisasi dulu supaya frontend tidak lagi
-       * membaca object sebagai array atau sebaliknya.
-       */
-
-      let dataList = [];
-
-
-      if (Array.isArray(hasil.data)) {
-
-        dataList = hasil.data;
-
-      } else if (
-        hasil.data &&
-        typeof hasil.data === "object"
-      ) {
-
-        dataList = [hasil.data];
-
-      }
-
-
-      if (dataList.length === 0) {
-
-        showStatus(
-          "statusStok",
-          "Data stok tidak ditemukan.",
-          false
-        );
-
-        return;
-
-      }
-
-
-      /*
-       * Cari data yang paling sesuai dengan:
-       * - ID Produk
-       * - Lokasi
-       *
-       * Jika backend hanya mengembalikan satu object,
-       * object tersebut tetap akan dipakai.
-       */
-
-      const produkCari =
-        String(produkId).trim().toUpperCase();
-
-      const lokasiCari =
-        String(lokasiId).trim().toUpperCase();
-
-
-      let data =
-        dataList.find(item => {
-
-          if (!item || typeof item !== "object") {
-            return false;
-          }
-
-
-          const itemProduk =
-            String(
-              item.produkId ??
-              item.idProduk ??
-              item.ID_PRODUK ??
-              item.ID ??
-              ""
-            )
-            .trim()
-            .toUpperCase();
-
-
-          const itemLokasi =
-            String(
-              item.lokasiId ??
-              item.idLokasi ??
-              item.LOKASI_ID ??
-              item.LOKASI ??
-              ""
-            )
-            .trim()
-            .toUpperCase();
-
-
-          return (
-            itemProduk === produkCari &&
-            itemLokasi === lokasiCari
-          );
+          lokasiId:
+            lokasiId
 
         });
 
 
-      /*
-       * Kalau backend hanya mengirim satu baris tetapi
-       * nama field lokasinya berbeda, gunakan pencocokan
-       * produk sebagai fallback.
-       */
+      if (
+        !hasil ||
+        hasil.success !== true
+      ) {
 
-      if (!data && dataList.length === 1) {
+        showStatus(
 
-        const item = dataList[0];
+          "statusStok",
+
+          (
+            hasil &&
+            hasil.message
+
+          )
+
+            ? hasil.message
+
+            : "Data stok tidak ditemukan.",
+
+          false
+
+        );
+
+        return;
+
+      }
+
+
+      let dataList = [];
+
+
+      if (
+        Array.isArray(
+          hasil.data
+        )
+      ) {
+
+        dataList =
+          hasil.data;
+
+
+      } else if (
+
+        hasil.data &&
+
+        typeof hasil.data ===
+          "object"
+
+      ) {
+
+        dataList =
+          [
+            hasil.data
+          ];
+
+      }
+
+
+      if (
+        dataList.length === 0
+      ) {
+
+        showStatus(
+
+          "statusStok",
+
+          "Data stok tidak ditemukan.",
+
+          false
+
+        );
+
+        return;
+
+      }
+
+
+      const produkCari =
+        String(
+          produkId
+        )
+        .trim()
+        .toUpperCase();
+
+
+      const lokasiCari =
+        String(
+          lokasiId
+        )
+        .trim()
+        .toUpperCase();
+
+
+      let data =
+        dataList.find(
+          item => {
+
+            if (
+              !item ||
+              typeof item !==
+                "object"
+            ) {
+
+              return false;
+
+            }
+
+
+            const itemProduk =
+              String(
+
+                item.produkId ??
+
+                item.idProduk ??
+
+                item.ID_PRODUK ??
+
+                item.ID ??
+
+                ""
+
+              )
+              .trim()
+              .toUpperCase();
+
+
+            const itemLokasi =
+              String(
+
+                item.lokasiId ??
+
+                item.idLokasi ??
+
+                item.LOKASI_ID ??
+
+                item.LOKASI ??
+
+                ""
+
+              )
+              .trim()
+              .toUpperCase();
+
+
+            return (
+
+              itemProduk ===
+                produkCari &&
+
+              itemLokasi ===
+                lokasiCari
+
+            );
+
+          }
+        );
+
+
+      if (
+        !data &&
+        dataList.length === 1
+      ) {
+
+        const item =
+          dataList[0];
+
 
         const itemProduk =
           String(
+
             item.produkId ??
+
             item.idProduk ??
+
             item.ID_PRODUK ??
+
             item.ID ??
+
             ""
+
           )
           .trim()
           .toUpperCase();
 
 
-        if (itemProduk === produkCari) {
+        if (
+          itemProduk ===
+          produkCari
+        ) {
+
           data = item;
+
         }
 
       }
@@ -1185,9 +2312,13 @@
       if (!data) {
 
         showStatus(
+
           "statusStok",
+
           "Stok untuk produk dan lokasi tersebut tidak ditemukan.",
+
           false
+
         );
 
         return;
@@ -1195,56 +2326,83 @@
       }
 
 
-      /*
-       * Normalisasi nama field supaya tampilan tidak
-       * lagi menghasilkan "undefined".
-       */
-
       const nama =
+
         data.nama ??
+
         data.namaProduk ??
+
         data.produkNama ??
+
         data.NAMA_PRODUK ??
+
         data.produk ??
+
         data.produkId ??
+
         data.idProduk ??
+
         produkId;
 
 
       const tampilProduk =
+
         data.produkId ??
+
         data.idProduk ??
+
         data.ID_PRODUK ??
+
         produkId;
 
 
       const tampilLokasi =
+
         data.lokasi ??
+
         data.namaLokasi ??
+
         data.lokasiNama ??
+
         data.LOKASI ??
+
         data.lokasiId ??
+
         data.idLokasi ??
+
         lokasiId;
 
 
       const stok =
+
         data.stok ??
+
         data.stock ??
+
         data.STOK ??
+
         data.qty ??
+
         data.QTY ??
+
         0;
 
 
       const satuan =
+
         data.satuan ??
+
         data.unit ??
+
         data.SATUAN ??
+
         "";
 
 
-      document.getElementById("hasilStok").innerHTML = `
+      document.getElementById(
+        "hasilStok"
+      )
+      .innerHTML = `
 
         <div class="lokasi-card">
 
@@ -1274,41 +2432,36 @@
 
 
       showStatus(
+
         "statusStok",
+
         "Stok berhasil ditemukan.",
+
         true
+
       );
 
 
     } catch (error) {
 
       showStatus(
+
         "statusStok",
-        error.message || "Gagal mengambil data stok.",
+
+        error.message ||
+          "Gagal mengambil data stok.",
+
         false
+
       );
+
 
       document.getElementById(
         "hasilStok"
-      ).innerHTML = "";
+      )
+      .innerHTML = "";
 
     }
-
-  }
-
-
-  // =====================================================
-  // ESCAPE HTML
-  // =====================================================
-
-  function escapeHtml(value) {
-
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
 
   }
 
@@ -1320,24 +2473,39 @@
   async function cekBackend() {
 
     const statusElement =
-      document.getElementById("backendStatus");
+      document.getElementById(
+        "backendStatus"
+      );
+
 
     if (!statusElement) {
+
       return;
+
     }
 
-    statusElement.textContent = "Checking...";
+
+    statusElement.textContent =
+      "Checking...";
 
 
     try {
 
       const response =
         await fetch(
+
           API_URL,
+
           {
-            method: "GET",
-            cache: "no-store"
+
+            method:
+              "GET",
+
+            cache:
+              "no-store"
+
           }
+
         );
 
 
@@ -1360,7 +2528,11 @@
 
       try {
 
-        data = JSON.parse(text);
+        data =
+          JSON.parse(
+            text
+          );
+
 
       } catch (error) {
 
@@ -1372,10 +2544,14 @@
       }
 
 
-      if (data && data.success === true) {
+      if (
+        data &&
+        data.success === true
+      ) {
 
         statusElement.textContent =
           "ONLINE";
+
 
       } else {
 
@@ -1400,12 +2576,27 @@
   // =====================================================
 
   document.addEventListener(
+
     "DOMContentLoaded",
-    function () {
+
+    function() {
 
       cekBackend();
 
+
+      loadProduk()
+        .catch(
+          function() {
+
+            // Jika preload gagal,
+            // picker akan mencoba lagi
+            // saat digunakan.
+
+          }
+        );
+
     }
+
   );
 
 </script>
