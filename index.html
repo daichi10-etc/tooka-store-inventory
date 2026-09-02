@@ -330,11 +330,144 @@
       pointer-events: none;
     }
 
-    footer {
-      text-align: center;
-      color: #9ca3af;
+    /* =====================================================
+       DASHBOARD STOCK WARNING
+       ===================================================== */
+
+    .dashboard-stock {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .dashboard-stock.alert-danger {
+      background: #fff1f2;
+      border-color: #fecdd3;
+    }
+
+    .dashboard-stock.alert-warning {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .dashboard-stock.alert-safe {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .dashboard-stock-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .dashboard-stock-title h3 {
+      margin-bottom: 5px;
+      font-size: 19px;
+    }
+
+    .dashboard-stock-title p {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .dashboard-stock-summary {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .summary-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 999px;
       font-size: 12px;
-      padding: 30px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .summary-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .summary-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .summary-safe {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .stock-warning-table-wrap {
+      overflow-x: auto;
+    }
+
+    .stock-warning-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .stock-warning-table th,
+    .stock-warning-table td {
+      padding: 11px 8px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+
+    .stock-warning-table th {
+      color: #6b7280;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .stock-warning-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .stock-status-badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .stock-status-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .stock-status-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .dashboard-safe-message {
+      font-size: 14px;
+      font-weight: bold;
+      color: #166534;
+    }
+
+    .dashboard-loading {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .dashboard-error {
+      color: #991b1b;
+      font-size: 13px;
     }
 
     @media (max-width: 700px) {
@@ -351,6 +484,14 @@
 
       header h1 {
         font-size: 20px;
+      }
+
+      .dashboard-stock-header {
+        flex-direction: column;
+      }
+
+      .dashboard-stock-summary {
+        justify-content: flex-start;
       }
 
     }
@@ -458,12 +599,54 @@
 
           <small>Sistem</small>
 
-          <strong>V1.2</strong>
+          <strong>V1.3</strong>
 
           <span class="muted">
             Inventory Control
           </span>
 
+        </div>
+
+      </div>
+
+
+      <!-- ================================================= -->
+      <!-- PERINGATAN STOK DASHBOARD -->
+      <!-- ================================================= -->
+
+      <div
+        id="dashboardStock"
+        class="dashboard-stock"
+      >
+
+        <div class="dashboard-stock-header">
+
+          <div class="dashboard-stock-title">
+
+            <h3>
+              🔔 Peringatan Stok
+            </h3>
+
+            <p>
+              Kondisi stok berdasarkan batas minimum.
+            </p>
+
+          </div>
+
+
+          <div
+            id="dashboardStockSummary"
+            class="dashboard-stock-summary"
+          ></div>
+
+        </div>
+
+
+        <div
+          id="dashboardStockContent"
+          class="dashboard-loading"
+        >
+          Memeriksa kondisi stok...
         </div>
 
       </div>
@@ -1229,7 +1412,7 @@
 
 
   // =====================================================
-  // API BACKEND TOOKA
+  // API BACKEND TOOKA V1.3
   // =====================================================
 
   const API_URL =
@@ -1680,6 +1863,14 @@
       button.classList.add(
         "active"
       );
+
+    }
+
+
+    // Dashboard selalu refresh ketika dibuka.
+    if (pageId === "dashboard") {
+
+      loadDashboardStock();
 
     }
 
@@ -2157,6 +2348,10 @@
       resetFormMasuk();
 
 
+      // Refresh peringatan stok di background.
+      loadDashboardStock();
+
+
     } catch (error) {
 
       showStatus(
@@ -2339,6 +2534,10 @@
       resetFormKeluar();
 
 
+      // Refresh peringatan stok di background.
+      loadDashboardStock();
+
+
     } catch (error) {
 
       showStatus(
@@ -2509,6 +2708,10 @@
 
 
       resetFormTransfer();
+
+
+      // Refresh peringatan stok di background.
+      loadDashboardStock();
 
 
     } catch (error) {
@@ -2873,6 +3076,707 @@
 
 
   // =====================================================
+  // STATUS STOK
+  // =====================================================
+
+  function tentukanStatusStok(
+    stok,
+    minimum
+  ) {
+
+    const stokAngka =
+      Number(stok || 0);
+
+
+    const minimumAngka =
+      Number(minimum || 0);
+
+
+    if (
+      minimumAngka <= 0
+    ) {
+
+      return {
+        text: "MINIMUM BELUM DIATUR",
+        icon: "⚪",
+        className: "stock-status-warning"
+      };
+
+    }
+
+
+    if (
+      stokAngka <= 0
+    ) {
+
+      return {
+        text: "HABIS",
+        icon: "🔴",
+        className: "stock-status-danger"
+      };
+
+    }
+
+
+    if (
+      stokAngka <= minimumAngka
+    ) {
+
+      return {
+        text: "STOK MENIPIS",
+        icon: "🟠",
+        className: "stock-status-warning"
+      };
+
+    }
+
+
+    return {
+      text: "AMAN",
+      icon: "🟢",
+      className: "stock-status-safe"
+    };
+
+  }
+
+
+  // =====================================================
+  // FORMAT ANGKA
+  // =====================================================
+
+  function formatNumber(
+    value
+  ) {
+
+    const number =
+      Number(value || 0);
+
+
+    if (
+      Number.isInteger(number)
+    ) {
+
+      return String(number);
+
+    }
+
+
+    return number.toLocaleString(
+      "id-ID",
+      {
+        maximumFractionDigits: 2
+      }
+    );
+
+  }
+
+
+  // =====================================================
+  // NAMA LOKASI
+  // =====================================================
+
+  function namaLokasi(
+    lokasiId
+  ) {
+
+    const id =
+      String(
+        lokasiId || ""
+      )
+      .trim()
+      .toUpperCase();
+
+
+    if (
+      id === "LOC001"
+    ) {
+
+      return "TOOKA HUB METRO";
+
+    }
+
+
+    if (
+      id === "LOC002"
+    ) {
+
+      return "TOOKA STORE JEPARA";
+
+    }
+
+
+    return lokasiId || "-";
+
+  }
+
+
+  // =====================================================
+  // DASHBOARD STOCK WARNING
+  // =====================================================
+
+  let dashboardStockLoading = false;
+
+
+  async function loadDashboardStock() {
+
+    if (
+      dashboardStockLoading
+    ) {
+
+      return;
+
+    }
+
+
+    const box =
+      document.getElementById(
+        "dashboardStock"
+      );
+
+
+    const summary =
+      document.getElementById(
+        "dashboardStockSummary"
+      );
+
+
+    const content =
+      document.getElementById(
+        "dashboardStockContent"
+      );
+
+
+    if (
+      !box ||
+      !summary ||
+      !content
+    ) {
+
+      return;
+
+    }
+
+
+    dashboardStockLoading = true;
+
+
+    box.className =
+      "dashboard-stock";
+
+
+    summary.innerHTML = "";
+
+
+    content.innerHTML =
+      '<div class="dashboard-loading">Memeriksa kondisi stok...</div>';
+
+
+    try {
+
+      // Pastikan master produk tersedia.
+      const products =
+        await loadProduk();
+
+
+      // Backend V1.3:
+      // STOK tanpa produk/lokasi mengembalikan
+      // seluruh posisi stok dan dihitung efisien
+      // di backend.
+      const hasil =
+        await apiRequest({
+
+          action: "STOK"
+
+        });
+
+
+      if (
+        !hasil ||
+        hasil.success !== true
+      ) {
+
+        throw new Error(
+          hasil && hasil.message
+            ? hasil.message
+            : "Data stok dashboard gagal dimuat."
+        );
+
+      }
+
+
+      const dataList =
+        Array.isArray(
+          hasil.data
+        )
+          ? hasil.data
+          : [];
+
+
+      const productMap =
+        new Map();
+
+
+      products.forEach(
+        product => {
+
+          const id =
+            String(
+              product.id || ""
+            )
+            .trim()
+            .toUpperCase();
+
+
+          if (id) {
+
+            productMap.set(
+              id,
+              product
+            );
+
+          }
+
+        }
+      );
+
+
+      const perhatian =
+        [];
+
+
+      dataList.forEach(
+        item => {
+
+          if (
+            !item ||
+            typeof item !==
+              "object"
+          ) {
+
+            return;
+
+          }
+
+
+          const produkId =
+            String(
+              item.produkId ??
+              item.idProduk ??
+              item.ID_PRODUK ??
+              item.ID ??
+              ""
+            )
+            .trim()
+            .toUpperCase();
+
+
+          if (!produkId) {
+            return;
+          }
+
+
+          const product =
+            productMap.get(
+              produkId
+            );
+
+
+          if (!product) {
+            return;
+          }
+
+
+          const minimum =
+            Number(
+              product.stokMinimum || 0
+            );
+
+
+          // Minimum 0 berarti belum diatur,
+          // bukan barang yang harus diberi alarm.
+          if (
+            minimum <= 0
+          ) {
+
+            return;
+
+          }
+
+
+          const stok =
+            Number(
+              item.stok ??
+              item.stock ??
+              item.STOK ??
+              item.qty ??
+              item.QTY ??
+              0
+            );
+
+
+          // Kalau stok masih di atas minimum,
+          // tidak perlu masuk daftar perhatian.
+          if (
+            stok > minimum
+          ) {
+
+            return;
+
+          }
+
+
+          const lokasiId =
+            item.lokasiId ??
+            item.idLokasi ??
+            item.LOKASI_ID ??
+            item.lokasi ??
+            item.LOKASI ??
+            "";
+
+
+          const status =
+            tentukanStatusStok(
+              stok,
+              minimum
+            );
+
+
+          perhatian.push({
+
+            produkId:
+              produkId,
+
+            nama:
+              product.nama ||
+              item.nama ||
+              produkId,
+
+            lokasi:
+              namaLokasi(
+                lokasiId
+              ),
+
+            lokasiId:
+              lokasiId,
+
+            stok:
+              stok,
+
+            minimum:
+              minimum,
+
+            satuan:
+              product.satuan ||
+              item.satuan ||
+              "",
+
+            status:
+              status
+
+          });
+
+        }
+      );
+
+
+      const habis =
+        perhatian.filter(
+          item =>
+            item.status.text ===
+            "HABIS"
+        );
+
+
+      const menipis =
+        perhatian.filter(
+          item =>
+            item.status.text ===
+            "STOK MENIPIS"
+        );
+
+
+      // =================================================
+      // TIDAK ADA MASALAH
+      // =================================================
+
+      if (
+        perhatian.length === 0
+      ) {
+
+        box.className =
+          "dashboard-stock alert-safe";
+
+
+        summary.innerHTML = `
+          <span class="summary-badge summary-safe">
+            🟢 AMAN
+          </span>
+        `;
+
+
+        content.innerHTML = `
+          <div class="dashboard-safe-message">
+            🟢 STOK TERKENDALI
+          </div>
+
+          <div
+            class="muted"
+            style="margin-top:6px;"
+          >
+            Tidak ada stok yang berada pada atau di bawah batas minimum.
+          </div>
+        `;
+
+
+        return;
+
+      }
+
+
+      // =================================================
+      // ADA MASALAH
+      // =================================================
+
+      if (
+        habis.length > 0
+      ) {
+
+        box.className =
+          "dashboard-stock alert-danger";
+
+      } else {
+
+        box.className =
+          "dashboard-stock alert-warning";
+
+      }
+
+
+      summary.innerHTML = `
+
+        <span class="summary-badge summary-danger">
+          🔴 ${habis.length} Habis
+        </span>
+
+        <span class="summary-badge summary-warning">
+          🟠 ${menipis.length} Menipis
+        </span>
+
+      `;
+
+
+      // Habis selalu ditaruh paling atas.
+      perhatian.sort(
+        (a, b) => {
+
+          if (
+            a.status.text ===
+              "HABIS" &&
+            b.status.text !==
+              "HABIS"
+          ) {
+
+            return -1;
+
+          }
+
+
+          if (
+            a.status.text !==
+              "HABIS" &&
+            b.status.text ===
+              "HABIS"
+          ) {
+
+            return 1;
+
+          }
+
+
+          return (
+            (a.stok - a.minimum) -
+            (b.stok - b.minimum)
+          );
+
+        }
+      );
+
+
+      const rows =
+        perhatian
+          .map(
+            item => {
+
+              return `
+
+                <tr>
+
+                  <td>
+
+                    <strong>
+                      ${escapeHtml(
+                        item.nama
+                      )}
+                    </strong>
+
+                    <div class="muted">
+                      ${escapeHtml(
+                        item.produkId
+                      )}
+                    </div>
+
+                  </td>
+
+
+                  <td>
+                    ${escapeHtml(
+                      item.lokasi
+                    )}
+                  </td>
+
+
+                  <td>
+
+                    <strong>
+                      ${escapeHtml(
+                        formatNumber(
+                          item.stok
+                        )
+                      )}
+                    </strong>
+
+                    ${escapeHtml(
+                      item.satuan
+                    )}
+
+                  </td>
+
+
+                  <td>
+
+                    ${escapeHtml(
+                      formatNumber(
+                        item.minimum
+                      )
+                    )}
+
+                    ${escapeHtml(
+                      item.satuan
+                    )}
+
+                  </td>
+
+
+                  <td>
+
+                    <span
+                      class="stock-status-badge ${item.status.className}"
+                    >
+                      ${item.status.icon}
+                      ${item.status.text}
+                    </span>
+
+                  </td>
+
+                </tr>
+
+              `;
+
+            }
+          )
+          .join("");
+
+
+      content.innerHTML = `
+
+        <div
+          style="
+            margin-bottom:12px;
+            font-size:14px;
+            font-weight:bold;
+          "
+        >
+          ⚠️ ${perhatian.length}
+          posisi stok membutuhkan perhatian.
+        </div>
+
+
+        <div class="stock-warning-table-wrap">
+
+          <table class="stock-warning-table">
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  Produk
+                </th>
+
+                <th>
+                  Lokasi
+                </th>
+
+                <th>
+                  Stok
+                </th>
+
+                <th>
+                  Minimum
+                </th>
+
+                <th>
+                  Kondisi
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody>
+              ${rows}
+            </tbody>
+
+          </table>
+
+        </div>
+
+      `;
+
+
+    } catch (error) {
+
+      box.className =
+        "dashboard-stock";
+
+
+      summary.innerHTML = "";
+
+
+      content.innerHTML = `
+        <div class="dashboard-error">
+          ⚠️ Peringatan stok belum dapat dimuat.
+        </div>
+
+        <div
+          class="muted"
+          style="margin-top:5px;"
+        >
+          Silakan buka kembali Dashboard untuk mencoba lagi.
+        </div>
+      `;
+
+    } finally {
+
+      dashboardStockLoading = false;
+
+    }
+
+  }
+
+
+  // =====================================================
   // CEK BACKEND
   // =====================================================
 
@@ -2980,6 +3884,11 @@
             // Error ditampilkan saat picker digunakan.
           }
         );
+
+
+      // Dashboard langsung mengecek stok
+      // ketika halaman pertama kali dibuka.
+      loadDashboardStock();
 
     }
   );
