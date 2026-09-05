@@ -1,4 +1,1420 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOOKA Store Inventory</title>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f5f6f8;
+      color: #222;
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: auto;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    header p {
+      font-size: 13px;
+      opacity: 0.75;
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px;
+      background: white;
+      border-bottom: 1px solid #ddd;
+    }
+
+    nav button {
+      border: none;
+      background: #eef0f3;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-weight: bold;
+    }
+
+    nav button.active {
+      background: #111827;
+      color: white;
+    }
+
+    nav button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .title {
+      margin-bottom: 18px;
+    }
+
+    .title h2 {
+      font-size: 22px;
+      margin-bottom: 5px;
+    }
+
+    .title p {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .card small {
+      color: #6b7280;
+    }
+
+    .card strong {
+      display: block;
+      font-size: 28px;
+      margin-top: 8px;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .panel h3 {
+      margin-bottom: 15px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      background: white;
+      font-size: 14px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #6b7280;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .product-picker {
+      position: relative;
+    }
+
+    .product-results {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      z-index: 50;
+      display: none;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .product-results.show {
+      display: block;
+    }
+
+    .product-option {
+      padding: 11px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .product-option:last-child {
+      border-bottom: none;
+    }
+
+    .product-option:hover {
+      background: #f5f6f8;
+    }
+
+    .product-option strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .product-option span {
+      display: block;
+      margin-top: 3px;
+      color: #6b7280;
+      font-size: 12px;
+    }
+
+    .product-empty {
+      padding: 12px;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .product-info {
+      margin-top: 6px;
+      min-height: 16px;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    .btn {
+      border: none;
+      padding: 12px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    .btn-success {
+      background: #22c55e;
+      color: white;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .status {
+      display: none;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status.loading {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .lokasi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .lokasi-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .lokasi-card h3 {
+      margin-bottom: 8px;
+    }
+
+    .stok-number {
+      font-size: 42px;
+      font-weight: bold;
+      margin: 12px 0 4px;
+    }
+
+    .saving {
+      opacity: 0.65;
+      pointer-events: none;
+    }
+
+    /* =====================================================
+       DASHBOARD STOCK WARNING
+       ===================================================== */
+
+    .dashboard-stock {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .dashboard-stock.alert-danger {
+      background: #fff1f2;
+      border-color: #fecdd3;
+    }
+
+    .dashboard-stock.alert-warning {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .dashboard-stock.alert-safe {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .dashboard-stock-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .dashboard-stock-title h3 {
+      margin-bottom: 5px;
+      font-size: 19px;
+    }
+
+    .dashboard-stock-title p {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .dashboard-stock-summary {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .summary-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .summary-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .summary-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .summary-safe {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .stock-warning-table-wrap {
+      overflow-x: auto;
+    }
+
+    .stock-warning-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .stock-warning-table th,
+    .stock-warning-table td {
+      padding: 11px 8px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+
+    .stock-warning-table th {
+      color: #6b7280;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .stock-warning-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .stock-status-badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .stock-status-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .stock-status-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .stock-status-safe {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .dashboard-safe-message {
+      font-size: 14px;
+      font-weight: bold;
+      color: #166534;
+    }
+
+    .dashboard-loading {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .dashboard-error {
+      color: #991b1b;
+      font-size: 13px;
+    }
+
+    @media (max-width: 700px) {
+
+      .cards,
+      .form-grid,
+      .lokasi-grid {
+        grid-template-columns: 1fr;
+      }
+
+      main {
+        padding: 12px;
+      }
+
+      header h1 {
+        font-size: 20px;
+      }
+
+      .dashboard-stock-header {
+        flex-direction: column;
+      }
+
+      .dashboard-stock-summary {
+        justify-content: flex-start;
+      }
+
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <header>
+    <h1>TOOKA STORE INVENTORY</h1>
+    <p>Sistem Inventory & Pergerakan Stok</p>
+  </header>
+
+
+  <nav>
+
+    <button
+      class="nav-btn active"
+      onclick="showPage('dashboard', this)"
+    >
+      Dashboard
+    </button>
+
+    <button
+      class="nav-btn"
+      onclick="showPage('masuk', this)"
+    >
+      Barang Masuk
+    </button>
+
+    <button
+      class="nav-btn"
+      onclick="showPage('keluar', this)"
+    >
+      Barang Keluar
+    </button>
+
+    <button
+      class="nav-btn"
+      onclick="showPage('transfer', this)"
+    >
+      Transfer
+    </button>
+
+    <button
+      class="nav-btn"
+      onclick="showPage('stok', this)"
+    >
+      Cek Stok
+    </button>
+
+  </nav>
+
+
+  <main>
+
+
+    <!-- ================================================= -->
+    <!-- DASHBOARD -->
+    <!-- ================================================= -->
+
+    <section id="dashboard" class="page active">
+
+      <div class="title">
+
+        <h2>Dashboard</h2>
+
+        <p>
+          Ringkasan inventory TOOKA
+        </p>
+
+      </div>
+
+
+      <div class="cards">
+
+        <div class="card">
+
+          <small>Status Backend</small>
+
+          <strong id="backendStatus">
+            Checking...
+          </strong>
+
+        </div>
+
+
+        <div class="card">
+
+          <small>Lokasi</small>
+
+          <strong>2</strong>
+
+          <span class="muted">
+            Metro & Jepara
+          </span>
+
+        </div>
+
+
+        <div class="card">
+
+          <small>Sistem</small>
+
+          <strong>V1.5</strong>
+
+          <span class="muted">
+            Inventory Control
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <!-- ================================================= -->
+      <!-- PERINGATAN STOK DASHBOARD -->
+      <!-- ================================================= -->
+
+      <div
+        id="dashboardStock"
+        class="dashboard-stock"
+      >
+
+        <div class="dashboard-stock-header">
+
+          <div class="dashboard-stock-title">
+
+            <h3>
+              🔔 Peringatan Stok
+            </h3>
+
+            <p>
+              Kondisi stok berdasarkan batas minimum.
+            </p>
+
+          </div>
+
+
+          <div
+            id="dashboardStockSummary"
+            class="dashboard-stock-summary"
+          ></div>
+
+        </div>
+
+
+        <div
+          id="dashboardStockContent"
+          class="dashboard-loading"
+        >
+          Memeriksa kondisi stok...
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <h3>
+          Lokasi Inventory
+        </h3>
+
+
+        <div class="lokasi-grid">
+
+          <div class="lokasi-card">
+
+            <h3>
+              TOOKA HUB METRO
+            </h3>
+
+            <div class="muted">
+              LOC001
+            </div>
+
+          </div>
+
+
+          <div class="lokasi-card">
+
+            <h3>
+              TOOKA STORE JEPARA
+            </h3>
+
+            <div class="muted">
+              LOC002
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- BARANG MASUK -->
+    <!-- ================================================= -->
+
+    <section id="masuk" class="page">
+
+      <div class="title">
+
+        <h2>
+          Barang Masuk
+        </h2>
+
+        <p>
+          Catat barang yang masuk ke lokasi inventory.
+        </p>
+
+      </div>
+
+
+      <div
+        id="statusMasuk"
+        class="status"
+      ></div>
+
+
+      <div class="panel">
+
+        <h3>
+          Input Barang Masuk
+        </h3>
+
+
+        <div class="form-grid">
+
+
+          <div>
+
+            <label>
+              Produk
+            </label>
+
+
+            <div class="product-picker">
+
+              <input
+                id="masukProdukCari"
+                placeholder="Ketik ID atau nama produk..."
+                autocomplete="off"
+                oninput="filterProduk('masuk')"
+                onfocus="showProdukResults('masuk')"
+              >
+
+
+              <div
+                id="masukProdukResults"
+                class="product-results"
+              ></div>
+
+            </div>
+
+
+            <input
+              id="masukProduk"
+              type="hidden"
+            >
+
+
+            <div
+              id="masukProdukInfo"
+              class="product-info muted"
+            ></div>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Lokasi
+            </label>
+
+            <select id="masukLokasi">
+
+              <option value="LOC001">
+                TOOKA HUB METRO
+              </option>
+
+              <option value="LOC002">
+                TOOKA STORE JEPARA
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Qty
+            </label>
+
+            <input
+              id="masukQty"
+              type="number"
+              min="0.01"
+              step="0.01"
+            >
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Harga
+            </label>
+
+            <input
+              id="masukHarga"
+              type="number"
+              min="0"
+            >
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Sumber
+            </label>
+
+            <select id="masukSumber">
+
+              <option value="SUPPLIER">
+                SUPPLIER
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              User / PIC
+            </label>
+
+            <select id="masukUser">
+
+              <option value="OWNER">
+                OWNER
+              </option>
+
+              <option value="PIC METRO">
+                PIC METRO
+              </option>
+
+              <option value="PIC JEPARA">
+                PIC JEPARA
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="full">
+
+            <label>
+              Keterangan
+            </label>
+
+            <textarea
+              id="masukKeterangan"
+            ></textarea>
+
+          </div>
+
+
+          <div class="full">
+
+            <button
+              id="btnMasuk"
+              class="btn btn-success"
+              onclick="barangMasuk()"
+            >
+              SIMPAN BARANG MASUK
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- BARANG KELUAR -->
+    <!-- ================================================= -->
+
+    <section id="keluar" class="page">
+
+      <div class="title">
+
+        <h2>
+          Barang Keluar
+        </h2>
+
+        <p>
+          Catat barang yang keluar dari lokasi inventory.
+        </p>
+
+      </div>
+
+
+      <div
+        id="statusKeluar"
+        class="status"
+      ></div>
+
+
+      <div class="panel">
+
+        <h3>
+          Input Barang Keluar
+        </h3>
+
+
+        <div class="form-grid">
+
+
+          <div>
+
+            <label>
+              Produk
+            </label>
+
+
+            <div class="product-picker">
+
+              <input
+                id="keluarProdukCari"
+                placeholder="Ketik ID atau nama produk..."
+                autocomplete="off"
+                oninput="filterProduk('keluar')"
+                onfocus="showProdukResults('keluar')"
+              >
+
+
+              <div
+                id="keluarProdukResults"
+                class="product-results"
+              ></div>
+
+            </div>
+
+
+            <input
+              id="keluarProduk"
+              type="hidden"
+            >
+
+
+            <div
+              id="keluarProdukInfo"
+              class="product-info muted"
+            ></div>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Lokasi
+            </label>
+
+            <select id="keluarLokasi">
+
+              <option value="LOC001">
+                TOOKA HUB METRO
+              </option>
+
+              <option value="LOC002">
+                TOOKA STORE JEPARA
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Qty
+            </label>
+
+            <input
+              id="keluarQty"
+              type="number"
+              min="0.01"
+              step="0.01"
+            >
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Harga
+            </label>
+
+            <input
+              id="keluarHarga"
+              type="number"
+              min="0"
+            >
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Tujuan
+            </label>
+
+            <select id="keluarTujuan">
+
+              <option value="KONSUMEN">
+                KONSUMEN
+              </option>
+
+              <option value="DKJ METRO">
+                DKJ METRO
+              </option>
+
+              <option value="DKJ JEPARA">
+                DKJ JEPARA
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              User / PIC
+            </label>
+
+            <select id="keluarUser">
+
+              <option value="OWNER">
+                OWNER
+              </option>
+
+              <option value="PIC METRO">
+                PIC METRO
+              </option>
+
+              <option value="PIC JEPARA">
+                PIC JEPARA
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="full">
+
+            <label>
+              Keterangan
+            </label>
+
+            <textarea
+              id="keluarKeterangan"
+            ></textarea>
+
+          </div>
+
+
+          <div class="full">
+
+            <button
+              id="btnKeluar"
+              class="btn btn-danger"
+              onclick="barangKeluar()"
+            >
+              SIMPAN BARANG KELUAR
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- TRANSFER -->
+    <!-- ================================================= -->
+
+    <section id="transfer" class="page">
+
+      <div class="title">
+
+        <h2>
+          Transfer Barang
+        </h2>
+
+        <p>
+          Pindahkan stok dari satu lokasi ke lokasi lain.
+        </p>
+
+      </div>
+
+
+      <div
+        id="statusTransfer"
+        class="status"
+      ></div>
+
+
+      <div class="panel">
+
+        <h3>
+          Transfer Antar Lokasi
+        </h3>
+
+
+        <div class="form-grid">
+
+
+          <div>
+
+            <label>
+              Produk
+            </label>
+
+
+            <div class="product-picker">
+
+              <input
+                id="transferProdukCari"
+                placeholder="Ketik ID atau nama produk..."
+                autocomplete="off"
+                oninput="filterProduk('transfer')"
+                onfocus="showProdukResults('transfer')"
+              >
+
+
+              <div
+                id="transferProdukResults"
+                class="product-results"
+              ></div>
+
+            </div>
+
+
+            <input
+              id="transferProduk"
+              type="hidden"
+            >
+
+
+            <div
+              id="transferProdukInfo"
+              class="product-info muted"
+            ></div>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Qty
+            </label>
+
+            <input
+              id="transferQty"
+              type="number"
+              min="0.01"
+              step="0.01"
+            >
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Lokasi Asal
+            </label>
+
+            <select id="transferAsal">
+
+              <option value="LOC001">
+                TOOKA HUB METRO
+              </option>
+
+              <option value="LOC002">
+                TOOKA STORE JEPARA
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Lokasi Tujuan
+            </label>
+
+            <select id="transferTujuan">
+
+              <option value="LOC002">
+                TOOKA STORE JEPARA
+              </option>
+
+              <option value="LOC001">
+                TOOKA HUB METRO
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              User / PIC
+            </label>
+
+            <select id="transferUser">
+
+              <option value="OWNER">
+                OWNER
+              </option>
+
+              <option value="PIC METRO">
+                PIC METRO
+              </option>
+
+              <option value="PIC JEPARA">
+                PIC JEPARA
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="full">
+
+            <button
+              id="btnTransfer"
+              class="btn btn-warning"
+              onclick="transferBarang()"
+            >
+              TRANSFER BARANG
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- CEK STOK -->
+    <!-- ================================================= -->
+
+    <section id="stok" class="page">
+
+      <div class="title">
+
+        <h2>
+          Cek Stok
+        </h2>
+
+        <p>
+          Lihat posisi stok berdasarkan produk dan lokasi.
+        </p>
+
+      </div>
+
+
+      <div
+        id="statusStok"
+        class="status"
+      ></div>
+
+
+      <div class="panel">
+
+        <h3>
+          Cari Stok
+        </h3>
+
+
+        <div class="form-grid">
+
+
+          <div>
+
+            <label>
+              Produk
+            </label>
+
+
+            <div class="product-picker">
+
+              <input
+                id="stokProdukCari"
+                placeholder="Ketik ID atau nama produk..."
+                autocomplete="off"
+                oninput="filterProduk('stok')"
+                onfocus="showProdukResults('stok')"
+              >
+
+
+              <div
+                id="stokProdukResults"
+                class="product-results"
+              ></div>
+
+            </div>
+
+
+            <input
+              id="stokProduk"
+              type="hidden"
+            >
+
+
+            <div
+              id="stokProdukInfo"
+              class="product-info muted"
+            ></div>
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Lokasi
+            </label>
+
+            <select id="stokLokasi">
+
+              <option value="LOC001">
+                TOOKA HUB METRO
+              </option>
+
+              <option value="LOC002">
+                TOOKA STORE JEPARA
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="full">
+
+            <button
+              id="btnStok"
+              class="btn btn-primary"
+              onclick="cekStok()"
+            >
+              CEK STOK
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div id="hasilStok"></div>
+
+    </section>
+
+
+  </main>
+
+
+  <footer>
+    TOOKA Store Inventory System — Backend Apps Script
+  </footer>
+
+</div>
+
+
 <script>
+
 
   // =====================================================
   // API BACKEND TOOKA V1.5
@@ -87,32 +1503,6 @@
   }
 
 
-  // =====================================================
-  // FORMAT RUPIAH
-  // =====================================================
-
-  function formatRupiah(value) {
-
-    const number =
-      Number(value || 0);
-
-
-    return number.toLocaleString(
-      "id-ID",
-      {
-        style: "currency",
-        currency: "IDR",
-        maximumFractionDigits: 0
-      }
-    );
-
-  }
-
-
-  // =====================================================
-  // SHOW PRODUCT RESULTS
-  // =====================================================
-
   function showProdukResults(type) {
 
     const results =
@@ -130,10 +1520,6 @@
 
   }
 
-
-  // =====================================================
-  // FILTER PRODUK
-  // =====================================================
 
   async function filterProduk(type) {
 
@@ -165,9 +1551,7 @@
         .toLowerCase();
 
 
-    results.classList.add(
-      "show"
-    );
+    results.classList.add("show");
 
 
     try {
@@ -209,10 +1593,7 @@
             );
 
           })
-          .slice(
-            0,
-            50
-          );
+          .slice(0, 50);
 
 
       if (
@@ -229,43 +1610,40 @@
 
       results.innerHTML =
         filtered
-          .map(
-            product => `
+          .map(product => `
 
-              <div
-                class="product-option"
-                onclick="selectProduk(
-                  '${type}',
-                  '${escapeJs(product.id)}'
-                )"
-              >
+            <div
+              class="product-option"
+              onclick="selectProduk(
+                '${type}',
+                '${escapeJs(product.id)}'
+              )"
+            >
 
-                <strong>
-                  ${escapeHtml(product.id)}
-                  —
-                  ${escapeHtml(product.nama)}
-                </strong>
+              <strong>
+                ${escapeHtml(product.id)}
+                —
+                ${escapeHtml(product.nama)}
+              </strong>
 
-                <span>
-                  ${escapeHtml(
-                    product.kategori ||
-                    "Tanpa kategori"
-                  )}
-                  ·
-                  ${escapeHtml(
-                    product.satuan ||
-                    "-"
-                  )}
-                  ·
-                  ${formatRupiah(
-                    product.hargaJual || 0
-                  )}
-                </span>
+              <span>
+                ${escapeHtml(
+                  product.kategori ||
+                  "Tanpa kategori"
+                )}
+                ·
+                ${escapeHtml(
+                  product.satuan || "-"
+                )}
+                ·
+                ${escapeHtml(
+                  formatRupiah(product.hargaJual || 0)
+                )}
+              </span>
 
-              </div>
+            </div>
 
-            `
-          )
+          `)
           .join("");
 
 
@@ -279,10 +1657,6 @@
   }
 
 
-  // =====================================================
-  // SELECT PRODUK
-  // =====================================================
-
   function selectProduk(
     type,
     produkId
@@ -291,16 +1665,8 @@
     const product =
       produkMaster.find(
         item =>
-          String(
-            item.id
-          )
-          .trim()
-          .toUpperCase() ===
-          String(
-            produkId
-          )
-          .trim()
-          .toUpperCase()
+          String(item.id).trim() ===
+          String(produkId).trim()
       );
 
 
@@ -351,78 +1717,32 @@
     }
 
 
-    // ===================================================
-    // INFO PRODUK V1.5
-    // ===================================================
-
     if (info) {
 
-      info.innerHTML = `
-
-        Satuan:
-        <strong>
-          ${escapeHtml(
-            product.satuan || "-"
-          )}
-        </strong>
-
-        · Minimum stok:
-        <strong>
-          ${formatNumber(
-            product.stokMinimum || 0
-          )}
-        </strong>
-
-        · Harga jual:
-        <strong>
-          ${escapeHtml(
-            formatRupiah(
-              product.hargaJual || 0
-            )
-          )}
-        </strong>
-
-      `;
+      info.textContent =
+        "Satuan: " +
+        (product.satuan || "-") +
+        " · Minimum stok: " +
+        Number(
+          product.stokMinimum || 0
+        ) +
+        " · Harga jual: " +
+        formatRupiah(product.hargaJual || 0);
 
     }
 
 
-    // ===================================================
-    // HARGA OTOMATIS BARANG KELUAR
-    // ===================================================
-
-    if (
-      type === "keluar"
-    ) {
+    if (type === "keluar") {
 
       const hargaInput =
-        document.getElementById(
-          "keluarHarga"
-        );
-
+        document.getElementById("keluarHarga");
 
       if (hargaInput) {
-
         hargaInput.value =
-          Number(
-            product.hargaJual || 0
-          );
-
+          Number(product.hargaJual || 0);
       }
 
     }
-
-
-    // ===================================================
-    // HARGA BARANG MASUK TETAP MANUAL
-    // ===================================================
-
-    // Sengaja tidak mengisi masukHarga.
-    //
-    // Harga Jual = harga ke konsumen.
-    // Harga Masuk = harga beli aktual dari supplier.
-    //
-    // Jadi keduanya tidak boleh otomatis disamakan.
 
 
     if (results) {
@@ -439,55 +1759,62 @@
 
 
   // =====================================================
-  // ESCAPE HTML
+  // FORMAT RUPIAH
   // =====================================================
 
-  function escapeHtml(value) {
+  function formatRupiah(value) {
 
-    return String(
-      value ?? ""
-    )
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
+    return Number(value || 0).toLocaleString("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0
+    });
 
   }
 
 
   // =====================================================
-  // ESCAPE JS
+  // ESCAPE
   // =====================================================
+
+  function escapeHtml(value) {
+
+    return String(value ?? "")
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#039;"
+      );
+
+  }
+
 
   function escapeJs(value) {
 
-    return String(
-      value ?? ""
-    )
-    .replace(
-      /\\/g,
-      "\\\\"
-    )
-    .replace(
-      /'/g,
-      "\\'"
-    );
+    return String(value ?? "")
+      .replace(
+        /\\/g,
+        "\\\\"
+      )
+      .replace(
+        /'/g,
+        "\\'"
+      );
 
   }
 
@@ -533,9 +1860,7 @@
   ) {
 
     document
-      .querySelectorAll(
-        ".page"
-      )
+      .querySelectorAll(".page")
       .forEach(
         page =>
           page.classList.remove(
@@ -581,10 +1906,8 @@
     }
 
 
-    if (
-      pageId ===
-      "dashboard"
-    ) {
+    // Dashboard selalu refresh ketika dibuka.
+    if (pageId === "dashboard") {
 
       loadDashboardStock();
 
@@ -632,9 +1955,7 @@
 
     try {
 
-      return JSON.parse(
-        text
-      );
+      return JSON.parse(text);
 
     } catch (error) {
 
@@ -706,17 +2027,13 @@
     }
 
 
-    button.disabled =
-      true;
-
+    button.disabled = true;
 
     button.dataset.originalText =
       button.textContent;
 
-
     button.textContent =
-      text ||
-      "MENYIMPAN...";
+      text || "MENYIMPAN...";
 
   }
 
@@ -736,8 +2053,7 @@
     }
 
 
-    button.disabled =
-      false;
+    button.disabled = false;
 
 
     if (
@@ -801,8 +2117,7 @@
 
     if (results) {
 
-      results.innerHTML =
-        "";
+      results.innerHTML = "";
 
       results.classList.remove(
         "show"
@@ -814,7 +2129,7 @@
 
 
   // =====================================================
-  // RESET FORM MASUK
+  // RESET FORM BARANG MASUK
   // =====================================================
 
   function resetFormMasuk() {
@@ -836,14 +2151,12 @@
 
     document.getElementById(
       "masukSumber"
-    ).value =
-      "SUPPLIER";
+    ).value = "SUPPLIER";
 
 
     document.getElementById(
       "masukUser"
-    ).value =
-      "OWNER";
+    ).value = "OWNER";
 
 
     document.getElementById(
@@ -854,7 +2167,7 @@
 
 
   // =====================================================
-  // RESET FORM KELUAR
+  // RESET FORM BARANG KELUAR
   // =====================================================
 
   function resetFormKeluar() {
@@ -876,14 +2189,12 @@
 
     document.getElementById(
       "keluarTujuan"
-    ).value =
-      "KONSUMEN";
+    ).value = "KONSUMEN";
 
 
     document.getElementById(
       "keluarUser"
-    ).value =
-      "OWNER";
+    ).value = "OWNER";
 
 
     document.getElementById(
@@ -911,20 +2222,17 @@
 
     document.getElementById(
       "transferAsal"
-    ).value =
-      "LOC001";
+    ).value = "LOC001";
 
 
     document.getElementById(
       "transferTujuan"
-    ).value =
-      "LOC002";
+    ).value = "LOC002";
 
 
     document.getElementById(
       "transferUser"
-    ).value =
-      "OWNER";
+    ).value = "OWNER";
 
   }
 
@@ -933,18 +2241,13 @@
   // BARANG MASUK
   // =====================================================
 
-  let sedangMasuk =
-    false;
+  let sedangMasuk = false;
 
 
   async function barangMasuk() {
 
-    if (
-      sedangMasuk
-    ) {
-
+    if (sedangMasuk) {
       return;
-
     }
 
 
@@ -972,8 +2275,7 @@
       Number(
         document.getElementById(
           "masukHarga"
-        ).value ||
-        0
+        ).value || 0
       );
 
 
@@ -1008,10 +2310,7 @@
     }
 
 
-    if (
-      !qty ||
-      qty <= 0
-    ) {
+    if (!qty || qty <= 0) {
 
       showStatus(
         "statusMasuk",
@@ -1024,9 +2323,7 @@
     }
 
 
-    sedangMasuk =
-      true;
-
+    sedangMasuk = true;
 
     lockButton(
       "btnMasuk",
@@ -1046,42 +2343,32 @@
       const hasil =
         await apiRequest({
 
-          action:
-            "MASUK",
+          action: "MASUK",
 
-          produkId:
-            produkId,
+          produkId: produkId,
 
-          lokasiId:
-            lokasiId,
+          lokasiId: lokasiId,
 
-          qty:
-            qty,
+          qty: qty,
 
-          user:
-            user,
+          user: user,
 
-          tujuan:
-            sumber,
+          tujuan: sumber,
 
-          harga:
-            harga,
+          harga: harga,
 
-          keterangan:
-            keterangan
+          keterangan: keterangan
 
         });
 
 
       if (
         !hasil ||
-        hasil.success !==
-          true
+        hasil.success !== true
       ) {
 
         throw new Error(
-          hasil &&
-          hasil.message
+          hasil && hasil.message
             ? hasil.message
             : "Barang masuk gagal disimpan."
         );
@@ -1100,6 +2387,7 @@
       resetFormMasuk();
 
 
+      // Refresh peringatan stok di background.
       loadDashboardStock();
 
 
@@ -1114,9 +2402,7 @@
 
     } finally {
 
-      sedangMasuk =
-        false;
-
+      sedangMasuk = false;
 
       unlockButton(
         "btnMasuk"
@@ -1131,18 +2417,13 @@
   // BARANG KELUAR
   // =====================================================
 
-  let sedangKeluar =
-    false;
+  let sedangKeluar = false;
 
 
   async function barangKeluar() {
 
-    if (
-      sedangKeluar
-    ) {
-
+    if (sedangKeluar) {
       return;
-
     }
 
 
@@ -1170,8 +2451,7 @@
       Number(
         document.getElementById(
           "keluarHarga"
-        ).value ||
-        0
+        ).value || 0
       );
 
 
@@ -1206,10 +2486,7 @@
     }
 
 
-    if (
-      !qty ||
-      qty <= 0
-    ) {
+    if (!qty || qty <= 0) {
 
       showStatus(
         "statusKeluar",
@@ -1222,9 +2499,7 @@
     }
 
 
-    sedangKeluar =
-      true;
-
+    sedangKeluar = true;
 
     lockButton(
       "btnKeluar",
@@ -1244,42 +2519,32 @@
       const hasil =
         await apiRequest({
 
-          action:
-            "KELUAR",
+          action: "KELUAR",
 
-          produkId:
-            produkId,
+          produkId: produkId,
 
-          lokasiId:
-            lokasiId,
+          lokasiId: lokasiId,
 
-          qty:
-            qty,
+          qty: qty,
 
-          user:
-            user,
+          user: user,
 
-          tujuan:
-            tujuan,
+          tujuan: tujuan,
 
-          harga:
-            harga,
+          harga: harga,
 
-          keterangan:
-            keterangan
+          keterangan: keterangan
 
         });
 
 
       if (
         !hasil ||
-        hasil.success !==
-          true
+        hasil.success !== true
       ) {
 
         throw new Error(
-          hasil &&
-          hasil.message
+          hasil && hasil.message
             ? hasil.message
             : "Barang keluar gagal disimpan."
         );
@@ -1289,8 +2554,7 @@
 
       const stokSisa =
         hasil.data &&
-        hasil.data.stokSisa !==
-          undefined
+        hasil.data.stokSisa !== undefined
           ? " Stok sisa: " +
             hasil.data.stokSisa
           : "";
@@ -1301,8 +2565,7 @@
         (
           hasil.message ||
           "Barang keluar berhasil disimpan."
-        ) +
-        stokSisa,
+        ) + stokSisa,
         "success"
       );
 
@@ -1310,6 +2573,7 @@
       resetFormKeluar();
 
 
+      // Refresh peringatan stok di background.
       loadDashboardStock();
 
 
@@ -1324,9 +2588,7 @@
 
     } finally {
 
-      sedangKeluar =
-        false;
-
+      sedangKeluar = false;
 
       unlockButton(
         "btnKeluar"
@@ -1341,18 +2603,13 @@
   // TRANSFER
   // =====================================================
 
-  let sedangTransfer =
-    false;
+  let sedangTransfer = false;
 
 
   async function transferBarang() {
 
-    if (
-      sedangTransfer
-    ) {
-
+    if (sedangTransfer) {
       return;
-
     }
 
 
@@ -1401,10 +2658,7 @@
     }
 
 
-    if (
-      !qty ||
-      qty <= 0
-    ) {
+    if (!qty || qty <= 0) {
 
       showStatus(
         "statusTransfer",
@@ -1433,9 +2687,7 @@
     }
 
 
-    sedangTransfer =
-      true;
-
+    sedangTransfer = true;
 
     lockButton(
       "btnTransfer",
@@ -1455,11 +2707,9 @@
       const hasil =
         await apiRequest({
 
-          action:
-            "TRANSFER",
+          action: "TRANSFER",
 
-          produkId:
-            produkId,
+          produkId: produkId,
 
           lokasiAsal:
             lokasiAsal,
@@ -1467,24 +2717,20 @@
           lokasiTujuan:
             lokasiTujuan,
 
-          qty:
-            qty,
+          qty: qty,
 
-          user:
-            user
+          user: user
 
         });
 
 
       if (
         !hasil ||
-        hasil.success !==
-          true
+        hasil.success !== true
       ) {
 
         throw new Error(
-          hasil &&
-          hasil.message
+          hasil && hasil.message
             ? hasil.message
             : "Transfer gagal disimpan."
         );
@@ -1503,6 +2749,7 @@
       resetFormTransfer();
 
 
+      // Refresh peringatan stok di background.
       loadDashboardStock();
 
 
@@ -1517,9 +2764,7 @@
 
     } finally {
 
-      sedangTransfer =
-        false;
-
+      sedangTransfer = false;
 
       unlockButton(
         "btnTransfer"
@@ -1534,18 +2779,13 @@
   // CEK STOK
   // =====================================================
 
-  let sedangCekStok =
-    false;
+  let sedangCekStok = false;
 
 
   async function cekStok() {
 
-    if (
-      sedangCekStok
-    ) {
-
+    if (sedangCekStok) {
       return;
-
     }
 
 
@@ -1563,8 +2803,7 @@
 
     document.getElementById(
       "hasilStok"
-    ).innerHTML =
-      "";
+    ).innerHTML = "";
 
 
     if (!produkId) {
@@ -1580,9 +2819,7 @@
     }
 
 
-    sedangCekStok =
-      true;
-
+    sedangCekStok = true;
 
     lockButton(
       "btnStok",
@@ -1602,8 +2839,7 @@
       const hasil =
         await apiRequest({
 
-          action:
-            "STOK",
+          action: "STOK",
 
           produkId:
             produkId,
@@ -1616,13 +2852,11 @@
 
       if (
         !hasil ||
-        hasil.success !==
-          true
+        hasil.success !== true
       ) {
 
         throw new Error(
-          hasil &&
-          hasil.message
+          hasil && hasil.message
             ? hasil.message
             : "Data stok tidak ditemukan."
         );
@@ -1630,8 +2864,7 @@
       }
 
 
-      let dataList =
-        [];
+      let dataList = [];
 
 
       if (
@@ -1656,8 +2889,7 @@
 
 
       if (
-        dataList.length ===
-        0
+        dataList.length === 0
       ) {
 
         throw new Error(
@@ -1734,8 +2966,7 @@
 
       if (
         !data &&
-        dataList.length ===
-          1
+        dataList.length === 1
       ) {
 
         const item =
@@ -1759,8 +2990,7 @@
           produkCari
         ) {
 
-          data =
-            item;
+          data = item;
 
         }
 
@@ -1837,59 +3067,33 @@
         <div class="lokasi-card">
 
           <h3>
-            ${escapeHtml(
-              nama
-            )}
+            ${escapeHtml(nama)}
           </h3>
 
           <div class="muted">
-            ${escapeHtml(
-              tampilProduk
-            )}
+            ${escapeHtml(tampilProduk)}
           </div>
 
           <div class="muted">
-            ${escapeHtml(
-              tampilLokasi
-            )}
+            ${escapeHtml(tampilLokasi)}
           </div>
 
           <div class="stok-number">
-            ${escapeHtml(
-              formatNumber(stok)
-            )}
+            ${escapeHtml(stok)}
           </div>
 
           <div class="muted">
-            ${escapeHtml(
-              satuan
-            )}
+            ${escapeHtml(satuan)}
           </div>
 
-          <div
-            class="muted"
-            style="margin-top:8px;"
-          >
-            Minimum:
-            <strong>
-              ${escapeHtml(
-                formatNumber(minimum)
-              )}
-            </strong>
+          <div class="muted" style="margin-top:6px;">
+            Minimum stok:
+            ${escapeHtml(formatNumber(minimum))}
           </div>
 
-          <div
-            class="muted"
-            style="margin-top:5px;"
-          >
-            Harga Jual:
-            <strong>
-              ${escapeHtml(
-                formatRupiah(
-                  hargaJual
-                )
-              )}
-            </strong>
+          <div class="muted" style="margin-top:4px;">
+            Harga jual:
+            ${escapeHtml(formatRupiah(hargaJual))}
           </div>
 
         </div>
@@ -1916,14 +3120,11 @@
 
       document.getElementById(
         "hasilStok"
-      ).innerHTML =
-        "";
+      ).innerHTML = "";
 
     } finally {
 
-      sedangCekStok =
-        false;
-
+      sedangCekStok = false;
 
       unlockButton(
         "btnStok"
@@ -1944,91 +3145,56 @@
   ) {
 
     const stokAngka =
-      Number(
-        stok || 0
-      );
+      Number(stok || 0);
 
 
     const minimumAngka =
-      Number(
-        minimum || 0
-      );
+      Number(minimum || 0);
 
 
     if (
-      minimumAngka <=
-      0
+      minimumAngka <= 0
     ) {
 
       return {
-
-        text:
-          "TIDAK DIPANTAU",
-
-        icon:
-          "⚪",
-
-        className:
-          "stock-status-warning"
-
+        text: "MINIMUM BELUM DIATUR",
+        icon: "⚪",
+        className: "stock-status-warning"
       };
 
     }
 
 
     if (
-      stokAngka <=
-      0
+      stokAngka <= 0
     ) {
 
       return {
-
-        text:
-          "HABIS",
-
-        icon:
-          "🔴",
-
-        className:
-          "stock-status-danger"
-
+        text: "HABIS",
+        icon: "🔴",
+        className: "stock-status-danger"
       };
 
     }
 
 
     if (
-      stokAngka <=
-      minimumAngka
+      stokAngka <= minimumAngka
     ) {
 
       return {
-
-        text:
-          "STOK MENIPIS",
-
-        icon:
-          "🟠",
-
-        className:
-          "stock-status-warning"
-
+        text: "STOK MENIPIS",
+        icon: "🟠",
+        className: "stock-status-warning"
       };
 
     }
 
 
     return {
-
-      text:
-        "AMAN",
-
-      icon:
-        "🟢",
-
-      className:
-        "stock-status-safe"
-
+      text: "AMAN",
+      icon: "🟢",
+      className: "stock-status-safe"
     };
 
   }
@@ -2043,20 +3209,14 @@
   ) {
 
     const number =
-      Number(
-        value || 0
-      );
+      Number(value || 0);
 
 
     if (
-      Number.isInteger(
-        number
-      )
+      Number.isInteger(number)
     ) {
 
-      return String(
-        number
-      );
+      return String(number);
 
     }
 
@@ -2064,8 +3224,7 @@
     return number.toLocaleString(
       "id-ID",
       {
-        maximumFractionDigits:
-          2
+        maximumFractionDigits: 2
       }
     );
 
@@ -2089,8 +3248,7 @@
 
 
     if (
-      id ===
-      "LOC001"
+      id === "LOC001"
     ) {
 
       return "TOOKA HUB METRO";
@@ -2099,8 +3257,7 @@
 
 
     if (
-      id ===
-      "LOC002"
+      id === "LOC002"
     ) {
 
       return "TOOKA STORE JEPARA";
@@ -2108,10 +3265,7 @@
     }
 
 
-    return (
-      lokasiId ||
-      "-"
-    );
+    return lokasiId || "-";
 
   }
 
@@ -2120,8 +3274,7 @@
   // DASHBOARD STOCK WARNING
   // =====================================================
 
-  let dashboardStockLoading =
-    false;
+  let dashboardStockLoading = false;
 
 
   async function loadDashboardStock() {
@@ -2164,16 +3317,14 @@
     }
 
 
-    dashboardStockLoading =
-      true;
+    dashboardStockLoading = true;
 
 
     box.className =
       "dashboard-stock";
 
 
-    summary.innerHTML =
-      "";
+    summary.innerHTML = "";
 
 
     content.innerHTML =
@@ -2182,28 +3333,30 @@
 
     try {
 
+      // Pastikan master produk tersedia.
       const products =
         await loadProduk();
 
 
+      // Backend V1.5:
+      // STOK tanpa produk/lokasi mengembalikan
+      // seluruh posisi stok dan sudah membawa
+      // minimum lokasi + harga jual.
       const hasil =
         await apiRequest({
 
-          action:
-            "STOK"
+          action: "STOK"
 
         });
 
 
       if (
         !hasil ||
-        hasil.success !==
-          true
+        hasil.success !== true
       ) {
 
         throw new Error(
-          hasil &&
-          hasil.message
+          hasil && hasil.message
             ? hasil.message
             : "Data stok dashboard gagal dimuat."
         );
@@ -2293,25 +3446,21 @@
           }
 
 
-          // =================================================
-          // PENTING V1.5
-          //
-          // Backend sudah menghitung minimum per lokasi.
-          // Jadi jangan lagi mengambil hanya
-          // product.stokMinimum.
-          // =================================================
-
+          // V1.5:
+          // Prioritas minimum dari MASTER_STOK_MINIMUM
+          // yang dikirim backend.
           const minimum =
             Number(
-              item.minimum ??
-              product.stokMinimum ??
-              0
+              item.minimum !== undefined
+                ? item.minimum
+                : product.stokMinimum || 0
             );
 
 
+          // Minimum 0 berarti belum diatur,
+          // bukan barang yang harus diberi alarm.
           if (
-            minimum <=
-            0
+            minimum <= 0
           ) {
 
             return;
@@ -2330,9 +3479,10 @@
             );
 
 
+          // Kalau stok masih di atas minimum,
+          // tidak perlu masuk daftar perhatian.
           if (
-            stok >
-            minimum
+            stok > minimum
           ) {
 
             return;
@@ -2344,6 +3494,8 @@
             item.lokasiId ??
             item.idLokasi ??
             item.LOKASI_ID ??
+            item.lokasi ??
+            item.LOKASI ??
             "";
 
 
@@ -2413,8 +3565,7 @@
       // =================================================
 
       if (
-        perhatian.length ===
-        0
+        perhatian.length === 0
       ) {
 
         box.className =
@@ -2422,21 +3573,14 @@
 
 
         summary.innerHTML = `
-
-          <span
-            class="summary-badge summary-safe"
-          >
+          <span class="summary-badge summary-safe">
             🟢 AMAN
           </span>
-
         `;
 
 
         content.innerHTML = `
-
-          <div
-            class="dashboard-safe-message"
-          >
+          <div class="dashboard-safe-message">
             🟢 STOK TERKENDALI
           </div>
 
@@ -2444,10 +3588,8 @@
             class="muted"
             style="margin-top:6px;"
           >
-            Tidak ada stok yang berada
-            pada atau di bawah batas minimum.
+            Tidak ada stok yang berada pada atau di bawah batas minimum.
           </div>
-
         `;
 
 
@@ -2461,8 +3603,7 @@
       // =================================================
 
       if (
-        habis.length >
-        0
+        habis.length > 0
       ) {
 
         box.className =
@@ -2478,21 +3619,18 @@
 
       summary.innerHTML = `
 
-        <span
-          class="summary-badge summary-danger"
-        >
+        <span class="summary-badge summary-danger">
           🔴 ${habis.length} Habis
         </span>
 
-        <span
-          class="summary-badge summary-warning"
-        >
+        <span class="summary-badge summary-warning">
           🟠 ${menipis.length} Menipis
         </span>
 
       `;
 
 
+      // Habis selalu ditaruh paling atas.
       perhatian.sort(
         (a, b) => {
 
@@ -2521,14 +3659,8 @@
 
 
           return (
-            (
-              a.stok -
-              a.minimum
-            ) -
-            (
-              b.stok -
-              b.minimum
-            )
+            (a.stok - a.minimum) -
+            (b.stok - b.minimum)
           );
 
         }
@@ -2634,13 +3766,9 @@
         </div>
 
 
-        <div
-          class="stock-warning-table-wrap"
-        >
+        <div class="stock-warning-table-wrap">
 
-          <table
-            class="stock-warning-table"
-          >
+          <table class="stock-warning-table">
 
             <thead>
 
@@ -2688,33 +3816,25 @@
         "dashboard-stock";
 
 
-      summary.innerHTML =
-        "";
+      summary.innerHTML = "";
 
 
       content.innerHTML = `
-
-        <div
-          class="dashboard-error"
-        >
-          ⚠️ Peringatan stok belum
-          dapat dimuat.
+        <div class="dashboard-error">
+          ⚠️ Peringatan stok belum dapat dimuat.
         </div>
 
         <div
           class="muted"
           style="margin-top:5px;"
         >
-          Silakan buka kembali Dashboard
-          untuk mencoba lagi.
+          Silakan buka kembali Dashboard untuk mencoba lagi.
         </div>
-
       `;
 
     } finally {
 
-      dashboardStockLoading =
-        false;
+      dashboardStockLoading = false;
 
     }
 
@@ -2748,18 +3868,13 @@
         await fetch(
           API_URL,
           {
-            method:
-              "GET",
-
-            cache:
-              "no-store"
+            method: "GET",
+            cache: "no-store"
           }
         );
 
 
-      if (
-        !response.ok
-      ) {
+      if (!response.ok) {
 
         statusElement.textContent =
           "ERROR";
@@ -2779,9 +3894,7 @@
       try {
 
         data =
-          JSON.parse(
-            text
-          );
+          JSON.parse(text);
 
       } catch (error) {
 
@@ -2795,8 +3908,7 @@
 
       if (
         data &&
-        data.success ===
-          true
+        data.success === true
       ) {
 
         statusElement.textContent =
@@ -2834,12 +3946,13 @@
       loadProduk()
         .catch(
           function() {
-            // Error akan ditampilkan
-            // ketika product picker digunakan.
+            // Error ditampilkan saat picker digunakan.
           }
         );
 
 
+      // Dashboard langsung mengecek stok
+      // ketika halaman pertama kali dibuka.
       loadDashboardStock();
 
     }
@@ -2847,3 +3960,6 @@
 
 
 </script>
+
+</body>
+</html>
