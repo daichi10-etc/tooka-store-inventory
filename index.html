@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TOOKA Store Inventory</title>
+  <title>TOOKA STORE</title>
 
   <style>
-
     * {
       box-sizing: border-box;
       margin: 0;
@@ -19,6 +18,125 @@
       color: #222;
     }
 
+    button,
+    input,
+    select,
+    textarea {
+      font-family: Arial, sans-serif;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    /* =====================================================
+       LOGIN
+       ===================================================== */
+
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #f5f6f8;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 30px;
+      box-shadow: 0 15px 40px rgba(0,0,0,.08);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .login-logo h1 {
+      font-size: 30px;
+      letter-spacing: 1px;
+      color: #111827;
+    }
+
+    .login-logo p {
+      margin-top: 6px;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .login-form-group {
+      margin-bottom: 16px;
+    }
+
+    .login-form-group label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .login-form-group input,
+    .login-form-group select {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #d1d5db;
+      border-radius: 9px;
+      font-size: 14px;
+    }
+
+    .login-button {
+      width: 100%;
+      border: none;
+      padding: 14px;
+      border-radius: 9px;
+      background: #111827;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .login-button:hover {
+      opacity: .92;
+    }
+
+    .login-secondary {
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .login-secondary button {
+      border: none;
+      background: transparent;
+      color: #2563eb;
+      font-size: 12px;
+      text-decoration: underline;
+    }
+
+    .setup-note {
+      margin-top: 12px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      border-radius: 9px;
+      padding: 11px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    /* =====================================================
+       APP
+       ===================================================== */
+
+    #appScreen {
+      display: none;
+    }
+
     .app {
       max-width: 1200px;
       margin: auto;
@@ -28,20 +146,48 @@
     header {
       background: #111827;
       color: white;
-      padding: 20px;
+      padding: 18px 20px;
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 100;
+    }
+
+    .header-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
     }
 
     header h1 {
-      font-size: 24px;
-      margin-bottom: 5px;
+      font-size: 23px;
+      margin-bottom: 4px;
     }
 
     header p {
+      font-size: 12px;
+      opacity: .75;
+    }
+
+    .header-user {
+      text-align: right;
+      font-size: 12px;
+    }
+
+    .header-user strong {
+      display: block;
       font-size: 13px;
-      opacity: 0.75;
+      margin-bottom: 3px;
+    }
+
+    .logout-btn {
+      margin-top: 7px;
+      border: 1px solid rgba(255,255,255,.3);
+      background: transparent;
+      color: white;
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 11px;
     }
 
     nav {
@@ -58,19 +204,14 @@
       background: #eef0f3;
       padding: 10px 15px;
       border-radius: 8px;
-      cursor: pointer;
       white-space: nowrap;
       font-weight: bold;
+      font-size: 13px;
     }
 
     nav button.active {
       background: #111827;
       color: white;
-    }
-
-    nav button:disabled {
-      cursor: not-allowed;
-      opacity: 0.6;
     }
 
     main {
@@ -119,7 +260,7 @@
 
     .card strong {
       display: block;
-      font-size: 28px;
+      font-size: 24px;
       margin-top: 8px;
     }
 
@@ -171,66 +312,6 @@
       resize: vertical;
     }
 
-    .product-picker {
-      position: relative;
-    }
-
-    .product-results {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: calc(100% + 4px);
-      background: white;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      max-height: 260px;
-      overflow-y: auto;
-      z-index: 50;
-      display: none;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-    }
-
-    .product-results.show {
-      display: block;
-    }
-
-    .product-option {
-      padding: 11px 12px;
-      cursor: pointer;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    .product-option:last-child {
-      border-bottom: none;
-    }
-
-    .product-option:hover {
-      background: #f5f6f8;
-    }
-
-    .product-option strong {
-      display: block;
-      font-size: 14px;
-    }
-
-    .product-option span {
-      display: block;
-      margin-top: 3px;
-      color: #6b7280;
-      font-size: 12px;
-    }
-
-    .product-empty {
-      padding: 12px;
-      color: #6b7280;
-      font-size: 13px;
-    }
-
-    .product-info {
-      margin-top: 6px;
-      min-height: 16px;
-    }
-
     .full {
       grid-column: 1 / -1;
     }
@@ -239,14 +320,18 @@
       border: none;
       padding: 12px 18px;
       border-radius: 8px;
-      cursor: pointer;
       font-weight: bold;
       font-size: 14px;
     }
 
     .btn:disabled {
       cursor: not-allowed;
-      opacity: 0.65;
+      opacity: .6;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
     }
 
     .btn-success {
@@ -264,8 +349,8 @@
       color: white;
     }
 
-    .btn-primary {
-      background: #2563eb;
+    .btn-dark {
+      background: #111827;
       color: white;
     }
 
@@ -302,36 +387,270 @@
       font-size: 13px;
     }
 
-    .lokasi-grid {
+    /* =====================================================
+       POS
+       ===================================================== */
+
+    .pos-buyer-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .buyer-btn {
+      border: 2px solid #e5e7eb;
+      background: white;
+      padding: 15px 10px;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .buyer-btn.active {
+      border-color: #111827;
+      background: #111827;
+      color: white;
+    }
+
+    .price-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .price-option {
+      border: 2px solid #e5e7eb;
+      padding: 14px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .price-option.active {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+
+    .price-option input {
+      width: auto;
+      margin-right: 7px;
+    }
+
+    .pos-product-area {
+      display: grid;
+      grid-template-columns: 1fr 130px 170px 130px;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .product-picker {
+      position: relative;
+    }
+
+    .product-results {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      z-index: 200;
+      display: none;
+      box-shadow: 0 8px 20px rgba(0,0,0,.08);
+    }
+
+    .product-results.show {
+      display: block;
+    }
+
+    .product-option {
+      padding: 11px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .product-option:hover {
+      background: #f5f6f8;
+    }
+
+    .product-option strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .product-option span {
+      display: block;
+      color: #6b7280;
+      font-size: 11px;
+      margin-top: 3px;
+    }
+
+    .product-empty {
+      padding: 12px;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .pos-cart-table-wrap {
+      overflow-x: auto;
+    }
+
+    .pos-cart-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .pos-cart-table th,
+    .pos-cart-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .pos-cart-table th {
+      color: #6b7280;
+      font-size: 11px;
+    }
+
+    .qty-control {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .qty-control button {
+      width: 26px;
+      height: 26px;
+      border: 1px solid #d1d5db;
+      background: white;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+
+    .remove-item {
+      border: none;
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 5px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .pos-total-box {
+      margin-top: 15px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .pos-total {
+      min-width: 280px;
+      border-radius: 10px;
+      background: #111827;
+      color: white;
+      padding: 18px;
+    }
+
+    .pos-total-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .pos-total-row.total {
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,.2);
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .payment-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 15px;
     }
 
-    .lokasi-card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
+    .change-box {
+      padding: 15px;
+      border-radius: 9px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+    }
+
+    .change-box strong {
+      display: block;
+      font-size: 22px;
+      margin-top: 5px;
+      color: #166534;
+    }
+
+    .receipt {
+      border: 1px dashed #9ca3af;
       padding: 20px;
+      max-width: 650px;
+      margin: auto;
+      background: white;
     }
 
-    .lokasi-card h3 {
-      margin-bottom: 8px;
+    .receipt-header {
+      text-align: center;
+      margin-bottom: 18px;
     }
 
-    .stok-number {
-      font-size: 42px;
+    .receipt-header h2 {
+      margin-bottom: 4px;
+    }
+
+    .receipt-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 12px;
+      margin-bottom: 15px;
+    }
+
+    .receipt table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .receipt th,
+    .receipt td {
+      padding: 7px 4px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    .receipt-summary {
+      margin-top: 15px;
+      margin-left: auto;
+      width: 260px;
+    }
+
+    .receipt-summary div {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .receipt-summary .grand {
+      border-top: 1px solid #111827;
+      padding-top: 8px;
       font-weight: bold;
-      margin: 12px 0 4px;
-    }
-
-    .saving {
-      opacity: 0.65;
-      pointer-events: none;
+      font-size: 17px;
     }
 
     /* =====================================================
-       DASHBOARD STOCK WARNING
+       DASHBOARD STOCK
        ===================================================== */
 
     .dashboard-stock {
@@ -379,18 +698,14 @@
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
-      justify-content: flex-end;
     }
 
     .summary-badge {
       display: inline-flex;
-      align-items: center;
-      gap: 4px;
       padding: 6px 10px;
       border-radius: 999px;
       font-size: 12px;
       font-weight: bold;
-      white-space: nowrap;
     }
 
     .summary-danger {
@@ -429,11 +744,6 @@
     .stock-warning-table th {
       color: #6b7280;
       font-size: 12px;
-      font-weight: bold;
-    }
-
-    .stock-warning-table tr:last-child td {
-      border-bottom: none;
     }
 
     .stock-status-badge {
@@ -459,1470 +769,1772 @@
       color: #166534;
     }
 
-    .dashboard-safe-message {
-      font-size: 14px;
+    .lokasi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .lokasi-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .stok-number {
+      font-size: 42px;
       font-weight: bold;
-      color: #166534;
+      margin: 12px 0 4px;
     }
 
-    .dashboard-loading {
-      color: #6b7280;
-      font-size: 13px;
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #9ca3af;
+      font-size: 11px;
     }
 
-    .dashboard-error {
-      color: #991b1b;
-      font-size: 13px;
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 800px) {
+      .pos-product-area {
+        grid-template-columns: 1fr 100px;
+      }
+
+      .pos-product-area > div:last-child {
+        grid-column: 1 / -1;
+      }
     }
 
     @media (max-width: 700px) {
-
       .cards,
       .form-grid,
-      .lokasi-grid {
+      .lokasi-grid,
+      .payment-grid,
+      .price-grid {
         grid-template-columns: 1fr;
+      }
+
+      .pos-buyer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header-main {
+        align-items: flex-start;
+      }
+
+      .header-user {
+        text-align: right;
+      }
+
+      header h1 {
+        font-size: 19px;
       }
 
       main {
         padding: 12px;
       }
 
-      header h1 {
-        font-size: 20px;
+      .panel {
+        padding: 15px;
       }
 
-      .dashboard-stock-header {
-        flex-direction: column;
+      .pos-total-box {
+        justify-content: stretch;
       }
 
-      .dashboard-stock-summary {
-        justify-content: flex-start;
+      .pos-total {
+        width: 100%;
       }
 
+      .receipt-meta {
+        grid-template-columns: 1fr;
+      }
     }
-
   </style>
 </head>
 
 <body>
 
-<div class="app">
+<!-- =====================================================
+     LOGIN SCREEN
+     ===================================================== -->
 
-  <header>
-    <h1>TOOKA STORE INVENTORY</h1>
-    <p>Sistem Inventory & Pergerakan Stok</p>
-  </header>
+<div id="loginScreen">
 
+  <div class="login-card">
 
-  <nav>
+    <div class="login-logo">
+      <h1>TOOKA STORE</h1>
+      <p>POS & Inventory System</p>
+    </div>
 
-    <button
-      class="nav-btn active"
-      onclick="showPage('dashboard', this)"
-    >
-      Dashboard
-    </button>
+    <div id="loginStatus" class="status"></div>
 
-    <button
-      class="nav-btn"
-      onclick="showPage('masuk', this)"
-    >
-      Barang Masuk
-    </button>
+    <div id="loginForm">
 
-    <button
-      class="nav-btn"
-      onclick="showPage('keluar', this)"
-    >
-      Barang Keluar
-    </button>
-
-    <button
-      class="nav-btn"
-      onclick="showPage('transfer', this)"
-    >
-      Transfer
-    </button>
-
-    <button
-      class="nav-btn"
-      onclick="showPage('stok', this)"
-    >
-      Cek Stok
-    </button>
-
-  </nav>
-
-
-  <main>
-
-
-    <!-- ================================================= -->
-    <!-- DASHBOARD -->
-    <!-- ================================================= -->
-
-    <section id="dashboard" class="page active">
-
-      <div class="title">
-
-        <h2>Dashboard</h2>
-
-        <p>
-          Ringkasan inventory TOOKA
-        </p>
-
+      <div class="login-form-group">
+        <label>Nama Kasir / User</label>
+        <select id="loginUser">
+          <option value="">Memuat user...</option>
+        </select>
       </div>
 
+      <div class="login-form-group">
+        <label>Password</label>
+        <input
+          id="loginPassword"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Masukkan password"
+        >
+      </div>
 
-      <div class="cards">
+      <button
+        id="btnLogin"
+        class="login-button"
+        onclick="login()"
+      >
+        MASUK
+      </button>
 
-        <div class="card">
+    </div>
 
-          <small>Status Backend</small>
+    <div class="login-secondary">
+      <button onclick="showSetupPassword()">
+        Setup Password OWNER pertama
+      </button>
+    </div>
 
-          <strong id="backendStatus">
-            Checking...
+    <div class="setup-note">
+      Password disimpan dalam bentuk hash di backend.
+      Jangan kirim password atau token setup kepada siapa pun.
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     SETUP PASSWORD
+     ===================================================== -->
+
+<div
+  id="setupScreen"
+  class="hidden"
+  style="
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:#f5f6f8;
+  "
+>
+
+  <div class="login-card">
+
+    <div class="login-logo">
+      <h1>TOOKA STORE</h1>
+      <p>Setup Password OWNER</p>
+    </div>
+
+    <div id="setupStatus" class="status"></div>
+
+    <div class="login-form-group">
+      <label>Token Setup Awal</label>
+
+      <input
+        id="setupToken"
+        type="password"
+        autocomplete="off"
+        placeholder="Masukkan token dari Apps Script"
+      >
+    </div>
+
+    <div class="login-form-group">
+      <label>Password Baru</label>
+
+      <input
+        id="setupPassword"
+        type="password"
+        autocomplete="new-password"
+        placeholder="Minimal 6 karakter"
+      >
+    </div>
+
+    <div class="login-form-group">
+      <label>Konfirmasi Password</label>
+
+      <input
+        id="setupConfirmation"
+        type="password"
+        autocomplete="new-password"
+        placeholder="Ulangi password"
+      >
+    </div>
+
+    <button
+      id="btnSetup"
+      class="login-button"
+      onclick="submitInitialPassword()"
+    >
+      SIMPAN PASSWORD
+    </button>
+
+    <div class="login-secondary">
+      <button onclick="hideSetupPassword()">
+        Kembali ke Login
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     APP SCREEN
+     ===================================================== -->
+
+<div id="appScreen">
+
+  <div class="app">
+
+    <header>
+
+      <div class="header-main">
+
+        <div>
+          <h1>TOOKA STORE</h1>
+          <p id="headerLocation">
+            POS & Inventory
+          </p>
+        </div>
+
+        <div class="header-user">
+
+          <strong id="headerUser">
+            -
           </strong>
 
-        </div>
-
-
-        <div class="card">
-
-          <small>Lokasi</small>
-
-          <strong>2</strong>
-
-          <span class="muted">
-            Metro & Jepara
+          <span id="headerRole">
+            -
           </span>
 
-        </div>
+          <br>
 
-
-        <div class="card">
-
-          <small>Sistem</small>
-
-          <strong>V1.5</strong>
-
-          <span class="muted">
-            Inventory Control
-          </span>
+          <button
+            class="logout-btn"
+            onclick="logout()"
+          >
+            KELUAR
+          </button>
 
         </div>
 
       </div>
 
+    </header>
 
-      <!-- ================================================= -->
-      <!-- PERINGATAN STOK DASHBOARD -->
-      <!-- ================================================= -->
 
-      <div
-        id="dashboardStock"
-        class="dashboard-stock"
+    <nav>
+
+      <button
+        class="nav-btn active"
+        onclick="showPage('pos', this)"
       >
+        🛒 POS
+      </button>
 
-        <div class="dashboard-stock-header">
+      <button
+        class="nav-btn"
+        onclick="showPage('dashboard', this)"
+      >
+        Dashboard
+      </button>
 
-          <div class="dashboard-stock-title">
+      <button
+        class="nav-btn"
+        onclick="showPage('masuk', this)"
+      >
+        Barang Masuk
+      </button>
 
-            <h3>
-              🔔 Peringatan Stok
-            </h3>
+      <button
+        class="nav-btn"
+        onclick="showPage('keluar', this)"
+      >
+        Barang Keluar
+      </button>
 
-            <p>
-              Kondisi stok berdasarkan batas minimum.
-            </p>
+      <button
+        class="nav-btn"
+        onclick="showPage('transfer', this)"
+      >
+        Transfer
+      </button>
+
+      <button
+        class="nav-btn"
+        onclick="showPage('stok', this)"
+      >
+        Cek Stok
+      </button>
+
+    </nav>
+
+
+    <main>
+
+
+      <!-- =================================================
+           POS
+           ================================================= -->
+
+      <section id="pos" class="page active">
+
+        <div class="title">
+
+          <h2>
+            POS Kasir
+          </h2>
+
+          <p>
+            Penjualan TOOKA Store
+          </p>
+
+        </div>
+
+
+        <div id="statusPOS" class="status"></div>
+
+
+        <!-- LOKASI -->
+
+        <div class="panel">
+
+          <h3>
+            Lokasi Penjualan
+          </h3>
+
+          <div class="form-grid">
+
+            <div>
+
+              <label>
+                Lokasi
+              </label>
+
+              <select
+                id="posLokasi"
+                onchange="updatePosLocation()"
+              >
+
+                <option value="LOC001">
+                  TOOKA HUB METRO
+                </option>
+
+                <option value="LOC002">
+                  TOOKA STORE JEPARA
+                </option>
+
+              </select>
+
+              <div
+                id="posLocationInfo"
+                class="muted"
+                style="margin-top:6px;"
+              ></div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- PEMBELI -->
+
+        <div class="panel">
+
+          <h3>
+            Pembeli
+          </h3>
+
+          <div class="pos-buyer-grid">
+
+            <button
+              id="buyerKonsumen"
+              class="buyer-btn active"
+              onclick="setBuyerType('KONSUMEN')"
+            >
+              KONSUMEN
+            </button>
+
+            <button
+              id="buyerReseller"
+              class="buyer-btn"
+              onclick="setBuyerType('RESELLER')"
+            >
+              RESELLER
+            </button>
+
+            <button
+              id="buyerInternal"
+              class="buyer-btn"
+              onclick="setBuyerType('INTERNAL')"
+            >
+              INTERNAL
+            </button>
 
           </div>
 
 
           <div
-            id="dashboardStockSummary"
-            class="dashboard-stock-summary"
+            id="resellerArea"
+            class="hidden"
+            style="margin-top:15px;"
+          >
+
+            <label>
+              Nama Reseller
+            </label>
+
+            <input
+              id="posResellerName"
+              placeholder="Nama reseller"
+            >
+
+          </div>
+
+
+          <div
+            id="internalArea"
+            class="hidden"
+            style="margin-top:15px;"
+          >
+
+            <label>
+              Tujuan Internal
+            </label>
+
+            <select id="posInternalBuyer">
+
+              <option value="">
+                Pilih tujuan
+              </option>
+
+              <option value="DEKAJE METRO">
+                DEKAJE METRO
+              </option>
+
+              <option value="DEKAJE WAY JEPARA">
+                DEKAJE WAY JEPARA
+              </option>
+
+              <option value="RAWUUH 16C">
+                RAWUUH 16C
+              </option>
+
+              <option value="RAWUUH 15A">
+                RAWUUH 15A
+              </option>
+
+              <option value="PRODUKSI RAWUUH">
+                PRODUKSI RAWUUH
+              </option>
+
+              <option value="RUMAH PRODUKSI WA' ADAH">
+                RUMAH PRODUKSI WA' ADAH
+              </option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+
+        <!-- TIPE HARGA -->
+
+        <div class="panel">
+
+          <h3>
+            Tipe Harga
+          </h3>
+
+          <div class="price-grid">
+
+            <div
+              id="priceRetail"
+              class="price-option active"
+              onclick="setPriceType('RETAIL')"
+            >
+
+              <input
+                type="radio"
+                name="priceType"
+                value="RETAIL"
+                checked
+              >
+
+              <strong>
+                RETAIL
+              </strong>
+
+              <div class="muted">
+                Menggunakan harga jual master produk.
+              </div>
+
+            </div>
+
+
+            <div
+              id="priceSpecial"
+              class="price-option"
+              onclick="setPriceType('KHUSUS')"
+            >
+
+              <input
+                type="radio"
+                name="priceType"
+                value="KHUSUS"
+              >
+
+              <strong>
+                KHUSUS
+              </strong>
+
+              <div class="muted">
+                Harga khusus sesuai kesepakatan.
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- TAMBAH PRODUK -->
+
+        <div class="panel">
+
+          <h3>
+            Tambah Produk
+          </h3>
+
+          <div class="pos-product-area">
+
+
+            <div>
+
+              <label>
+                Produk
+              </label>
+
+              <div class="product-picker">
+
+                <input
+                  id="posProdukCari"
+                  placeholder="Ketik ID atau nama produk..."
+                  autocomplete="off"
+                  oninput="filterProdukPOS()"
+                  onfocus="filterProdukPOS()"
+                >
+
+                <div
+                  id="posProdukResults"
+                  class="product-results"
+                ></div>
+
+              </div>
+
+              <input
+                id="posProduk"
+                type="hidden"
+              >
+
+              <div
+                id="posProdukInfo"
+                class="muted"
+                style="margin-top:6px;"
+              ></div>
+
+            </div>
+
+
+            <div>
+
+              <label>
+                Qty
+              </label>
+
+              <input
+                id="posQty"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value="1"
+              >
+
+            </div>
+
+
+            <div
+              id="posSpecialPriceArea"
+              class="hidden"
+            >
+
+              <label>
+                Harga Khusus
+              </label>
+
+              <input
+                id="posSpecialPrice"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Harga"
+              >
+
+            </div>
+
+
+            <div>
+
+              <button
+                class="btn btn-primary"
+                style="width:100%;"
+                onclick="addPosItem()"
+              >
+                + TAMBAH
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- KERANJANG -->
+
+        <div class="panel">
+
+          <h3>
+            Keranjang
+          </h3>
+
+          <div
+            id="posCartEmpty"
+            class="muted"
+          >
+            Belum ada produk.
+          </div>
+
+
+          <div
+            id="posCartWrap"
+            class="pos-cart-table-wrap hidden"
+          >
+
+            <table class="pos-cart-table">
+
+              <thead>
+
+                <tr>
+                  <th>Produk</th>
+                  <th>Qty</th>
+                  <th>Harga</th>
+                  <th>Subtotal</th>
+                  <th></th>
+                </tr>
+
+              </thead>
+
+              <tbody id="posCartBody"></tbody>
+
+            </table>
+
+            <div class="pos-total-box">
+
+              <div class="pos-total">
+
+                <div class="pos-total-row">
+
+                  <span>
+                    Item
+                  </span>
+
+                  <strong id="posTotalItems">
+                    0
+                  </strong>
+
+                </div>
+
+                <div class="pos-total-row total">
+
+                  <span>
+                    TOTAL
+                  </span>
+
+                  <strong id="posTotal">
+                    Rp0
+                  </strong>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- PEMBAYARAN -->
+
+        <div class="panel">
+
+          <h3>
+            Pembayaran
+          </h3>
+
+          <div class="payment-grid">
+
+            <div>
+
+              <label>
+                Metode Pembayaran
+              </label>
+
+              <input
+                value="CASH"
+                readonly
+              >
+
+            </div>
+
+
+            <div>
+
+              <label>
+                Uang Diterima
+              </label>
+
+              <input
+                id="posAmountReceived"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="0"
+                oninput="calculateChange()"
+              >
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="change-box"
+            style="margin-top:15px;"
+          >
+
+            Kembalian
+
+            <strong id="posChange">
+              Rp0
+            </strong>
+
+          </div>
+
+
+          <div
+            style="
+              margin-top:15px;
+              display:flex;
+              justify-content:flex-end;
+            "
+          >
+
+            <button
+              id="btnCheckout"
+              class="btn btn-success"
+              onclick="checkoutPOS()"
+            >
+              BAYAR & SIMPAN
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- SUCCESS RECEIPT -->
+
+        <div
+          id="posReceiptPanel"
+          class="panel hidden"
+        >
+
+          <div class="title">
+
+            <h2>
+              ✅ Transaksi Berhasil
+            </h2>
+
+            <p>
+              Transaksi sudah tercatat ke inventory.
+            </p>
+
+          </div>
+
+          <div
+            id="posReceipt"
+            class="receipt"
           ></div>
+
+          <div
+            style="
+              margin-top:15px;
+              text-align:center;
+            "
+          >
+
+            <button
+              class="btn btn-primary"
+              onclick="newPosTransaction()"
+            >
+              TRANSAKSI BARU
+            </button>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           DASHBOARD
+           ================================================= -->
+
+      <section id="dashboard" class="page">
+
+        <div class="title">
+
+          <h2>
+            Dashboard
+          </h2>
+
+          <p>
+            Ringkasan inventory TOOKA
+          </p>
+
+        </div>
+
+
+        <div class="cards">
+
+          <div class="card">
+
+            <small>
+              Status Backend
+            </small>
+
+            <strong id="backendStatus">
+              Checking...
+            </strong>
+
+          </div>
+
+
+          <div class="card">
+
+            <small>
+              User Login
+            </small>
+
+            <strong
+              id="dashboardUser"
+              style="font-size:17px;"
+            >
+              -
+            </strong>
+
+          </div>
+
+
+          <div class="card">
+
+            <small>
+              Lokasi
+            </small>
+
+            <strong
+              id="dashboardLocation"
+              style="font-size:17px;"
+            >
+              -
+            </strong>
+
+          </div>
 
         </div>
 
 
         <div
-          id="dashboardStockContent"
-          class="dashboard-loading"
+          id="dashboardStock"
+          class="dashboard-stock"
         >
-          Memeriksa kondisi stok...
-        </div>
 
-      </div>
+          <div class="dashboard-stock-header">
 
+            <div class="dashboard-stock-title">
 
-      <div class="panel">
+              <h3>
+                🔔 Peringatan Stok
+              </h3>
 
-        <h3>
-          Lokasi Inventory
-        </h3>
+              <p>
+                Kondisi stok berdasarkan batas minimum.
+              </p>
 
-
-        <div class="lokasi-grid">
-
-          <div class="lokasi-card">
-
-            <h3>
-              TOOKA HUB METRO
-            </h3>
-
-            <div class="muted">
-              LOC001
             </div>
+
+            <div
+              id="dashboardStockSummary"
+              class="dashboard-stock-summary"
+            ></div>
 
           </div>
 
-
-          <div class="lokasi-card">
-
-            <h3>
-              TOOKA STORE JEPARA
-            </h3>
-
-            <div class="muted">
-              LOC002
-            </div>
-
+          <div
+            id="dashboardStockContent"
+            class="muted"
+          >
+            Memeriksa kondisi stok...
           </div>
 
         </div>
 
-      </div>
 
-    </section>
+        <div class="panel">
 
+          <h3>
+            Lokasi Inventory
+          </h3>
 
-    <!-- ================================================= -->
-    <!-- BARANG MASUK -->
-    <!-- ================================================= -->
+          <div class="lokasi-grid">
 
-    <section id="masuk" class="page">
+            <div class="lokasi-card">
 
-      <div class="title">
+              <h3>
+                TOOKA HUB METRO
+              </h3>
 
-        <h2>
-          Barang Masuk
-        </h2>
+              <div class="muted">
+                LOC001
+              </div>
 
-        <p>
-          Catat barang yang masuk ke lokasi inventory.
-        </p>
+            </div>
 
-      </div>
+            <div class="lokasi-card">
 
+              <h3>
+                TOOKA STORE JEPARA
+              </h3>
 
-      <div
-        id="statusMasuk"
-        class="status"
-      ></div>
+              <div class="muted">
+                LOC002
+              </div>
 
+            </div>
 
-      <div class="panel">
+          </div>
 
-        <h3>
-          Input Barang Masuk
-        </h3>
+        </div>
 
-
-        <div class="form-grid">
-
-
-          <div>
-
-            <label>
-              Produk
-            </label>
+      </section>
 
 
-            <div class="product-picker">
+      <!-- =================================================
+           BARANG MASUK
+           ================================================= -->
+
+      <section id="masuk" class="page">
+
+        <div class="title">
+
+          <h2>
+            Barang Masuk
+          </h2>
+
+          <p>
+            Catat barang yang masuk ke lokasi inventory.
+          </p>
+
+        </div>
+
+        <div id="statusMasuk" class="status"></div>
+
+        <div class="panel">
+
+          <h3>
+            Input Barang Masuk
+          </h3>
+
+          <div class="form-grid">
+
+            <div>
+
+              <label>
+                Produk
+              </label>
+
+              <div class="product-picker">
+
+                <input
+                  id="masukProdukCari"
+                  placeholder="Ketik ID atau nama produk..."
+                  autocomplete="off"
+                  oninput="filterProduk('masuk')"
+                  onfocus="filterProduk('masuk')"
+                >
+
+                <div
+                  id="masukProdukResults"
+                  class="product-results"
+                ></div>
+
+              </div>
 
               <input
-                id="masukProdukCari"
-                placeholder="Ketik ID atau nama produk..."
-                autocomplete="off"
-                oninput="filterProduk('masuk')"
-                onfocus="showProdukResults('masuk')"
+                id="masukProduk"
+                type="hidden"
               >
 
-
               <div
-                id="masukProdukResults"
-                class="product-results"
+                id="masukProdukInfo"
+                class="muted"
               ></div>
 
             </div>
 
 
-            <input
-              id="masukProduk"
-              type="hidden"
-            >
+            <div>
+
+              <label>
+                Lokasi
+              </label>
+
+              <select id="masukLokasi">
+
+                <option value="LOC001">
+                  TOOKA HUB METRO
+                </option>
+
+                <option value="LOC002">
+                  TOOKA STORE JEPARA
+                </option>
+
+              </select>
+
+            </div>
 
 
-            <div
-              id="masukProdukInfo"
-              class="product-info muted"
-            ></div>
+            <div>
 
-          </div>
+              <label>
+                Qty
+              </label>
 
+              <input
+                id="masukQty"
+                type="number"
+                min="0.01"
+                step="0.01"
+              >
 
-          <div>
-
-            <label>
-              Lokasi
-            </label>
-
-            <select id="masukLokasi">
-
-              <option value="LOC001">
-                TOOKA HUB METRO
-              </option>
-
-              <option value="LOC002">
-                TOOKA STORE JEPARA
-              </option>
-
-            </select>
-
-          </div>
+            </div>
 
 
-          <div>
+            <div>
 
-            <label>
-              Qty
-            </label>
+              <label>
+                Harga
+              </label>
 
-            <input
-              id="masukQty"
-              type="number"
-              min="0.01"
-              step="0.01"
-            >
+              <input
+                id="masukHarga"
+                type="number"
+                min="0"
+              >
 
-          </div>
-
-
-          <div>
-
-            <label>
-              Harga
-            </label>
-
-            <input
-              id="masukHarga"
-              type="number"
-              min="0"
-            >
-
-          </div>
+            </div>
 
 
-          <div>
+            <div>
 
-            <label>
-              Sumber
-            </label>
+              <label>
+                Sumber
+              </label>
 
-            <select id="masukSumber">
+              <select id="masukSumber">
 
-              <option value="SUPPLIER">
-                SUPPLIER
-              </option>
+                <option value="SUPPLIER">
+                  SUPPLIER
+                </option>
 
-            </select>
+              </select>
 
-          </div>
-
-
-          <div>
-
-            <label>
-              User / PIC
-            </label>
-
-            <select id="masukUser">
-
-              <option value="OWNER">
-                OWNER
-              </option>
-
-              <option value="PIC METRO">
-                PIC METRO
-              </option>
-
-              <option value="PIC JEPARA">
-                PIC JEPARA
-              </option>
-
-            </select>
-
-          </div>
+            </div>
 
 
-          <div class="full">
+            <div class="full">
 
-            <label>
-              Keterangan
-            </label>
+              <label>
+                Keterangan
+              </label>
 
-            <textarea
-              id="masukKeterangan"
-            ></textarea>
+              <textarea
+                id="masukKeterangan"
+              ></textarea>
 
-          </div>
+            </div>
 
 
-          <div class="full">
+            <div class="full">
 
-            <button
-              id="btnMasuk"
-              class="btn btn-success"
-              onclick="barangMasuk()"
-            >
-              SIMPAN BARANG MASUK
-            </button>
+              <button
+                id="btnMasuk"
+                class="btn btn-success"
+                onclick="barangMasuk()"
+              >
+                SIMPAN BARANG MASUK
+              </button>
+
+            </div>
 
           </div>
 
         </div>
 
-      </div>
-
-    </section>
+      </section>
 
 
-    <!-- ================================================= -->
-    <!-- BARANG KELUAR -->
-    <!-- ================================================= -->
+      <!-- =================================================
+           BARANG KELUAR
+           ================================================= -->
 
-    <section id="keluar" class="page">
+      <section id="keluar" class="page">
 
-      <div class="title">
+        <div class="title">
 
-        <h2>
-          Barang Keluar
-        </h2>
+          <h2>
+            Barang Keluar
+          </h2>
 
-        <p>
-          Catat barang yang keluar dari lokasi inventory.
-        </p>
+          <p>
+            Catat barang yang keluar dari inventory.
+          </p>
 
-      </div>
+        </div>
 
+        <div id="statusKeluar" class="status"></div>
 
-      <div
-        id="statusKeluar"
-        class="status"
-      ></div>
+        <div class="panel">
 
+          <h3>
+            Input Barang Keluar
+          </h3>
 
-      <div class="panel">
+          <div class="form-grid">
 
-        <h3>
-          Input Barang Keluar
-        </h3>
+            <div>
 
+              <label>
+                Produk
+              </label>
 
-        <div class="form-grid">
+              <div class="product-picker">
 
+                <input
+                  id="keluarProdukCari"
+                  placeholder="Ketik ID atau nama produk..."
+                  autocomplete="off"
+                  oninput="filterProduk('keluar')"
+                  onfocus="filterProduk('keluar')"
+                >
 
-          <div>
+                <div
+                  id="keluarProdukResults"
+                  class="product-results"
+                ></div>
 
-            <label>
-              Produk
-            </label>
-
-
-            <div class="product-picker">
+              </div>
 
               <input
-                id="keluarProdukCari"
-                placeholder="Ketik ID atau nama produk..."
-                autocomplete="off"
-                oninput="filterProduk('keluar')"
-                onfocus="showProdukResults('keluar')"
+                id="keluarProduk"
+                type="hidden"
               >
 
-
               <div
-                id="keluarProdukResults"
-                class="product-results"
+                id="keluarProdukInfo"
+                class="muted"
               ></div>
 
             </div>
 
 
-            <input
-              id="keluarProduk"
-              type="hidden"
-            >
+            <div>
+
+              <label>
+                Lokasi
+              </label>
+
+              <select id="keluarLokasi">
+
+                <option value="LOC001">
+                  TOOKA HUB METRO
+                </option>
+
+                <option value="LOC002">
+                  TOOKA STORE JEPARA
+                </option>
+
+              </select>
+
+            </div>
 
 
-            <div
-              id="keluarProdukInfo"
-              class="product-info muted"
-            ></div>
+            <div>
 
-          </div>
+              <label>
+                Qty
+              </label>
 
+              <input
+                id="keluarQty"
+                type="number"
+                min="0.01"
+                step="0.01"
+              >
 
-          <div>
-
-            <label>
-              Lokasi
-            </label>
-
-            <select id="keluarLokasi">
-
-              <option value="LOC001">
-                TOOKA HUB METRO
-              </option>
-
-              <option value="LOC002">
-                TOOKA STORE JEPARA
-              </option>
-
-            </select>
-
-          </div>
+            </div>
 
 
-          <div>
+            <div>
 
-            <label>
-              Qty
-            </label>
+              <label>
+                Harga
+              </label>
 
-            <input
-              id="keluarQty"
-              type="number"
-              min="0.01"
-              step="0.01"
-            >
+              <input
+                id="keluarHarga"
+                type="number"
+                min="0"
+              >
 
-          </div>
-
-
-          <div>
-
-            <label>
-              Harga
-            </label>
-
-            <input
-              id="keluarHarga"
-              type="number"
-              min="0"
-            >
-
-          </div>
+            </div>
 
 
-          <div>
+            <div>
 
-            <label>
-              Tujuan
-            </label>
+              <label>
+                Tujuan
+              </label>
 
-            <select id="keluarTujuan">
+              <select id="keluarTujuan">
 
-              <option value="KONSUMEN">
-                KONSUMEN
-              </option>
+                <option value="KONSUMEN">
+                  KONSUMEN
+                </option>
 
-              <option value="DKJ METRO">
-                DKJ METRO
-              </option>
+                <option value="DEKAJE METRO">
+                  DEKAJE METRO
+                </option>
 
-              <option value="DKJ JEPARA">
-                DKJ JEPARA
-              </option>
+                <option value="DEKAJE WAY JEPARA">
+                  DEKAJE WAY JEPARA
+                </option>
 
-            </select>
+                <option value="RAWUUH 16C">
+                  RAWUUH 16C
+                </option>
 
-          </div>
+                <option value="RAWUUH 15A">
+                  RAWUUH 15A
+                </option>
 
+                <option value="PRODUKSI RAWUUH">
+                  PRODUKSI RAWUUH
+                </option>
 
-          <div>
+                <option value="RUMAH PRODUKSI WA' ADAH">
+                  RUMAH PRODUKSI WA' ADAH
+                </option>
 
-            <label>
-              User / PIC
-            </label>
+              </select>
 
-            <select id="keluarUser">
-
-              <option value="OWNER">
-                OWNER
-              </option>
-
-              <option value="PIC METRO">
-                PIC METRO
-              </option>
-
-              <option value="PIC JEPARA">
-                PIC JEPARA
-              </option>
-
-            </select>
-
-          </div>
+            </div>
 
 
-          <div class="full">
+            <div class="full">
 
-            <label>
-              Keterangan
-            </label>
+              <label>
+                Keterangan
+              </label>
 
-            <textarea
-              id="keluarKeterangan"
-            ></textarea>
+              <textarea
+                id="keluarKeterangan"
+              ></textarea>
 
-          </div>
+            </div>
 
 
-          <div class="full">
+            <div class="full">
 
-            <button
-              id="btnKeluar"
-              class="btn btn-danger"
-              onclick="barangKeluar()"
-            >
-              SIMPAN BARANG KELUAR
-            </button>
+              <button
+                id="btnKeluar"
+                class="btn btn-danger"
+                onclick="barangKeluar()"
+              >
+                SIMPAN BARANG KELUAR
+              </button>
+
+            </div>
 
           </div>
 
         </div>
 
-      </div>
-
-    </section>
+      </section>
 
 
-    <!-- ================================================= -->
-    <!-- TRANSFER -->
-    <!-- ================================================= -->
+      <!-- =================================================
+           TRANSFER
+           ================================================= -->
 
-    <section id="transfer" class="page">
+      <section id="transfer" class="page">
 
-      <div class="title">
+        <div class="title">
 
-        <h2>
-          Transfer Barang
-        </h2>
+          <h2>
+            Transfer Barang
+          </h2>
 
-        <p>
-          Pindahkan stok dari satu lokasi ke lokasi lain.
-        </p>
+          <p>
+            Pindahkan stok antar lokasi.
+          </p>
 
-      </div>
+        </div>
 
+        <div id="statusTransfer" class="status"></div>
 
-      <div
-        id="statusTransfer"
-        class="status"
-      ></div>
+        <div class="panel">
 
+          <h3>
+            Transfer Antar Lokasi
+          </h3>
 
-      <div class="panel">
+          <div class="form-grid">
 
-        <h3>
-          Transfer Antar Lokasi
-        </h3>
+            <div>
 
+              <label>
+                Produk
+              </label>
 
-        <div class="form-grid">
+              <div class="product-picker">
 
+                <input
+                  id="transferProdukCari"
+                  placeholder="Ketik ID atau nama produk..."
+                  autocomplete="off"
+                  oninput="filterProduk('transfer')"
+                  onfocus="filterProduk('transfer')"
+                >
 
-          <div>
+                <div
+                  id="transferProdukResults"
+                  class="product-results"
+                ></div>
 
-            <label>
-              Produk
-            </label>
-
-
-            <div class="product-picker">
+              </div>
 
               <input
-                id="transferProdukCari"
-                placeholder="Ketik ID atau nama produk..."
-                autocomplete="off"
-                oninput="filterProduk('transfer')"
-                onfocus="showProdukResults('transfer')"
+                id="transferProduk"
+                type="hidden"
               >
 
-
               <div
-                id="transferProdukResults"
-                class="product-results"
+                id="transferProdukInfo"
+                class="muted"
               ></div>
 
             </div>
 
 
-            <input
-              id="transferProduk"
-              type="hidden"
-            >
+            <div>
+
+              <label>
+                Qty
+              </label>
+
+              <input
+                id="transferQty"
+                type="number"
+                min="0.01"
+                step="0.01"
+              >
+
+            </div>
 
 
-            <div
-              id="transferProdukInfo"
-              class="product-info muted"
-            ></div>
+            <div>
 
-          </div>
+              <label>
+                Lokasi Asal
+              </label>
 
+              <select id="transferAsal">
 
-          <div>
+                <option value="LOC001">
+                  TOOKA HUB METRO
+                </option>
 
-            <label>
-              Qty
-            </label>
+                <option value="LOC002">
+                  TOOKA STORE JEPARA
+                </option>
 
-            <input
-              id="transferQty"
-              type="number"
-              min="0.01"
-              step="0.01"
-            >
+              </select>
 
-          </div>
+            </div>
 
 
-          <div>
+            <div>
 
-            <label>
-              Lokasi Asal
-            </label>
+              <label>
+                Lokasi Tujuan
+              </label>
 
-            <select id="transferAsal">
+              <select id="transferTujuan">
 
-              <option value="LOC001">
-                TOOKA HUB METRO
-              </option>
+                <option value="LOC002">
+                  TOOKA STORE JEPARA
+                </option>
 
-              <option value="LOC002">
-                TOOKA STORE JEPARA
-              </option>
+                <option value="LOC001">
+                  TOOKA HUB METRO
+                </option>
 
-            </select>
+              </select>
 
-          </div>
-
-
-          <div>
-
-            <label>
-              Lokasi Tujuan
-            </label>
-
-            <select id="transferTujuan">
-
-              <option value="LOC002">
-                TOOKA STORE JEPARA
-              </option>
-
-              <option value="LOC001">
-                TOOKA HUB METRO
-              </option>
-
-            </select>
-
-          </div>
+            </div>
 
 
-          <div>
+            <div class="full">
 
-            <label>
-              User / PIC
-            </label>
+              <button
+                id="btnTransfer"
+                class="btn btn-warning"
+                onclick="transferBarang()"
+              >
+                TRANSFER BARANG
+              </button>
 
-            <select id="transferUser">
-
-              <option value="OWNER">
-                OWNER
-              </option>
-
-              <option value="PIC METRO">
-                PIC METRO
-              </option>
-
-              <option value="PIC JEPARA">
-                PIC JEPARA
-              </option>
-
-            </select>
-
-          </div>
-
-
-          <div class="full">
-
-            <button
-              id="btnTransfer"
-              class="btn btn-warning"
-              onclick="transferBarang()"
-            >
-              TRANSFER BARANG
-            </button>
+            </div>
 
           </div>
 
         </div>
 
-      </div>
-
-    </section>
+      </section>
 
 
-    <!-- ================================================= -->
-    <!-- CEK STOK -->
-    <!-- ================================================= -->
+      <!-- =================================================
+           STOK
+           ================================================= -->
 
-    <section id="stok" class="page">
+      <section id="stok" class="page">
 
-      <div class="title">
+        <div class="title">
 
-        <h2>
-          Cek Stok
-        </h2>
+          <h2>
+            Cek Stok
+          </h2>
 
-        <p>
-          Lihat posisi stok berdasarkan produk dan lokasi.
-        </p>
+          <p>
+            Lihat posisi stok berdasarkan produk dan lokasi.
+          </p>
 
-      </div>
+        </div>
 
+        <div id="statusStok" class="status"></div>
 
-      <div
-        id="statusStok"
-        class="status"
-      ></div>
+        <div class="panel">
 
+          <h3>
+            Cari Stok
+          </h3>
 
-      <div class="panel">
+          <div class="form-grid">
 
-        <h3>
-          Cari Stok
-        </h3>
+            <div>
 
+              <label>
+                Produk
+              </label>
 
-        <div class="form-grid">
+              <div class="product-picker">
 
+                <input
+                  id="stokProdukCari"
+                  placeholder="Ketik ID atau nama produk..."
+                  autocomplete="off"
+                  oninput="filterProduk('stok')"
+                  onfocus="filterProduk('stok')"
+                >
 
-          <div>
+                <div
+                  id="stokProdukResults"
+                  class="product-results"
+                ></div>
 
-            <label>
-              Produk
-            </label>
-
-
-            <div class="product-picker">
+              </div>
 
               <input
-                id="stokProdukCari"
-                placeholder="Ketik ID atau nama produk..."
-                autocomplete="off"
-                oninput="filterProduk('stok')"
-                onfocus="showProdukResults('stok')"
+                id="stokProduk"
+                type="hidden"
               >
 
-
               <div
-                id="stokProdukResults"
-                class="product-results"
+                id="stokProdukInfo"
+                class="muted"
               ></div>
 
             </div>
 
 
-            <input
-              id="stokProduk"
-              type="hidden"
-            >
+            <div>
+
+              <label>
+                Lokasi
+              </label>
+
+              <select id="stokLokasi">
+
+                <option value="LOC001">
+                  TOOKA HUB METRO
+                </option>
+
+                <option value="LOC002">
+                  TOOKA STORE JEPARA
+                </option>
+
+              </select>
+
+            </div>
 
 
-            <div
-              id="stokProdukInfo"
-              class="product-info muted"
-            ></div>
+            <div class="full">
 
-          </div>
+              <button
+                id="btnStok"
+                class="btn btn-primary"
+                onclick="cekStok()"
+              >
+                CEK STOK
+              </button>
 
-
-          <div>
-
-            <label>
-              Lokasi
-            </label>
-
-            <select id="stokLokasi">
-
-              <option value="LOC001">
-                TOOKA HUB METRO
-              </option>
-
-              <option value="LOC002">
-                TOOKA STORE JEPARA
-              </option>
-
-            </select>
-
-          </div>
-
-
-          <div class="full">
-
-            <button
-              id="btnStok"
-              class="btn btn-primary"
-              onclick="cekStok()"
-            >
-              CEK STOK
-            </button>
+            </div>
 
           </div>
 
         </div>
 
-      </div>
+        <div id="hasilStok"></div>
+
+      </section>
+
+    </main>
 
 
-      <div id="hasilStok"></div>
+    <footer>
+      TOOKA STORE — POS & Inventory System
+    </footer>
 
-    </section>
-
-
-  </main>
-
-
-  <footer>
-    TOOKA Store Inventory System — Backend Apps Script
-  </footer>
+  </div>
 
 </div>
 
 
 <script>
 
+/* =========================================================
+   CONFIG
+   ========================================================= */
 
-  // =====================================================
-  // API BACKEND TOOKA V1.5
-  // =====================================================
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbxv3ocJD6hDQHb9Q85oAYjkaK6RxUpJWeLRYpxm4jXoEmH-ata8ReP6sjb3pbFchgkb/exec";
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbxv3ocJD6hDQHb9Q85oAYjkaK6RxUpJWeLRYpxm4jXoEmH-ata8ReP6sjb3pbFchgkb/exec";
+const SESSION_KEY =
+  "TOOKA_SESSION_TOKEN";
 
+const USER_KEY =
+  "TOOKA_SESSION_USER";
 
-  // =====================================================
-  // MASTER PRODUK
-  // =====================================================
 
-  let produkMaster = [];
+/* =========================================================
+   GLOBAL STATE
+   ========================================================= */
 
-  let produkLoaded = false;
+let currentUser = null;
 
-  let produkLoading = false;
+let sessionToken = null;
 
+let produkMaster = [];
 
-  async function loadProduk() {
+let produkLoaded = false;
 
-    if (produkLoaded) {
-      return produkMaster;
-    }
+let produkLoading = false;
 
+let posBuyerType = "KONSUMEN";
 
-    if (produkLoading) {
+let posPriceType = "RETAIL";
 
-      while (produkLoading) {
+let posCart = [];
 
-        await new Promise(
-          resolve => setTimeout(resolve, 100)
-        );
+let posSelectedProduct = null;
 
-      }
 
-      return produkMaster;
+/* =========================================================
+   BASIC HELPERS
+   ========================================================= */
 
-    }
+function escapeHtml(value) {
 
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
-    produkLoading = true;
+}
 
 
-    try {
+function escapeJs(value) {
 
-      const hasil =
-        await apiRequest({
-          action: "PRODUK"
-        });
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'");
 
+}
 
-      if (
-        !hasil ||
-        hasil.success !== true
-      ) {
 
-        throw new Error(
-          hasil && hasil.message
-            ? hasil.message
-            : "Master produk gagal dimuat."
-        );
+function formatRupiah(value) {
 
-      }
-
-
-      produkMaster =
-        Array.isArray(hasil.data)
-          ? hasil.data
-          : [];
-
-
-      produkLoaded = true;
-
-
-      return produkMaster;
-
-
-    } finally {
-
-      produkLoading = false;
-
-    }
-
-  }
-
-
-  function showProdukResults(type) {
-
-    const results =
-      document.getElementById(
-        type + "ProdukResults"
-      );
-
-
-    if (!results) {
-      return;
-    }
-
-
-    filterProduk(type);
-
-  }
-
-
-  async function filterProduk(type) {
-
-    const searchInput =
-      document.getElementById(
-        type + "ProdukCari"
-      );
-
-
-    const results =
-      document.getElementById(
-        type + "ProdukResults"
-      );
-
-
-    if (
-      !searchInput ||
-      !results
-    ) {
-
-      return;
-
-    }
-
-
-    const keyword =
-      searchInput.value
-        .trim()
-        .toLowerCase();
-
-
-    results.classList.add("show");
-
-
-    try {
-
-      const products =
-        await loadProduk();
-
-
-      const filtered =
-        products
-          .filter(product => {
-
-            const id =
-              String(
-                product.id || ""
-              )
-              .toLowerCase();
-
-
-            const nama =
-              String(
-                product.nama || ""
-              )
-              .toLowerCase();
-
-
-            const kategori =
-              String(
-                product.kategori || ""
-              )
-              .toLowerCase();
-
-
-            return (
-              !keyword ||
-              id.includes(keyword) ||
-              nama.includes(keyword) ||
-              kategori.includes(keyword)
-            );
-
-          })
-          .slice(0, 50);
-
-
-      if (
-        filtered.length === 0
-      ) {
-
-        results.innerHTML =
-          '<div class="product-empty">Produk tidak ditemukan.</div>';
-
-        return;
-
-      }
-
-
-      results.innerHTML =
-        filtered
-          .map(product => `
-
-            <div
-              class="product-option"
-              onclick="selectProduk(
-                '${type}',
-                '${escapeJs(product.id)}'
-              )"
-            >
-
-              <strong>
-                ${escapeHtml(product.id)}
-                —
-                ${escapeHtml(product.nama)}
-              </strong>
-
-              <span>
-                ${escapeHtml(
-                  product.kategori ||
-                  "Tanpa kategori"
-                )}
-                ·
-                ${escapeHtml(
-                  product.satuan || "-"
-                )}
-                ·
-                ${escapeHtml(
-                  formatRupiah(product.hargaJual || 0)
-                )}
-              </span>
-
-            </div>
-
-          `)
-          .join("");
-
-
-    } catch (error) {
-
-      results.innerHTML =
-        '<div class="product-empty">Gagal memuat master produk.</div>';
-
-    }
-
-  }
-
-
-  function selectProduk(
-    type,
-    produkId
-  ) {
-
-    const product =
-      produkMaster.find(
-        item =>
-          String(item.id).trim() ===
-          String(produkId).trim()
-      );
-
-
-    if (!product) {
-      return;
-    }
-
-
-    const hiddenInput =
-      document.getElementById(
-        type + "Produk"
-      );
-
-
-    const searchInput =
-      document.getElementById(
-        type + "ProdukCari"
-      );
-
-
-    const results =
-      document.getElementById(
-        type + "ProdukResults"
-      );
-
-
-    const info =
-      document.getElementById(
-        type + "ProdukInfo"
-      );
-
-
-    if (hiddenInput) {
-
-      hiddenInput.value =
-        product.id;
-
-    }
-
-
-    if (searchInput) {
-
-      searchInput.value =
-        product.id +
-        " — " +
-        product.nama;
-
-    }
-
-
-    if (info) {
-
-      info.textContent =
-        "Satuan: " +
-        (product.satuan || "-") +
-        " · Minimum stok: " +
-        Number(
-          product.stokMinimum || 0
-        ) +
-        " · Harga jual: " +
-        formatRupiah(product.hargaJual || 0);
-
-    }
-
-
-    if (type === "keluar") {
-
-      const hargaInput =
-        document.getElementById("keluarHarga");
-
-      if (hargaInput) {
-        hargaInput.value =
-          Number(product.hargaJual || 0);
-      }
-
-    }
-
-
-    if (results) {
-
-      results.innerHTML = "";
-
-      results.classList.remove(
-        "show"
-      );
-
-    }
-
-  }
-
-
-  // =====================================================
-  // FORMAT RUPIAH
-  // =====================================================
-
-  function formatRupiah(value) {
-
-    return Number(value || 0).toLocaleString("id-ID", {
+  return Number(value || 0).toLocaleString(
+    "id-ID",
+    {
       style: "currency",
       currency: "IDR",
       maximumFractionDigits: 0
-    });
-
-  }
-
-
-  // =====================================================
-  // ESCAPE
-  // =====================================================
-
-  function escapeHtml(value) {
-
-    return String(value ?? "")
-      .replace(
-        /&/g,
-        "&amp;"
-      )
-      .replace(
-        /</g,
-        "&lt;"
-      )
-      .replace(
-        />/g,
-        "&gt;"
-      )
-      .replace(
-        /"/g,
-        "&quot;"
-      )
-      .replace(
-        /'/g,
-        "&#039;"
-      );
-
-  }
-
-
-  function escapeJs(value) {
-
-    return String(value ?? "")
-      .replace(
-        /\\/g,
-        "\\\\"
-      )
-      .replace(
-        /'/g,
-        "\\'"
-      );
-
-  }
-
-
-  // =====================================================
-  // TUTUP PRODUCT DROPDOWN
-  // =====================================================
-
-  document.addEventListener(
-    "click",
-    function(event) {
-
-      if (
-        !event.target.closest(
-          ".product-picker"
-        )
-      ) {
-
-        document
-          .querySelectorAll(
-            ".product-results"
-          )
-          .forEach(
-            element =>
-              element.classList.remove(
-                "show"
-              )
-          );
-
-      }
-
     }
   );
 
+}
 
-  // =====================================================
-  // NAVIGASI
-  // =====================================================
 
-  function showPage(
-    pageId,
-    button
+function formatNumber(value) {
+
+  const number =
+    Number(value || 0);
+
+  if (Number.isInteger(number)) {
+    return String(number);
+  }
+
+  return number.toLocaleString(
+    "id-ID",
+    {
+      maximumFractionDigits: 2
+    }
+  );
+
+}
+
+
+function namaLokasi(lokasiId) {
+
+  const id =
+    String(lokasiId || "")
+      .trim()
+      .toUpperCase();
+
+  if (id === "LOC001") {
+    return "TOOKA HUB METRO";
+  }
+
+  if (id === "LOC002") {
+    return "TOOKA STORE JEPARA";
+  }
+
+  return lokasiId || "-";
+
+}
+
+
+/* =========================================================
+   API REQUEST
+   ========================================================= */
+
+async function apiRequest(data, options = {}) {
+
+  const payload = {
+    ...data
+  };
+
+  const publicActions = [
+    "LOGIN",
+    "PUBLIC_USERS",
+    "SET_INITIAL_OWNER_PASSWORD"
+  ];
+
+  if (
+    !publicActions.includes(
+      payload.action
+    )
   ) {
 
-    document
-      .querySelectorAll(".page")
-      .forEach(
-        page =>
-          page.classList.remove(
-            "active"
-          )
+    const token =
+      sessionToken ||
+      sessionStorage.getItem(
+        SESSION_KEY
       );
 
-
-    const page =
-      document.getElementById(
-        pageId
-      );
-
-
-    if (!page) {
-      return;
-    }
-
-
-    page.classList.add(
-      "active"
-    );
-
-
-    document
-      .querySelectorAll(
-        ".nav-btn"
-      )
-      .forEach(
-        btn =>
-          btn.classList.remove(
-            "active"
-          )
-      );
-
-
-    if (button) {
-
-      button.classList.add(
-        "active"
-      );
-
-    }
-
-
-    // Dashboard selalu refresh ketika dibuka.
-    if (pageId === "dashboard") {
-
-      loadDashboardStock();
-
+    if (token) {
+      payload.sessionToken = token;
     }
 
   }
 
 
-  // =====================================================
-  // REQUEST API
-  // =====================================================
+  let response;
 
-  async function apiRequest(data) {
+  try {
 
-    const response =
+    response =
       await fetch(
         API_URL,
         {
@@ -1934,17 +2546,4848 @@
           },
 
           body:
-            JSON.stringify(data)
+            JSON.stringify(payload)
+        }
+      );
+
+  } catch (error) {
+
+    throw new Error(
+      "Tidak dapat terhubung ke server."
+    );
+
+  }
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      "Server API gagal merespons. HTTP " +
+      response.status
+    );
+
+  }
+
+
+  const text =
+    await response.text();
+
+
+  let result;
+
+  try {
+
+    result =
+      JSON.parse(text);
+
+  } catch (error) {
+
+    throw new Error(
+      "Response API tidak valid."
+    );
+
+  }
+
+
+  /*
+   * Jika session sudah tidak valid,
+   * otomatis keluarkan user.
+   */
+
+  if (
+    !options.skipSessionCheck &&
+    result &&
+    result.success === false &&
+    /session|login|autoris|otoris|token/i.test(
+      String(result.message || "")
+    )
+  ) {
+
+    clearSession();
+
+    showLoginScreen();
+
+  }
+
+
+  return result;
+
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+function showStatus(
+  elementId,
+  message,
+  type
+) {
+
+  const element =
+    document.getElementById(
+      elementId
+    );
+
+  if (!element) {
+    return;
+  }
+
+  element.textContent =
+    message || "";
+
+  element.className =
+    "status show " +
+    (
+      type === "loading"
+        ? "loading"
+        : type === "success"
+          ? "success"
+          : "error"
+    );
+
+}
+
+
+/* =========================================================
+   PUBLIC USERS
+   ========================================================= */
+
+async function loadPublicUsers() {
+
+  const select =
+    document.getElementById(
+      "loginUser"
+    );
+
+  try {
+
+    const hasil =
+      await apiRequest(
+        {
+          action:
+            "PUBLIC_USERS"
+        },
+        {
+          skipSessionCheck:
+            true
+        }
+      );
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      throw new Error(
+        hasil?.message ||
+        "Daftar user gagal dimuat."
+      );
+
+    }
+
+
+    const users =
+      Array.isArray(
+        hasil.data
+      )
+        ? hasil.data
+        : [];
+
+
+    select.innerHTML =
+      '<option value="">Pilih user...</option>';
+
+
+    users.forEach(
+      user => {
+
+        const option =
+          document.createElement(
+            "option"
+          );
+
+        option.value =
+          user.id;
+
+        option.textContent =
+          user.nama +
+          " — " +
+          user.role +
+          " — " +
+          (
+            user.lokasiNama ||
+            user.lokasi ||
+            "SEMUA"
+          );
+
+        select.appendChild(
+          option
+        );
+
+      }
+    );
+
+
+  } catch (error) {
+
+    select.innerHTML =
+      '<option value="">Gagal memuat user</option>';
+
+    showStatus(
+      "loginStatus",
+      error.message ||
+        "Daftar user gagal dimuat.",
+      "error"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+async function login() {
+
+  const userId =
+    document.getElementById(
+      "loginUser"
+    ).value;
+
+
+  const password =
+    document.getElementById(
+      "loginPassword"
+    ).value;
+
+
+  if (!userId) {
+
+    showStatus(
+      "loginStatus",
+      "Pilih user terlebih dahulu.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if (!password) {
+
+    showStatus(
+      "loginStatus",
+      "Password wajib diisi.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  const button =
+    document.getElementById(
+      "btnLogin"
+    );
+
+
+  button.disabled = true;
+
+  button.textContent =
+    "MEMERIKSA...";
+
+
+  showStatus(
+    "loginStatus",
+    "Memeriksa login...",
+    "loading"
+  );
+
+
+  try {
+
+    const hasil =
+      await apiRequest(
+        {
+          action: "LOGIN",
+
+          userId:
+            userId,
+
+          password:
+            password
+
+        },
+        {
+          skipSessionCheck:
+            true
+        }
+      );
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      throw new Error(
+        hasil?.message ||
+        "Login gagal."
+      );
+
+    }
+
+
+    /*
+     * Backend V2.1 mengembalikan
+     * sessionToken dan data user.
+     */
+
+    const token =
+      hasil.sessionToken ||
+      hasil.token ||
+      hasil.data?.sessionToken ||
+      hasil.data?.token;
+
+
+    const user =
+      hasil.user ||
+      hasil.data?.user ||
+      hasil.data;
+
+
+    if (!token) {
+
+      throw new Error(
+        "Login berhasil tetapi session token tidak diterima."
+      );
+
+    }
+
+
+    sessionToken =
+      token;
+
+
+    currentUser =
+      user;
+
+
+    sessionStorage.setItem(
+      SESSION_KEY,
+      token
+    );
+
+
+    sessionStorage.setItem(
+      USER_KEY,
+      JSON.stringify(
+        user || {}
+      )
+    );
+
+
+    document.getElementById(
+      "loginPassword"
+    ).value = "";
+
+
+    await enterApplication();
+
+
+  } catch (error) {
+
+    showStatus(
+      "loginStatus",
+      error.message ||
+        "Login gagal.",
+      "error"
+    );
+
+  } finally {
+
+    button.disabled = false;
+
+    button.textContent =
+      "MASUK";
+
+  }
+
+}
+
+
+/* =========================================================
+   SESSION
+   ========================================================= */
+
+function clearSession() {
+
+  sessionToken = null;
+
+  currentUser = null;
+
+  sessionStorage.removeItem(
+    SESSION_KEY
+  );
+
+  sessionStorage.removeItem(
+    USER_KEY
+  );
+
+}
+
+
+async function restoreSession() {
+
+  const token =
+    sessionStorage.getItem(
+      SESSION_KEY
+    );
+
+
+  if (!token) {
+    return false;
+  }
+
+
+  sessionToken =
+    token;
+
+
+  try {
+
+    const hasil =
+      await apiRequest(
+        {
+          action: "ME"
+        }
+      );
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      clearSession();
+
+      return false;
+
+    }
+
+
+    currentUser =
+      hasil.user ||
+      hasil.data?.user ||
+      hasil.data;
+
+
+    if (!currentUser) {
+
+      clearSession();
+
+      return false;
+
+    }
+
+
+    sessionStorage.setItem(
+      USER_KEY,
+      JSON.stringify(
+        currentUser
+      )
+    );
+
+
+    await enterApplication(
+      true
+    );
+
+
+    return true;
+
+
+  } catch (error) {
+
+    clearSession();
+
+    return false;
+
+  }
+
+}
+
+
+/* =========================================================
+   ENTER APPLICATION
+   ========================================================= */
+
+async function enterApplication(
+  restored = false
+) {
+
+  document.getElementById(
+    "loginScreen"
+  ).style.display =
+    "none";
+
+
+  document.getElementById(
+    "setupScreen"
+  ).classList.add(
+    "hidden"
+  );
+
+
+  document.getElementById(
+    "appScreen"
+  ).style.display =
+    "block";
+
+
+  updateUserUI();
+
+
+  /*
+   * Bersihkan cache master karena
+   * data harus berasal dari session aktif.
+   */
+
+  produkMaster = [];
+
+  produkLoaded = false;
+
+
+  await loadProduk();
+
+
+  setupRoleLocation();
+
+
+  if (!restored) {
+
+    showPage(
+      "pos",
+      document.querySelector(
+        '.nav-btn[onclick*="pos"]'
+      )
+    );
+
+  }
+
+
+  loadDashboardStock()
+    .catch(
+      () => {}
+    );
+
+}
+
+
+/* =========================================================
+   USER UI
+   ========================================================= */
+
+function updateUserUI() {
+
+  if (!currentUser) {
+    return;
+  }
+
+
+  const nama =
+    currentUser.nama ||
+    currentUser.name ||
+    "-";
+
+
+  const role =
+    currentUser.role ||
+    "-";
+
+
+  const lokasiId =
+    currentUser.lokasi ||
+    currentUser.lokasiId ||
+    "";
+
+
+  const lokasiNama =
+    currentUser.lokasiNama ||
+    namaLokasi(
+      lokasiId
+    );
+
+
+  document.getElementById(
+    "headerUser"
+  ).textContent =
+    nama;
+
+
+  document.getElementById(
+    "headerRole"
+  ).textContent =
+    role;
+
+
+  document.getElementById(
+    "headerLocation"
+  ).textContent =
+    "POS " +
+    lokasiNama;
+
+
+  document.getElementById(
+    "dashboardUser"
+  ).textContent =
+    nama;
+
+
+  document.getElementById(
+    "dashboardLocation"
+  ).textContent =
+    lokasiNama;
+
+}
+
+
+/* =========================================================
+   ROLE / LOCATION
+   ========================================================= */
+
+function isOwner() {
+
+  return String(
+    currentUser?.role || ""
+  )
+    .trim()
+    .toUpperCase() ===
+    "OWNER";
+
+}
+
+
+function getAssignedLocation() {
+
+  return String(
+    currentUser?.lokasi ||
+    currentUser?.lokasiId ||
+    ""
+  )
+    .trim()
+    .toUpperCase();
+
+}
+
+
+function setupRoleLocation() {
+
+  const assigned =
+    getAssignedLocation();
+
+
+  const selects = [
+    "posLokasi",
+    "masukLokasi",
+    "keluarLokasi",
+    "stokLokasi",
+    "transferAsal"
+  ];
+
+
+  if (isOwner()) {
+
+    selects.forEach(
+      id => {
+
+        const element =
+          document.getElementById(
+            id
+          );
+
+        if (element) {
+          element.disabled =
+            false;
+        }
+
+      }
+    );
+
+
+    /*
+     * Owner default ke lokasi pertama
+     * kalau belum ada pilihan.
+     */
+
+    document.getElementById(
+      "posLokasi"
+    ).value =
+      assigned === "LOC002"
+        ? "LOC002"
+        : "LOC001";
+
+
+    document.getElementById(
+      "masukLokasi"
+    ).value =
+      document.getElementById(
+        "posLokasi"
+      ).value;
+
+
+    document.getElementById(
+      "keluarLokasi"
+    ).value =
+      document.getElementById(
+        "posLokasi"
+      ).value;
+
+
+    document.getElementById(
+      "stokLokasi"
+    ).value =
+      document.getElementById(
+        "posLokasi"
+      ).value;
+
+
+  } else {
+
+    /*
+     * Kasir dikunci ke lokasi backend.
+     */
+
+    selects.forEach(
+      id => {
+
+        const element =
+          document.getElementById(
+            id
+          );
+
+        if (!element) {
+          return;
+        }
+
+        if (
+          assigned ===
+          "LOC001" ||
+          assigned ===
+          "LOC002"
+        ) {
+
+          element.value =
+            assigned;
+
+          element.disabled =
+            true;
+
+        }
+
+      }
+    );
+
+  }
+
+
+  updatePosLocation();
+
+}
+
+
+function updatePosLocation() {
+
+  const location =
+    document.getElementById(
+      "posLokasi"
+    ).value;
+
+
+  document.getElementById(
+    "posLocationInfo"
+  ).textContent =
+    namaLokasi(location);
+
+}
+
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+async function logout() {
+
+  try {
+
+    if (sessionToken) {
+
+      await apiRequest(
+        {
+          action:
+            "LOGOUT"
+        },
+        {
+          skipSessionCheck:
+            true
+        }
+      );
+
+    }
+
+  } catch (error) {
+
+    /*
+     * Tetap clear session
+     * walaupun request logout gagal.
+     */
+
+  }
+
+
+  clearSession();
+
+  showLoginScreen();
+
+}
+
+
+function showLoginScreen() {
+
+  document.getElementById(
+    "appScreen"
+  ).style.display =
+    "none";
+
+
+  document.getElementById(
+    "setupScreen"
+  ).classList.add(
+    "hidden"
+  );
+
+
+  document.getElementById(
+    "loginScreen"
+  ).style.display =
+    "flex";
+
+
+  loadPublicUsers();
+
+}
+
+
+/* =========================================================
+   INITIAL PASSWORD SETUP
+   ========================================================= */
+
+function showSetupPassword() {
+
+  document.getElementById(
+    "loginScreen"
+  ).style.display =
+    "none";
+
+
+  document.getElementById(
+    "setupScreen"
+  ).classList.remove(
+    "hidden"
+  );
+
+
+  document.getElementById(
+    "setupStatus"
+  ).className =
+    "status";
+
+
+  document.getElementById(
+    "setupToken"
+  ).value = "";
+
+
+  document.getElementById(
+    "setupPassword"
+  ).value = "";
+
+
+  document.getElementById(
+    "setupConfirmation"
+  ).value = "";
+
+}
+
+
+function hideSetupPassword() {
+
+  document.getElementById(
+    "setupScreen"
+  ).classList.add(
+    "hidden"
+  );
+
+
+  document.getElementById(
+    "loginScreen"
+  ).style.display =
+    "flex";
+
+
+  document.getElementById(
+    "setupStatus"
+  ).className =
+    "status";
+
+}
+
+
+async function submitInitialPassword() {
+
+  const token =
+    document.getElementById(
+      "setupToken"
+    ).value.trim();
+
+
+  const password =
+    document.getElementById(
+      "setupPassword"
+    ).value;
+
+
+  const confirmation =
+    document.getElementById(
+      "setupConfirmation"
+    ).value;
+
+
+  if (!token) {
+
+    showStatus(
+      "setupStatus",
+      "Token setup wajib diisi.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    password.length <
+    6
+  ) {
+
+    showStatus(
+      "setupStatus",
+      "Password minimal 6 karakter.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    password !==
+    confirmation
+  ) {
+
+    showStatus(
+      "setupStatus",
+      "Konfirmasi password tidak sama.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  const button =
+    document.getElementById(
+      "btnSetup"
+    );
+
+
+  button.disabled = true;
+
+  button.textContent =
+    "MENYIMPAN...";
+
+
+  showStatus(
+    "setupStatus",
+    "Menyimpan password OWNER...",
+    "loading"
+  );
+
+
+  try {
+
+    const hasil =
+      await apiRequest(
+        {
+          action:
+            "SET_INITIAL_OWNER_PASSWORD",
+
+          setupToken:
+            token,
+
+          password:
+            password,
+
+          confirmation:
+            confirmation
+
+        },
+        {
+          skipSessionCheck:
+            true
+        }
+      );
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      throw new Error(
+        hasil?.message ||
+        "Setup password gagal."
+      );
+
+    }
+
+
+    /*
+     * Token tidak disimpan.
+     */
+
+    document.getElementById(
+      "setupToken"
+    ).value = "";
+
+
+    document.getElementById(
+      "setupPassword"
+    ).value = "";
+
+
+    document.getElementById(
+      "setupConfirmation"
+    ).value = "";
+
+
+    showStatus(
+      "setupStatus",
+      hasil.message ||
+        "Password OWNER berhasil dibuat. Silakan login.",
+      "success"
+    );
+
+
+    setTimeout(
+      () => {
+
+        hideSetupPassword();
+
+      },
+      1200
+    );
+
+
+  } catch (error) {
+
+    showStatus(
+      "setupStatus",
+      error.message ||
+        "Setup password gagal.",
+      "error"
+    );
+
+  } finally {
+
+    button.disabled = false;
+
+    button.textContent =
+      "SIMPAN PASSWORD";
+
+  }
+
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+function showPage(
+  pageId,
+  button
+) {
+
+  document
+    .querySelectorAll(
+      ".page"
+    )
+    .forEach(
+      page =>
+        page.classList.remove(
+          "active"
+        )
+    );
+
+
+  const page =
+    document.getElementById(
+      pageId
+    );
+
+
+  if (!page) {
+    return;
+  }
+
+
+  page.classList.add(
+    "active"
+  );
+
+
+  document
+    .querySelectorAll(
+      ".nav-btn"
+    )
+    .forEach(
+      btn =>
+        btn.classList.remove(
+          "active"
+        )
+    );
+
+
+  if (button) {
+
+    button.classList.add(
+      "active"
+    );
+
+  }
+
+
+  if (
+    pageId ===
+    "dashboard"
+  ) {
+
+    loadDashboardStock();
+
+  }
+
+}
+
+
+/* =========================================================
+   MASTER PRODUK
+   ========================================================= */
+
+async function loadProduk() {
+
+  if (produkLoaded) {
+    return produkMaster;
+  }
+
+
+  if (produkLoading) {
+
+    while (
+      produkLoading
+    ) {
+
+      await new Promise(
+        resolve =>
+          setTimeout(
+            resolve,
+            100
+          )
+      );
+
+    }
+
+    return produkMaster;
+
+  }
+
+
+  produkLoading = true;
+
+
+  try {
+
+    const hasil =
+      await apiRequest(
+        {
+          action:
+            "PRODUK"
+        }
+      );
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      throw new Error(
+        hasil?.message ||
+        "Master produk gagal dimuat."
+      );
+
+    }
+
+
+    produkMaster =
+      Array.isArray(
+        hasil.data
+      )
+        ? hasil.data
+        : [];
+
+
+    produkLoaded =
+      true;
+
+
+    return produkMaster;
+
+
+  } finally {
+
+    produkLoading =
+      false;
+
+  }
+
+}
+
+
+/* =========================================================
+   PRODUCT SEARCH
+   ========================================================= */
+
+async function filterProduk(type) {
+
+  const searchInput =
+    document.getElementById(
+      type +
+      "ProdukCari"
+    );
+
+
+  const results =
+    document.getElementById(
+      type +
+      "ProdukResults"
+    );
+
+
+  if (
+    !searchInput ||
+    !results
+  ) {
+    return;
+  }
+
+
+  const keyword =
+    searchInput.value
+      .trim()
+      .toLowerCase();
+
+
+  results.classList.add(
+    "show"
+  );
+
+
+  try {
+
+    const products =
+      await loadProduk();
+
+
+    const filtered =
+      products
+        .filter(
+          product => {
+
+            const id =
+              String(
+                product.id || ""
+              )
+                .toLowerCase();
+
+            const nama =
+              String(
+                product.nama || ""
+              )
+                .toLowerCase();
+
+            const kategori =
+              String(
+                product.kategori || ""
+              )
+                .toLowerCase();
+
+            return (
+              !keyword ||
+              id.includes(
+                keyword
+              ) ||
+              nama.includes(
+                keyword
+              ) ||
+              kategori.includes(
+                keyword
+              )
+            );
+
+          }
+        )
+        .slice(
+          0,
+          50
+        );
+
+
+    if (
+      filtered.length ===
+      0
+    ) {
+
+      results.innerHTML =
+        '<div class="product-empty">Produk tidak ditemukan.</div>';
+
+      return;
+
+    }
+
+
+    results.innerHTML =
+      filtered
+        .map(
+          product => `
+
+            <div
+              class="product-option"
+              onclick="selectProduk(
+                '${type}',
+                '${escapeJs(product.id)}'
+              )"
+            >
+
+              <strong>
+                ${escapeHtml(
+                  product.id
+                )}
+                —
+                ${escapeHtml(
+                  product.nama
+                )}
+              </strong>
+
+              <span>
+                ${escapeHtml(
+                  product.kategori ||
+                  "Tanpa kategori"
+                )}
+                ·
+                ${escapeHtml(
+                  product.satuan ||
+                  "-"
+                )}
+                ·
+                ${escapeHtml(
+                  formatRupiah(
+                    product.hargaJual ||
+                    0
+                  )
+                )}
+              </span>
+
+            </div>
+
+          `
+        )
+        .join("");
+
+
+  } catch (error) {
+
+    results.innerHTML =
+      '<div class="product-empty">Gagal memuat produk.</div>';
+
+  }
+
+}
+
+
+function selectProduk(
+  type,
+  produkId
+) {
+
+  const product =
+    produkMaster.find(
+      item =>
+        String(
+          item.id
+        ).trim() ===
+        String(
+          produkId
+        ).trim()
+    );
+
+
+  if (!product) {
+    return;
+  }
+
+
+  const hidden =
+    document.getElementById(
+      type +
+      "Produk"
+    );
+
+
+  const search =
+    document.getElementById(
+      type +
+      "ProdukCari"
+    );
+
+
+  const results =
+    document.getElementById(
+      type +
+      "ProdukResults"
+    );
+
+
+  const info =
+    document.getElementById(
+      type +
+      "ProdukInfo"
+    );
+
+
+  if (hidden) {
+
+    hidden.value =
+      product.id;
+
+  }
+
+
+  if (search) {
+
+    search.value =
+      product.id +
+      " — " +
+      product.nama;
+
+  }
+
+
+  if (info) {
+
+    info.textContent =
+      "Satuan: " +
+      (
+        product.satuan ||
+        "-"
+      ) +
+      " · Harga jual: " +
+      formatRupiah(
+        product.hargaJual ||
+        0
+      );
+
+  }
+
+
+  if (
+    type ===
+    "keluar"
+  ) {
+
+    document.getElementById(
+      "keluarHarga"
+    ).value =
+      Number(
+        product.hargaJual ||
+        0
+      );
+
+  }
+
+
+  if (results) {
+
+    results.innerHTML =
+      "";
+
+    results.classList.remove(
+      "show"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   POS PRODUCT SEARCH
+   ========================================================= */
+
+async function filterProdukPOS() {
+
+  const search =
+    document.getElementById(
+      "posProdukCari"
+    );
+
+
+  const results =
+    document.getElementById(
+      "posProdukResults"
+    );
+
+
+  const keyword =
+    search.value
+      .trim()
+      .toLowerCase();
+
+
+  results.classList.add(
+    "show"
+  );
+
+
+  try {
+
+    const products =
+      await loadProduk();
+
+
+    const filtered =
+      products
+        .filter(
+          product => {
+
+            const id =
+              String(
+                product.id ||
+                ""
+              )
+                .toLowerCase();
+
+            const nama =
+              String(
+                product.nama ||
+                ""
+              )
+                .toLowerCase();
+
+            const kategori =
+              String(
+                product.kategori ||
+                ""
+              )
+                .toLowerCase();
+
+            return (
+              !keyword ||
+              id.includes(
+                keyword
+              ) ||
+              nama.includes(
+                keyword
+              ) ||
+              kategori.includes(
+                keyword
+              )
+            );
+
+          }
+        )
+        .slice(
+          0,
+          30
+        );
+
+
+    if (
+      filtered.length ===
+      0
+    ) {
+
+      results.innerHTML =
+        '<div class="product-empty">Produk tidak ditemukan.</div>';
+
+      return;
+
+    }
+
+
+    results.innerHTML =
+      filtered
+        .map(
+          product => `
+
+            <div
+              class="product-option"
+              onclick="selectPOSProduct(
+                '${escapeJs(product.id)}'
+              )"
+            >
+
+              <strong>
+                ${escapeHtml(
+                  product.id
+                )}
+                —
+                ${escapeHtml(
+                  product.nama
+                )}
+              </strong>
+
+              <span>
+                ${escapeHtml(
+                  product.satuan ||
+                  "-"
+                )}
+                ·
+                ${escapeHtml(
+                  formatRupiah(
+                    product.hargaJual ||
+                    0
+                  )
+                )}
+              </span>
+
+            </div>
+
+          `
+        )
+        .join("");
+
+
+  } catch (error) {
+
+    results.innerHTML =
+      '<div class="product-empty">Gagal memuat produk.</div>';
+
+  }
+
+}
+
+
+function selectPOSProduct(
+  produkId
+) {
+
+  const product =
+    produkMaster.find(
+      item =>
+        String(
+          item.id
+        ).trim() ===
+        String(
+          produkId
+        ).trim()
+    );
+
+
+  if (!product) {
+    return;
+  }
+
+
+  posSelectedProduct =
+    product;
+
+
+  document.getElementById(
+    "posProduk"
+  ).value =
+    product.id;
+
+
+  document.getElementById(
+    "posProdukCari"
+  ).value =
+    product.id +
+    " — " +
+    product.nama;
+
+
+  document.getElementById(
+    "posProdukInfo"
+  ).textContent =
+    "Harga retail: " +
+    formatRupiah(
+      product.hargaJual ||
+      0
+    ) +
+    " · Satuan: " +
+    (
+      product.satuan ||
+      "-"
+    );
+
+
+  document.getElementById(
+    "posSpecialPrice"
+  ).value =
+    Number(
+      product.hargaJual ||
+      0
+    );
+
+
+  document.getElementById(
+    "posProdukResults"
+  ).classList.remove(
+    "show"
+  );
+
+}
+
+
+/* =========================================================
+   POS BUYER
+   ========================================================= */
+
+function setBuyerType(
+  type
+) {
+
+  posBuyerType =
+    type;
+
+
+  document
+    .querySelectorAll(
+      ".buyer-btn"
+    )
+    .forEach(
+      button =>
+        button.classList.remove(
+          "active"
+        )
+    );
+
+
+  const buttonMap = {
+    KONSUMEN:
+      "buyerKonsumen",
+
+    RESELLER:
+      "buyerReseller",
+
+    INTERNAL:
+      "buyerInternal"
+  };
+
+
+  document.getElementById(
+    buttonMap[type]
+  ).classList.add(
+    "active"
+  );
+
+
+  document.getElementById(
+    "resellerArea"
+  ).classList.toggle(
+    "hidden",
+    type !==
+      "RESELLER"
+  );
+
+
+  document.getElementById(
+    "internalArea"
+  ).classList.toggle(
+    "hidden",
+    type !==
+      "INTERNAL"
+  );
+
+
+  if (
+    type !==
+    "RESELLER"
+  ) {
+
+    document.getElementById(
+      "posResellerName"
+    ).value =
+      "";
+
+  }
+
+
+  if (
+    type !==
+    "INTERNAL"
+  ) {
+
+    document.getElementById(
+      "posInternalBuyer"
+    ).value =
+      "";
+
+  }
+
+}
+
+
+/* =========================================================
+   POS PRICE
+   ========================================================= */
+
+function setPriceType(
+  type
+) {
+
+  posPriceType =
+    type;
+
+
+  document.getElementById(
+    "priceRetail"
+  ).classList.toggle(
+    "active",
+    type ===
+      "RETAIL"
+  );
+
+
+  document.getElementById(
+    "priceSpecial"
+  ).classList.toggle(
+    "active",
+    type ===
+      "KHUSUS"
+  );
+
+
+  document.querySelector(
+    'input[name="priceType"][value="RETAIL"]'
+  ).checked =
+    type ===
+    "RETAIL";
+
+
+  document.querySelector(
+    'input[name="priceType"][value="KHUSUS"]'
+  ).checked =
+    type ===
+    "KHUSUS";
+
+
+  document.getElementById(
+    "posSpecialPriceArea"
+  ).classList.toggle(
+    "hidden",
+    type !==
+      "KHUSUS"
+  );
+
+
+  if (
+    type ===
+    "KHUSUS" &&
+    posSelectedProduct
+  ) {
+
+    document.getElementById(
+      "posSpecialPrice"
+    ).value =
+      Number(
+        posSelectedProduct.hargaJual ||
+        0
+      );
+
+  }
+
+
+  /*
+   * Harga cart retail mengikuti master.
+   * Harga khusus yang sudah dimasukkan
+   * tetap tersimpan sebagai actual price.
+   */
+
+}
+
+
+/* =========================================================
+   ADD POS ITEM
+   ========================================================= */
+
+function addPosItem() {
+
+  if (!posSelectedProduct) {
+
+    showStatus(
+      "statusPOS",
+      "Pilih produk terlebih dahulu.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  const qty =
+    Number(
+      document.getElementById(
+        "posQty"
+      ).value
+    );
+
+
+  if (
+    !qty ||
+    qty <= 0
+  ) {
+
+    showStatus(
+      "statusPOS",
+      "Qty harus lebih dari 0.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  let harga =
+    Number(
+      posSelectedProduct.hargaJual ||
+      0
+    );
+
+
+  if (
+    posPriceType ===
+    "KHUSUS"
+  ) {
+
+    harga =
+      Number(
+        document.getElementById(
+          "posSpecialPrice"
+        ).value
+      );
+
+
+    if (
+      !harga ||
+      harga < 0
+    ) {
+
+      showStatus(
+        "statusPOS",
+        "Harga khusus tidak valid.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    const retail =
+      Number(
+        posSelectedProduct.hargaJual ||
+        0
+      );
+
+
+    if (
+      retail > 0 &&
+      harga >
+      retail
+    ) {
+
+      showStatus(
+        "statusPOS",
+        "Harga khusus tidak boleh lebih tinggi dari harga retail.",
+        "error"
+      );
+
+      return;
+
+    }
+
+  }
+
+
+  const existing =
+    posCart.find(
+      item =>
+        String(
+          item.produkId
+        ) ===
+        String(
+          posSelectedProduct.id
+        )
+    );
+
+
+  if (existing) {
+
+    /*
+     * Jika produk sudah ada,
+     * tambahkan qty.
+     */
+
+    existing.qty +=
+      qty;
+
+    /*
+     * Kalau harga khusus,
+     * gunakan harga baru.
+     */
+
+    if (
+      posPriceType ===
+      "KHUSUS"
+    ) {
+
+      existing.harga =
+        harga;
+
+    } else {
+
+      existing.harga =
+        Number(
+          posSelectedProduct.hargaJual ||
+          0
+        );
+
+    }
+
+  } else {
+
+    posCart.push({
+
+      produkId:
+        posSelectedProduct.id,
+
+      nama:
+        posSelectedProduct.nama,
+
+      satuan:
+        posSelectedProduct.satuan ||
+        "",
+
+      qty:
+        qty,
+
+      harga:
+        harga,
+
+      hargaRetail:
+        Number(
+          posSelectedProduct.hargaJual ||
+          0
+        )
+
+    });
+
+  }
+
+
+  renderPosCart();
+
+
+  /*
+   * Reset picker.
+   */
+
+  posSelectedProduct =
+    null;
+
+
+  document.getElementById(
+    "posProduk"
+  ).value =
+    "";
+
+
+  document.getElementById(
+    "posProdukCari"
+  ).value =
+    "";
+
+
+  document.getElementById(
+    "posProdukInfo"
+  ).textContent =
+    "";
+
+
+  document.getElementById(
+    "posSpecialPrice"
+  ).value =
+    "";
+
+
+  document.getElementById(
+    "posQty"
+  ).value =
+    "1";
+
+}
+
+
+/* =========================================================
+   POS CART
+   ========================================================= */
+
+function renderPosCart() {
+
+  const empty =
+    document.getElementById(
+      "posCartEmpty"
+    );
+
+
+  const wrap =
+    document.getElementById(
+      "posCartWrap"
+    );
+
+
+  const body =
+    document.getElementById(
+      "posCartBody"
+    );
+
+
+  if (
+    posCart.length ===
+    0
+  ) {
+
+    empty.classList.remove(
+      "hidden"
+    );
+
+    wrap.classList.add(
+      "hidden"
+    );
+
+    document.getElementById(
+      "posTotal"
+    ).textContent =
+      "Rp0";
+
+    document.getElementById(
+      "posTotalItems"
+    ).textContent =
+      "0";
+
+    calculateChange();
+
+    return;
+
+  }
+
+
+  empty.classList.add(
+    "hidden"
+  );
+
+
+  wrap.classList.remove(
+    "hidden"
+  );
+
+
+  body.innerHTML =
+    posCart
+      .map(
+        (item, index) => {
+
+          const subtotal =
+            item.qty *
+            item.harga;
+
+
+          return `
+
+            <tr>
+
+              <td>
+
+                <strong>
+                  ${escapeHtml(
+                    item.nama
+                  )}
+                </strong>
+
+                <div class="muted">
+                  ${escapeHtml(
+                    item.produkId
+                  )}
+                </div>
+
+              </td>
+
+
+              <td>
+
+                <div class="qty-control">
+
+                  <button
+                    onclick="changePosQty(
+                      ${index},
+                      -1
+                    )"
+                  >
+                    −
+                  </button>
+
+                  <strong>
+                    ${escapeHtml(
+                      formatNumber(
+                        item.qty
+                      )
+                    )}
+                  </strong>
+
+                  <button
+                    onclick="changePosQty(
+                      ${index},
+                      1
+                    )"
+                  >
+                    +
+                  </button>
+
+                </div>
+
+              </td>
+
+
+              <td>
+                ${escapeHtml(
+                  formatRupiah(
+                    item.harga
+                  )
+                )}
+              </td>
+
+
+              <td>
+
+                <strong>
+                  ${escapeHtml(
+                    formatRupiah(
+                      subtotal
+                    )
+                  )}
+                </strong>
+
+              </td>
+
+
+              <td>
+
+                <button
+                  class="remove-item"
+                  onclick="removePosItem(
+                    ${index}
+                  )"
+                >
+                  HAPUS
+                </button>
+
+              </td>
+
+            </tr>
+
+          `;
+
+        }
+      )
+      .join("");
+
+
+  const total =
+    getPosTotal();
+
+
+  const totalItems =
+    posCart.reduce(
+      (
+        sum,
+        item
+      ) =>
+        sum +
+        Number(
+          item.qty
+        ),
+      0
+    );
+
+
+  document.getElementById(
+    "posTotal"
+  ).textContent =
+    formatRupiah(
+      total
+    );
+
+
+  document.getElementById(
+    "posTotalItems"
+  ).textContent =
+    formatNumber(
+      totalItems
+    );
+
+
+  calculateChange();
+
+}
+
+
+function changePosQty(
+  index,
+  delta
+) {
+
+  if (
+    !posCart[index]
+  ) {
+    return;
+  }
+
+
+  posCart[index].qty +=
+    delta;
+
+
+  if (
+    posCart[index].qty <=
+    0
+  ) {
+
+    posCart.splice(
+      index,
+      1
+    );
+
+  }
+
+
+  renderPosCart();
+
+}
+
+
+function removePosItem(
+  index
+) {
+
+  posCart.splice(
+    index,
+    1
+  );
+
+
+  renderPosCart();
+
+}
+
+
+function getPosTotal() {
+
+  return posCart.reduce(
+    (
+      total,
+      item
+    ) =>
+      total +
+      (
+        Number(
+          item.qty
+        ) *
+        Number(
+          item.harga
+        )
+      ),
+    0
+  );
+
+}
+
+
+/* =========================================================
+   PAYMENT
+   ========================================================= */
+
+function calculateChange() {
+
+  const total =
+    getPosTotal();
+
+
+  const received =
+    Number(
+      document.getElementById(
+        "posAmountReceived"
+      ).value ||
+      0
+    );
+
+
+  const change =
+    received -
+    total;
+
+
+  document.getElementById(
+    "posChange"
+  ).textContent =
+    formatRupiah(
+      change > 0
+        ? change
+        : 0
+    );
+
+}
+
+
+/* =========================================================
+   POS VALIDATION
+   ========================================================= */
+
+function getPosBuyerName() {
+
+  if (
+    posBuyerType ===
+    "KONSUMEN"
+  ) {
+
+    return "KONSUMEN";
+
+  }
+
+
+  if (
+    posBuyerType ===
+    "RESELLER"
+  ) {
+
+    return document.getElementById(
+      "posResellerName"
+    ).value.trim();
+
+  }
+
+
+  if (
+    posBuyerType ===
+    "INTERNAL"
+  ) {
+
+    return document.getElementById(
+      "posInternalBuyer"
+    ).value;
+
+  }
+
+
+  return "";
+
+}
+
+
+/* =========================================================
+   CHECKOUT POS
+   ========================================================= */
+
+let checkoutRunning =
+  false;
+
+
+async function checkoutPOS() {
+
+  if (
+    checkoutRunning
+  ) {
+    return;
+  }
+
+
+  if (
+    posCart.length ===
+    0
+  ) {
+
+    showStatus(
+      "statusPOS",
+      "Keranjang masih kosong.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  const buyerName =
+    getPosBuyerName();
+
+
+  if (!buyerName) {
+
+    showStatus(
+      "statusPOS",
+      "Informasi pembeli wajib dilengkapi.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  const locationId =
+    document.getElementById(
+      "posLokasi"
+    ).value;
+
+
+  const amountReceived =
+    Number(
+      document.getElementById(
+        "posAmountReceived"
+      ).value ||
+      0
+    );
+
+
+  const total =
+    getPosTotal();
+
+
+  if (
+    amountReceived <
+    total
+  ) {
+
+    showStatus(
+      "statusPOS",
+      "Uang diterima masih kurang.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  /*
+   * Backend tetap menjadi otoritas
+   * untuk validasi stok, lokasi, harga,
+   * role dan transaksi.
+   */
+
+  const items =
+    posCart.map(
+      item => ({
+
+        produkId:
+          item.produkId,
+
+        qty:
+          Number(
+            item.qty
+          ),
+
+        harga:
+          Number(
+            item.harga
+          )
+
+      })
+    );
+
+
+  checkoutRunning =
+    true;
+
+
+  const button =
+    document.getElementById(
+      "btnCheckout"
+    );
+
+
+  button.disabled =
+    true;
+
+  button.textContent =
+    "MEMPROSES...";
+
+
+  showStatus(
+    "statusPOS",
+    "Memproses transaksi...",
+    "loading"
+  );
+
+
+  try {
+
+    const hasil =
+      await apiRequest({
+
+        action:
+          "POS_SALE",
+
+        locationId:
+          locationId,
+
+        buyerType:
+          posBuyerType,
+
+        buyerName:
+          buyerName,
+
+        priceType:
+          posPriceType,
+
+        paymentMethod:
+          "CASH",
+
+        amountReceived:
+          amountReceived,
+
+        items:
+          items
+
+      });
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      throw new Error(
+        hasil?.message ||
+        "Transaksi gagal."
+      );
+
+    }
+
+
+    renderPosReceipt(
+      hasil
+    );
+
+
+    showStatus(
+      "statusPOS",
+      hasil.message ||
+        "Transaksi berhasil.",
+      "success"
+    );
+
+
+    document.getElementById(
+      "posReceiptPanel"
+    ).classList.remove(
+      "hidden"
+    );
+
+
+    /*
+     * Scroll ke receipt.
+     */
+
+    document.getElementById(
+      "posReceiptPanel"
+    ).scrollIntoView({
+      behavior:
+        "smooth",
+      block:
+        "start"
+    });
+
+
+    loadDashboardStock()
+      .catch(
+        () => {}
+      );
+
+
+  } catch (error) {
+
+    showStatus(
+      "statusPOS",
+      error.message ||
+        "Transaksi gagal.",
+      "error"
+    );
+
+  } finally {
+
+    checkoutRunning =
+      false;
+
+    button.disabled =
+      false;
+
+    button.textContent =
+      "BAYAR & SIMPAN";
+
+  }
+
+}
+
+
+/* =========================================================
+   POS RECEIPT
+   ========================================================= */
+
+function renderPosReceipt(
+  hasil
+) {
+
+  const data =
+    hasil.data ||
+    hasil;
+
+
+  const transactionId =
+    data.transactionId ||
+    data.idTransaksi ||
+    hasil.transactionId ||
+    "-";
+
+
+  const cashier =
+    data.cashier ||
+    data.user ||
+    currentUser?.nama ||
+    "-";
+
+
+  const location =
+    data.locationName ||
+    namaLokasi(
+      data.locationId ||
+      data.lokasiId ||
+      document.getElementById(
+        "posLokasi"
+      ).value
+    );
+
+
+  const buyerType =
+    data.buyerType ||
+    posBuyerType;
+
+
+  const buyerName =
+    data.buyerName ||
+    getPosBuyerName();
+
+
+  const total =
+    Number(
+      data.total ??
+      getPosTotal()
+    );
+
+
+  const paid =
+    Number(
+      data.amountReceived ??
+      document.getElementById(
+        "posAmountReceived"
+      ).value ||
+      0
+    );
+
+
+  const change =
+    Number(
+      data.change ??
+      (
+        paid -
+        total
+      )
+    );
+
+
+  const items =
+    Array.isArray(
+      data.items
+    )
+      ? data.items
+      : posCart;
+
+
+  const rows =
+    items
+      .map(
+        item => {
+
+          const nama =
+            item.nama ||
+            item.productName ||
+            produkMaster.find(
+              p =>
+                String(
+                  p.id
+                ) ===
+                String(
+                  item.produkId
+                )
+            )?.nama ||
+            item.produkId ||
+            "-";
+
+
+          const qty =
+            Number(
+              item.qty ||
+              0
+            );
+
+
+          const harga =
+            Number(
+              item.harga ||
+              item.unitPrice ||
+              0
+            );
+
+
+          const subtotal =
+            Number(
+              item.subtotal ??
+              (
+                qty *
+                harga
+              )
+            );
+
+
+          return `
+
+            <tr>
+
+              <td>
+                ${escapeHtml(
+                  nama
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  formatNumber(
+                    qty
+                  )
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  formatRupiah(
+                    harga
+                  )
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  formatRupiah(
+                    subtotal
+                  )
+                )}
+              </td>
+
+            </tr>
+
+          `;
+
+        }
+      )
+      .join("");
+
+
+  document.getElementById(
+    "posReceipt"
+  ).innerHTML = `
+
+    <div class="receipt-header">
+
+      <h2>
+        TOOKA STORE
+      </h2>
+
+      <div class="muted">
+        BUKTI TRANSAKSI
+      </div>
+
+    </div>
+
+
+    <div class="receipt-meta">
+
+      <div>
+        <strong>
+          No. Transaksi
+        </strong>
+
+        <br>
+
+        ${escapeHtml(
+          transactionId
+        )}
+      </div>
+
+
+      <div>
+        <strong>
+          Kasir
+        </strong>
+
+        <br>
+
+        ${escapeHtml(
+          cashier
+        )}
+      </div>
+
+
+      <div>
+        <strong>
+          Lokasi
+        </strong>
+
+        <br>
+
+        ${escapeHtml(
+          location
+        )}
+      </div>
+
+
+      <div>
+        <strong>
+          Pembeli
+        </strong>
+
+        <br>
+
+        ${escapeHtml(
+          buyerType
+        )}
+        —
+        ${escapeHtml(
+          buyerName
+        )}
+      </div>
+
+    </div>
+
+
+    <table>
+
+      <thead>
+
+        <tr>
+
+          <th>
+            Produk
+          </th>
+
+          <th>
+            Qty
+          </th>
+
+          <th>
+            Harga
+          </th>
+
+          <th>
+            Subtotal
+          </th>
+
+        </tr>
+
+      </thead>
+
+      <tbody>
+        ${rows}
+      </tbody>
+
+    </table>
+
+
+    <div class="receipt-summary">
+
+      <div class="grand">
+
+        <span>
+          TOTAL
+        </span>
+
+        <span>
+          ${escapeHtml(
+            formatRupiah(
+              total
+            )
+          )}
+        </span>
+
+      </div>
+
+
+      <div>
+
+        <span>
+          Tunai
+        </span>
+
+        <span>
+          ${escapeHtml(
+            formatRupiah(
+              paid
+            )
+          )}
+        </span>
+
+      </div>
+
+
+      <div>
+
+        <span>
+          Kembalian
+        </span>
+
+        <span>
+          ${escapeHtml(
+            formatRupiah(
+              change
+            )
+          )}
+        </span>
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   NEW POS TRANSACTION
+   ========================================================= */
+
+function newPosTransaction() {
+
+  posCart = [];
+
+  posSelectedProduct =
+    null;
+
+
+  document.getElementById(
+    "posProduk"
+  ).value =
+    "";
+
+
+  document.getElementById(
+    "posProdukCari"
+  ).value =
+    "";
+
+
+  document.getElementById(
+    "posProdukInfo"
+  ).textContent =
+    "";
+
+
+  document.getElementById(
+    "posQty"
+  ).value =
+    "1";
+
+
+  document.getElementById(
+    "posSpecialPrice"
+  ).value =
+    "";
+
+
+  document.getElementById(
+    "posAmountReceived"
+  ).value =
+    "";
+
+
+  document.getElementById(
+    "posReceiptPanel"
+  ).classList.add(
+    "hidden"
+  );
+
+
+  document.getElementById(
+    "statusPOS"
+  ).className =
+    "status";
+
+
+  setBuyerType(
+    "KONSUMEN"
+  );
+
+
+  setPriceType(
+    "RETAIL"
+  );
+
+
+  renderPosCart();
+
+
+  calculateChange();
+
+
+  window.scrollTo({
+    top: 0,
+    behavior:
+      "smooth"
+  });
+
+}
+
+
+/* =========================================================
+   BARANG MASUK
+   ========================================================= */
+
+let sedangMasuk =
+  false;
+
+
+async function barangMasuk() {
+
+  if (sedangMasuk) {
+    return;
+  }
+
+
+  const produkId =
+    document.getElementById(
+      "masukProduk"
+    ).value.trim();
+
+
+  const lokasiId =
+    document.getElementById(
+      "masukLokasi"
+    ).value;
+
+
+  const qty =
+    Number(
+      document.getElementById(
+        "masukQty"
+      ).value
+    );
+
+
+  const harga =
+    Number(
+      document.getElementById(
+        "masukHarga"
+      ).value ||
+      0
+    );
+
+
+  const keterangan =
+    document.getElementById(
+      "masukKeterangan"
+    ).value.trim();
+
+
+  if (!produkId) {
+
+    showStatus(
+      "statusMasuk",
+      "Produk wajib dipilih.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !qty ||
+    qty <= 0
+  ) {
+
+    showStatus(
+      "statusMasuk",
+      "Qty harus lebih dari 0.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  sedangMasuk =
+    true;
+
+
+  lockButton(
+    "btnMasuk",
+    "MENYIMPAN..."
+  );
+
+
+  showStatus(
+    "statusMasuk",
+    "Menyimpan barang masuk...",
+    "loading"
+  );
+
+
+  try {
+
+    const hasil =
+      await apiRequest({
+
+        action:
+          "MASUK",
+
+        produkId:
+          produkId,
+
+        lokasiId:
+          lokasiId,
+
+        qty:
+          qty,
+
+        tujuan:
+          "SUPPLIER",
+
+        harga:
+          harga,
+
+        keterangan:
+          keterangan
+
+      });
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      throw new Error(
+        hasil?.message ||
+        "Barang masuk gagal."
+      );
+
+    }
+
+
+    showStatus(
+      "statusMasuk",
+      hasil.message ||
+        "Barang masuk berhasil.",
+      "success"
+    );
+
+
+    document.getElementById(
+      "masukQty"
+    ).value =
+      "";
+
+
+    document.getElementById(
+      "masukHarga"
+    ).value =
+      "";
+
+
+    document.getElementById(
+      "masukKeterangan"
+    ).value =
+      "";
+
+
+    resetProductPicker(
+      "masuk"
+    );
+
+
+    loadDashboardStock()
+      .catch(
+        () => {}
+      );
+
+
+  } catch (error) {
+
+    showStatus(
+      "statusMasuk",
+      error.message ||
+        "Barang masuk gagal.",
+      "error"
+    );
+
+  } finally {
+
+    sedangMasuk =
+      false;
+
+    unlockButton(
+      "btnMasuk"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   BARANG KELUAR
+   ========================================================= */
+
+let sedangKeluar =
+  false;
+
+
+async function barangKeluar() {
+
+  if (sedangKeluar) {
+    return;
+  }
+
+
+  const produkId =
+    document.getElementById(
+      "keluarProduk"
+    ).value.trim();
+
+
+  const lokasiId =
+    document.getElementById(
+      "keluarLokasi"
+    ).value;
+
+
+  const qty =
+    Number(
+      document.getElementById(
+        "keluarQty"
+      ).value
+    );
+
+
+  const harga =
+    Number(
+      document.getElementById(
+        "keluarHarga"
+      ).value ||
+      0
+    );
+
+
+  const tujuan =
+    document.getElementById(
+      "keluarTujuan"
+    ).value;
+
+
+  const keterangan =
+    document.getElementById(
+      "keluarKeterangan"
+    ).value.trim();
+
+
+  if (!produkId) {
+
+    showStatus(
+      "statusKeluar",
+      "Produk wajib dipilih.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !qty ||
+    qty <= 0
+  ) {
+
+    showStatus(
+      "statusKeluar",
+      "Qty harus lebih dari 0.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  sedangKeluar =
+    true;
+
+
+  lockButton(
+    "btnKeluar",
+    "MENYIMPAN..."
+  );
+
+
+  showStatus(
+    "statusKeluar",
+    "Menyimpan barang keluar...",
+    "loading"
+  );
+
+
+  try {
+
+    const hasil =
+      await apiRequest({
+
+        action:
+          "KELUAR",
+
+        produkId:
+          produkId,
+
+        lokasiId:
+          lokasiId,
+
+        qty:
+          qty,
+
+        tujuan:
+          tujuan,
+
+        harga:
+          harga,
+
+        keterangan:
+          keterangan
+
+      });
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      throw new Error(
+        hasil?.message ||
+        "Barang keluar gagal."
+      );
+
+    }
+
+
+    const stokSisa =
+      hasil.data?.stokSisa !==
+      undefined
+        ? " Stok sisa: " +
+          hasil.data.stokSisa
+        : "";
+
+
+    showStatus(
+      "statusKeluar",
+      (
+        hasil.message ||
+        "Barang keluar berhasil."
+      ) +
+      stokSisa,
+      "success"
+    );
+
+
+    document.getElementById(
+      "keluarQty"
+    ).value =
+      "";
+
+
+    document.getElementById(
+      "keluarHarga"
+    ).value =
+      "";
+
+
+    document.getElementById(
+      "keluarKeterangan"
+    ).value =
+      "";
+
+
+    resetProductPicker(
+      "keluar"
+    );
+
+
+    loadDashboardStock()
+      .catch(
+        () => {}
+      );
+
+
+  } catch (error) {
+
+    showStatus(
+      "statusKeluar",
+      error.message ||
+        "Barang keluar gagal.",
+      "error"
+    );
+
+  } finally {
+
+    sedangKeluar =
+      false;
+
+    unlockButton(
+      "btnKeluar"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   TRANSFER
+   ========================================================= */
+
+let sedangTransfer =
+  false;
+
+
+async function transferBarang() {
+
+  if (sedangTransfer) {
+    return;
+  }
+
+
+  const produkId =
+    document.getElementById(
+      "transferProduk"
+    ).value.trim();
+
+
+  const qty =
+    Number(
+      document.getElementById(
+        "transferQty"
+      ).value
+    );
+
+
+  const lokasiAsal =
+    document.getElementById(
+      "transferAsal"
+    ).value;
+
+
+  const lokasiTujuan =
+    document.getElementById(
+      "transferTujuan"
+    ).value;
+
+
+  if (!produkId) {
+
+    showStatus(
+      "statusTransfer",
+      "Produk wajib dipilih.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !qty ||
+    qty <= 0
+  ) {
+
+    showStatus(
+      "statusTransfer",
+      "Qty harus lebih dari 0.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    lokasiAsal ===
+    lokasiTujuan
+  ) {
+
+    showStatus(
+      "statusTransfer",
+      "Lokasi asal dan tujuan tidak boleh sama.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  sedangTransfer =
+    true;
+
+
+  lockButton(
+    "btnTransfer",
+    "MEMPROSES..."
+  );
+
+
+  showStatus(
+    "statusTransfer",
+    "Memproses transfer...",
+    "loading"
+  );
+
+
+  try {
+
+    const hasil =
+      await apiRequest({
+
+        action:
+          "TRANSFER",
+
+        produkId:
+          produkId,
+
+        lokasiAsal:
+          lokasiAsal,
+
+        lokasiTujuan:
+          lokasiTujuan,
+
+        qty:
+          qty
+
+      });
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      throw new Error(
+        hasil?.message ||
+        "Transfer gagal."
+      );
+
+    }
+
+
+    showStatus(
+      "statusTransfer",
+      hasil.message ||
+        "Transfer berhasil.",
+      "success"
+    );
+
+
+    document.getElementById(
+      "transferQty"
+    ).value =
+      "";
+
+
+    resetProductPicker(
+      "transfer"
+    );
+
+
+    loadDashboardStock()
+      .catch(
+        () => {}
+      );
+
+
+  } catch (error) {
+
+    showStatus(
+      "statusTransfer",
+      error.message ||
+        "Transfer gagal.",
+      "error"
+    );
+
+  } finally {
+
+    sedangTransfer =
+      false;
+
+    unlockButton(
+      "btnTransfer"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   CEK STOK
+   ========================================================= */
+
+let sedangCekStok =
+  false;
+
+
+async function cekStok() {
+
+  if (sedangCekStok) {
+    return;
+  }
+
+
+  const produkId =
+    document.getElementById(
+      "stokProduk"
+    ).value.trim();
+
+
+  const lokasiId =
+    document.getElementById(
+      "stokLokasi"
+    ).value;
+
+
+  if (!produkId) {
+
+    showStatus(
+      "statusStok",
+      "Produk wajib dipilih.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  sedangCekStok =
+    true;
+
+
+  lockButton(
+    "btnStok",
+    "MEMERIKSA..."
+  );
+
+
+  showStatus(
+    "statusStok",
+    "Mengambil data stok...",
+    "loading"
+  );
+
+
+  try {
+
+    const hasil =
+      await apiRequest({
+
+        action:
+          "STOK",
+
+        produkId:
+          produkId,
+
+        lokasiId:
+          lokasiId
+
+      });
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      throw new Error(
+        hasil?.message ||
+        "Data stok tidak ditemukan."
+      );
+
+    }
+
+
+    let dataList =
+      Array.isArray(
+        hasil.data
+      )
+        ? hasil.data
+        : (
+          hasil.data
+            ? [hasil.data]
+            : []
+        );
+
+
+    let data =
+      dataList.find(
+        item =>
+          String(
+            item.produkId ||
+            item.idProduk ||
+            item.ID_PRODUK ||
+            ""
+          )
+            .trim()
+            .toUpperCase() ===
+          String(
+            produkId
+          )
+            .trim()
+            .toUpperCase() &&
+          (
+            !item.lokasiId ||
+            String(
+              item.lokasiId
+            )
+              .trim()
+              .toUpperCase() ===
+            String(
+              lokasiId
+            )
+              .trim()
+              .toUpperCase()
+          )
+      );
+
+
+    if (
+      !data &&
+      dataList.length ===
+      1
+    ) {
+
+      data =
+        dataList[0];
+
+    }
+
+
+    if (!data) {
+
+      throw new Error(
+        "Stok untuk produk dan lokasi tersebut tidak ditemukan."
+      );
+
+    }
+
+
+    const nama =
+      data.nama ||
+      data.namaProduk ||
+      produkMaster.find(
+        p =>
+          String(
+            p.id
+          ) ===
+          String(
+            produkId
+          )
+      )?.nama ||
+      produkId;
+
+
+    const stok =
+      Number(
+        data.stok ??
+        data.stock ??
+        data.STOK ??
+        data.qty ??
+        0
+      );
+
+
+    const minimum =
+      Number(
+        data.minimum ??
+        data.stokMinimum ??
+        0
+      );
+
+
+    const satuan =
+      data.satuan ||
+      produkMaster.find(
+        p =>
+          String(
+            p.id
+          ) ===
+          String(
+            produkId
+          )
+      )?.satuan ||
+      "";
+
+
+    const hargaJual =
+      Number(
+        data.hargaJual ??
+        produkMaster.find(
+          p =>
+            String(
+              p.id
+            ) ===
+            String(
+              produkId
+            )
+        )?.hargaJual ||
+        0
+      );
+
+
+    document.getElementById(
+      "hasilStok"
+    ).innerHTML = `
+
+      <div class="lokasi-card">
+
+        <h3>
+          ${escapeHtml(
+            nama
+          )}
+        </h3>
+
+        <div class="muted">
+          ${escapeHtml(
+            produkId
+          )}
+        </div>
+
+        <div class="muted">
+          ${escapeHtml(
+            namaLokasi(
+              lokasiId
+            )
+          )}
+        </div>
+
+        <div class="stok-number">
+          ${escapeHtml(
+            formatNumber(
+              stok
+            )
+          )}
+        </div>
+
+        <div class="muted">
+          ${escapeHtml(
+            satuan
+          )}
+        </div>
+
+        <div
+          class="muted"
+          style="margin-top:6px;"
+        >
+          Minimum:
+          ${escapeHtml(
+            formatNumber(
+              minimum
+            )
+          )}
+        </div>
+
+        <div
+          class="muted"
+          style="margin-top:4px;"
+        >
+          Harga jual:
+          ${escapeHtml(
+            formatRupiah(
+              hargaJual
+            )
+          )}
+        </div>
+
+      </div>
+
+    `;
+
+
+    showStatus(
+      "statusStok",
+      "Stok berhasil ditemukan.",
+      "success"
+    );
+
+
+  } catch (error) {
+
+    showStatus(
+      "statusStok",
+      error.message ||
+        "Gagal mengambil stok.",
+      "error"
+    );
+
+
+    document.getElementById(
+      "hasilStok"
+    ).innerHTML =
+      "";
+
+  } finally {
+
+    sedangCekStok =
+      false;
+
+    unlockButton(
+      "btnStok"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   RESET PRODUCT PICKER
+   ========================================================= */
+
+function resetProductPicker(
+  type
+) {
+
+  const search =
+    document.getElementById(
+      type +
+      "ProdukCari"
+    );
+
+
+  const hidden =
+    document.getElementById(
+      type +
+      "Produk"
+    );
+
+
+  const info =
+    document.getElementById(
+      type +
+      "ProdukInfo"
+    );
+
+
+  const results =
+    document.getElementById(
+      type +
+      "ProdukResults"
+    );
+
+
+  if (search) {
+    search.value =
+      "";
+  }
+
+
+  if (hidden) {
+    hidden.value =
+      "";
+  }
+
+
+  if (info) {
+    info.textContent =
+      "";
+  }
+
+
+  if (results) {
+
+    results.innerHTML =
+      "";
+
+    results.classList.remove(
+      "show"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   BUTTON LOCK
+   ========================================================= */
+
+function lockButton(
+  buttonId,
+  text
+) {
+
+  const button =
+    document.getElementById(
+      buttonId
+    );
+
+
+  if (!button) {
+    return;
+  }
+
+
+  button.disabled =
+    true;
+
+
+  button.dataset.originalText =
+    button.textContent;
+
+
+  button.textContent =
+    text;
+
+}
+
+
+function unlockButton(
+  buttonId
+) {
+
+  const button =
+    document.getElementById(
+      buttonId
+    );
+
+
+  if (!button) {
+    return;
+  }
+
+
+  button.disabled =
+    false;
+
+
+  if (
+    button.dataset.originalText
+  ) {
+
+    button.textContent =
+      button.dataset.originalText;
+
+  }
+
+}
+
+
+/* =========================================================
+   STOCK STATUS
+   ========================================================= */
+
+function tentukanStatusStok(
+  stok,
+  minimum
+) {
+
+  const s =
+    Number(
+      stok || 0
+    );
+
+
+  const m =
+    Number(
+      minimum || 0
+    );
+
+
+  if (
+    m <= 0
+  ) {
+
+    return {
+      text:
+        "MINIMUM BELUM DIATUR",
+
+      icon:
+        "⚪",
+
+      className:
+        "stock-status-warning"
+    };
+
+  }
+
+
+  if (
+    s <= 0
+  ) {
+
+    return {
+      text:
+        "HABIS",
+
+      icon:
+        "🔴",
+
+      className:
+        "stock-status-danger"
+    };
+
+  }
+
+
+  if (
+    s <= m
+  ) {
+
+    return {
+      text:
+        "STOK MENIPIS",
+
+      icon:
+        "🟠",
+
+      className:
+        "stock-status-warning"
+    };
+
+  }
+
+
+  return {
+    text:
+      "AMAN",
+
+    icon:
+      "🟢",
+
+    className:
+      "stock-status-safe"
+  };
+
+}
+
+
+/* =========================================================
+   DASHBOARD STOCK
+   ========================================================= */
+
+let dashboardStockLoading =
+  false;
+
+
+async function loadDashboardStock() {
+
+  if (
+    dashboardStockLoading
+  ) {
+    return;
+  }
+
+
+  const box =
+    document.getElementById(
+      "dashboardStock"
+    );
+
+
+  const summary =
+    document.getElementById(
+      "dashboardStockSummary"
+    );
+
+
+  const content =
+    document.getElementById(
+      "dashboardStockContent"
+    );
+
+
+  if (
+    !box ||
+    !summary ||
+    !content
+  ) {
+    return;
+  }
+
+
+  dashboardStockLoading =
+    true;
+
+
+  box.className =
+    "dashboard-stock";
+
+
+  summary.innerHTML =
+    "";
+
+
+  content.innerHTML =
+    "Memeriksa kondisi stok...";
+
+
+  try {
+
+    const products =
+      await loadProduk();
+
+
+    const hasil =
+      await apiRequest({
+        action:
+          "STOK"
+      });
+
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+
+      throw new Error(
+        hasil?.message ||
+        "Data stok gagal dimuat."
+      );
+
+    }
+
+
+    const dataList =
+      Array.isArray(
+        hasil.data
+      )
+        ? hasil.data
+        : [];
+
+
+    const productMap =
+      new Map();
+
+
+    products.forEach(
+      product => {
+
+        const id =
+          String(
+            product.id ||
+            ""
+          )
+            .trim()
+            .toUpperCase();
+
+
+        if (id) {
+
+          productMap.set(
+            id,
+            product
+          );
+
+        }
+
+      }
+    );
+
+
+    const perhatian =
+      [];
+
+
+    dataList.forEach(
+      item => {
+
+        if (
+          !item ||
+          typeof item !==
+          "object"
+        ) {
+          return;
+        }
+
+
+        const produkId =
+          String(
+            item.produkId ||
+            item.idProduk ||
+            item.ID_PRODUK ||
+            ""
+          )
+            .trim()
+            .toUpperCase();
+
+
+        if (!produkId) {
+          return;
+        }
+
+
+        const product =
+          productMap.get(
+            produkId
+          );
+
+
+        if (!product) {
+          return;
+        }
+
+
+        const minimum =
+          Number(
+            item.minimum ??
+            item.stokMinimum ??
+            product.stokMinimum ||
+            0
+          );
+
+
+        if (
+          minimum <= 0
+        ) {
+          return;
+        }
+
+
+        const stok =
+          Number(
+            item.stok ??
+            item.stock ??
+            item.STOK ??
+            item.qty ??
+            0
+          );
+
+
+        if (
+          stok >
+          minimum
+        ) {
+          return;
+        }
+
+
+        const lokasiId =
+          item.lokasiId ||
+          item.idLokasi ||
+          item.LOKASI_ID ||
+          "";
+
+
+        perhatian.push({
+
+          produkId:
+            produkId,
+
+          nama:
+            product.nama ||
+            produkId,
+
+          lokasi:
+            namaLokasi(
+              lokasiId
+            ),
+
+          stok:
+            stok,
+
+          minimum:
+            minimum,
+
+          satuan:
+            product.satuan ||
+            "",
+
+          status:
+            tentukanStatusStok(
+              stok,
+              minimum
+            )
+
+        });
+
+      }
+    );
+
+
+    const habis =
+      perhatian.filter(
+        item =>
+          item.status.text ===
+          "HABIS"
+      );
+
+
+    const menipis =
+      perhatian.filter(
+        item =>
+          item.status.text ===
+          "STOK MENIPIS"
+      );
+
+
+    if (
+      perhatian.length ===
+      0
+    ) {
+
+      box.className =
+        "dashboard-stock alert-safe";
+
+
+      summary.innerHTML = `
+        <span class="summary-badge summary-safe">
+          🟢 AMAN
+        </span>
+      `;
+
+
+      content.innerHTML = `
+        <strong style="color:#166534;">
+          🟢 STOK TERKENDALI
+        </strong>
+
+        <div
+          class="muted"
+          style="margin-top:6px;"
+        >
+          Tidak ada stok yang berada pada atau di bawah batas minimum.
+        </div>
+      `;
+
+
+      return;
+
+    }
+
+
+    box.className =
+      habis.length >
+      0
+        ? "dashboard-stock alert-danger"
+        : "dashboard-stock alert-warning";
+
+
+    summary.innerHTML = `
+
+      <span class="summary-badge summary-danger">
+        🔴 ${habis.length} Habis
+      </span>
+
+      <span class="summary-badge summary-warning">
+        🟠 ${menipis.length} Menipis
+      </span>
+
+    `;
+
+
+    perhatian.sort(
+      (
+        a,
+        b
+      ) => {
+
+        if (
+          a.status.text ===
+            "HABIS" &&
+          b.status.text !==
+            "HABIS"
+        ) {
+          return -1;
+        }
+
+
+        if (
+          a.status.text !==
+            "HABIS" &&
+          b.status.text ===
+            "HABIS"
+        ) {
+          return 1;
+        }
+
+
+        return (
+          (
+            a.stok -
+            a.minimum
+          ) -
+          (
+            b.stok -
+            b.minimum
+          )
+        );
+
+      }
+    );
+
+
+    const rows =
+      perhatian
+        .map(
+          item => `
+
+            <tr>
+
+              <td>
+
+                <strong>
+                  ${escapeHtml(
+                    item.nama
+                  )}
+                </strong>
+
+                <div class="muted">
+                  ${escapeHtml(
+                    item.produkId
+                  )}
+                </div>
+
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  item.lokasi
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  formatNumber(
+                    item.stok
+                  )
+                )}
+                ${escapeHtml(
+                  item.satuan
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  formatNumber(
+                    item.minimum
+                  )
+                )}
+                ${escapeHtml(
+                  item.satuan
+                )}
+              </td>
+
+              <td>
+
+                <span
+                  class="stock-status-badge ${item.status.className}"
+                >
+                  ${item.status.icon}
+                  ${item.status.text}
+                </span>
+
+              </td>
+
+            </tr>
+
+          `
+        )
+        .join("");
+
+
+    content.innerHTML = `
+
+      <div
+        style="
+          margin-bottom:12px;
+          font-size:14px;
+          font-weight:bold;
+        "
+      >
+        ⚠️ ${perhatian.length}
+        posisi stok membutuhkan perhatian.
+      </div>
+
+      <div class="stock-warning-table-wrap">
+
+        <table class="stock-warning-table">
+
+          <thead>
+
+            <tr>
+
+              <th>
+                Produk
+              </th>
+
+              <th>
+                Lokasi
+              </th>
+
+              <th>
+                Stok
+              </th>
+
+              <th>
+                Minimum
+              </th>
+
+              <th>
+                Kondisi
+              </th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+            ${rows}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    `;
+
+
+  } catch (error) {
+
+    content.innerHTML = `
+      <div style="color:#991b1b;">
+        ⚠️ Peringatan stok belum dapat dimuat.
+      </div>
+    `;
+
+  } finally {
+
+    dashboardStockLoading =
+      false;
+
+  }
+
+}
+
+
+/* =========================================================
+   BACKEND HEALTH
+   ========================================================= */
+
+async function cekBackend() {
+
+  const element =
+    document.getElementById(
+      "backendStatus"
+    );
+
+
+  if (!element) {
+    return;
+  }
+
+
+  try {
+
+    const response =
+      await fetch(
+        API_URL,
+        {
+          method:
+            "GET",
+
+          cache:
+            "no-store"
         }
       );
 
 
     if (!response.ok) {
 
-      throw new Error(
-        "Server API gagal merespons. HTTP " +
-        response.status
-      );
+      element.textContent =
+        "ERROR";
+
+      return;
 
     }
 
@@ -1953,2011 +7396,133 @@
       await response.text();
 
 
-    try {
-
-      return JSON.parse(text);
-
-    } catch (error) {
-
-      throw new Error(
-        "Response API tidak valid: " +
+    const data =
+      JSON.parse(
         text
       );
 
-    }
-
-  }
-
-
-  // =====================================================
-  // STATUS
-  // =====================================================
-
-  function showStatus(
-    elementId,
-    message,
-    type
-  ) {
-
-    const element =
-      document.getElementById(
-        elementId
-      );
-
-
-    if (!element) {
-      return;
-    }
-
 
     element.textContent =
-      message || "";
+      data.success ===
+      true
+        ? "ONLINE"
+        : "ERROR";
 
 
-    element.className =
-      "status show " +
-      (
-        type === "loading"
-          ? "loading"
-          : type
-            ? type
-            : "error"
-      );
+  } catch (error) {
+
+    element.textContent =
+      "OFFLINE";
 
   }
 
-
-  // =====================================================
-  // BUTTON LOCK
-  // =====================================================
-
-  function lockButton(
-    buttonId,
-    text
-  ) {
-
-    const button =
-      document.getElementById(
-        buttonId
-      );
+}
 
 
-    if (!button) {
-      return;
-    }
+/* =========================================================
+   CLOSE PRODUCT DROPDOWN
+   ========================================================= */
 
-
-    button.disabled = true;
-
-    button.dataset.originalText =
-      button.textContent;
-
-    button.textContent =
-      text || "MENYIMPAN...";
-
-  }
-
-
-  function unlockButton(
-    buttonId
-  ) {
-
-    const button =
-      document.getElementById(
-        buttonId
-      );
-
-
-    if (!button) {
-      return;
-    }
-
-
-    button.disabled = false;
-
+document.addEventListener(
+  "click",
+  function(event) {
 
     if (
-      button.dataset.originalText
-    ) {
-
-      button.textContent =
-        button.dataset.originalText;
-
-    }
-
-  }
-
-
-  // =====================================================
-  // RESET PRODUCT
-  // =====================================================
-
-  function resetProductPicker(
-    type
-  ) {
-
-    const search =
-      document.getElementById(
-        type + "ProdukCari"
-      );
-
-
-    const hidden =
-      document.getElementById(
-        type + "Produk"
-      );
-
-
-    const info =
-      document.getElementById(
-        type + "ProdukInfo"
-      );
-
-
-    const results =
-      document.getElementById(
-        type + "ProdukResults"
-      );
-
-
-    if (search) {
-      search.value = "";
-    }
-
-
-    if (hidden) {
-      hidden.value = "";
-    }
-
-
-    if (info) {
-      info.textContent = "";
-    }
-
-
-    if (results) {
-
-      results.innerHTML = "";
-
-      results.classList.remove(
-        "show"
-      );
-
-    }
-
-  }
-
-
-  // =====================================================
-  // RESET FORM BARANG MASUK
-  // =====================================================
-
-  function resetFormMasuk() {
-
-    resetProductPicker(
-      "masuk"
-    );
-
-
-    document.getElementById(
-      "masukQty"
-    ).value = "";
-
-
-    document.getElementById(
-      "masukHarga"
-    ).value = "";
-
-
-    document.getElementById(
-      "masukSumber"
-    ).value = "SUPPLIER";
-
-
-    document.getElementById(
-      "masukUser"
-    ).value = "OWNER";
-
-
-    document.getElementById(
-      "masukKeterangan"
-    ).value = "";
-
-  }
-
-
-  // =====================================================
-  // RESET FORM BARANG KELUAR
-  // =====================================================
-
-  function resetFormKeluar() {
-
-    resetProductPicker(
-      "keluar"
-    );
-
-
-    document.getElementById(
-      "keluarQty"
-    ).value = "";
-
-
-    document.getElementById(
-      "keluarHarga"
-    ).value = "";
-
-
-    document.getElementById(
-      "keluarTujuan"
-    ).value = "KONSUMEN";
-
-
-    document.getElementById(
-      "keluarUser"
-    ).value = "OWNER";
-
-
-    document.getElementById(
-      "keluarKeterangan"
-    ).value = "";
-
-  }
-
-
-  // =====================================================
-  // RESET FORM TRANSFER
-  // =====================================================
-
-  function resetFormTransfer() {
-
-    resetProductPicker(
-      "transfer"
-    );
-
-
-    document.getElementById(
-      "transferQty"
-    ).value = "";
-
-
-    document.getElementById(
-      "transferAsal"
-    ).value = "LOC001";
-
-
-    document.getElementById(
-      "transferTujuan"
-    ).value = "LOC002";
-
-
-    document.getElementById(
-      "transferUser"
-    ).value = "OWNER";
-
-  }
-
-
-  // =====================================================
-  // BARANG MASUK
-  // =====================================================
-
-  let sedangMasuk = false;
-
-
-  async function barangMasuk() {
-
-    if (sedangMasuk) {
-      return;
-    }
-
-
-    const produkId =
-      document.getElementById(
-        "masukProduk"
-      ).value.trim();
-
-
-    const lokasiId =
-      document.getElementById(
-        "masukLokasi"
-      ).value;
-
-
-    const qty =
-      Number(
-        document.getElementById(
-          "masukQty"
-        ).value
-      );
-
-
-    const harga =
-      Number(
-        document.getElementById(
-          "masukHarga"
-        ).value || 0
-      );
-
-
-    const sumber =
-      document.getElementById(
-        "masukSumber"
-      ).value;
-
-
-    const user =
-      document.getElementById(
-        "masukUser"
-      ).value;
-
-
-    const keterangan =
-      document.getElementById(
-        "masukKeterangan"
-      ).value.trim();
-
-
-    if (!produkId) {
-
-      showStatus(
-        "statusMasuk",
-        "Produk wajib dipilih.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    if (!qty || qty <= 0) {
-
-      showStatus(
-        "statusMasuk",
-        "Qty harus lebih dari 0.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    sedangMasuk = true;
-
-    lockButton(
-      "btnMasuk",
-      "MENYIMPAN..."
-    );
-
-
-    showStatus(
-      "statusMasuk",
-      "Sedang menyimpan barang masuk...",
-      "loading"
-    );
-
-
-    try {
-
-      const hasil =
-        await apiRequest({
-
-          action: "MASUK",
-
-          produkId: produkId,
-
-          lokasiId: lokasiId,
-
-          qty: qty,
-
-          user: user,
-
-          tujuan: sumber,
-
-          harga: harga,
-
-          keterangan: keterangan
-
-        });
-
-
-      if (
-        !hasil ||
-        hasil.success !== true
-      ) {
-
-        throw new Error(
-          hasil && hasil.message
-            ? hasil.message
-            : "Barang masuk gagal disimpan."
-        );
-
-      }
-
-
-      showStatus(
-        "statusMasuk",
-        hasil.message ||
-          "Barang masuk berhasil disimpan.",
-        "success"
-      );
-
-
-      resetFormMasuk();
-
-
-      // Refresh peringatan stok di background.
-      loadDashboardStock();
-
-
-    } catch (error) {
-
-      showStatus(
-        "statusMasuk",
-        error.message ||
-          "Barang masuk gagal disimpan.",
-        "error"
-      );
-
-    } finally {
-
-      sedangMasuk = false;
-
-      unlockButton(
-        "btnMasuk"
-      );
-
-    }
-
-  }
-
-
-  // =====================================================
-  // BARANG KELUAR
-  // =====================================================
-
-  let sedangKeluar = false;
-
-
-  async function barangKeluar() {
-
-    if (sedangKeluar) {
-      return;
-    }
-
-
-    const produkId =
-      document.getElementById(
-        "keluarProduk"
-      ).value.trim();
-
-
-    const lokasiId =
-      document.getElementById(
-        "keluarLokasi"
-      ).value;
-
-
-    const qty =
-      Number(
-        document.getElementById(
-          "keluarQty"
-        ).value
-      );
-
-
-    const harga =
-      Number(
-        document.getElementById(
-          "keluarHarga"
-        ).value || 0
-      );
-
-
-    const tujuan =
-      document.getElementById(
-        "keluarTujuan"
-      ).value;
-
-
-    const user =
-      document.getElementById(
-        "keluarUser"
-      ).value;
-
-
-    const keterangan =
-      document.getElementById(
-        "keluarKeterangan"
-      ).value.trim();
-
-
-    if (!produkId) {
-
-      showStatus(
-        "statusKeluar",
-        "Produk wajib dipilih.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    if (!qty || qty <= 0) {
-
-      showStatus(
-        "statusKeluar",
-        "Qty harus lebih dari 0.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    sedangKeluar = true;
-
-    lockButton(
-      "btnKeluar",
-      "MENYIMPAN..."
-    );
-
-
-    showStatus(
-      "statusKeluar",
-      "Sedang menyimpan barang keluar...",
-      "loading"
-    );
-
-
-    try {
-
-      const hasil =
-        await apiRequest({
-
-          action: "KELUAR",
-
-          produkId: produkId,
-
-          lokasiId: lokasiId,
-
-          qty: qty,
-
-          user: user,
-
-          tujuan: tujuan,
-
-          harga: harga,
-
-          keterangan: keterangan
-
-        });
-
-
-      if (
-        !hasil ||
-        hasil.success !== true
-      ) {
-
-        throw new Error(
-          hasil && hasil.message
-            ? hasil.message
-            : "Barang keluar gagal disimpan."
-        );
-
-      }
-
-
-      const stokSisa =
-        hasil.data &&
-        hasil.data.stokSisa !== undefined
-          ? " Stok sisa: " +
-            hasil.data.stokSisa
-          : "";
-
-
-      showStatus(
-        "statusKeluar",
-        (
-          hasil.message ||
-          "Barang keluar berhasil disimpan."
-        ) + stokSisa,
-        "success"
-      );
-
-
-      resetFormKeluar();
-
-
-      // Refresh peringatan stok di background.
-      loadDashboardStock();
-
-
-    } catch (error) {
-
-      showStatus(
-        "statusKeluar",
-        error.message ||
-          "Barang keluar gagal disimpan.",
-        "error"
-      );
-
-    } finally {
-
-      sedangKeluar = false;
-
-      unlockButton(
-        "btnKeluar"
-      );
-
-    }
-
-  }
-
-
-  // =====================================================
-  // TRANSFER
-  // =====================================================
-
-  let sedangTransfer = false;
-
-
-  async function transferBarang() {
-
-    if (sedangTransfer) {
-      return;
-    }
-
-
-    const produkId =
-      document.getElementById(
-        "transferProduk"
-      ).value.trim();
-
-
-    const qty =
-      Number(
-        document.getElementById(
-          "transferQty"
-        ).value
-      );
-
-
-    const lokasiAsal =
-      document.getElementById(
-        "transferAsal"
-      ).value;
-
-
-    const lokasiTujuan =
-      document.getElementById(
-        "transferTujuan"
-      ).value;
-
-
-    const user =
-      document.getElementById(
-        "transferUser"
-      ).value;
-
-
-    if (!produkId) {
-
-      showStatus(
-        "statusTransfer",
-        "Produk wajib dipilih.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    if (!qty || qty <= 0) {
-
-      showStatus(
-        "statusTransfer",
-        "Qty harus lebih dari 0.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    if (
-      lokasiAsal ===
-      lokasiTujuan
-    ) {
-
-      showStatus(
-        "statusTransfer",
-        "Lokasi asal dan tujuan tidak boleh sama.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    sedangTransfer = true;
-
-    lockButton(
-      "btnTransfer",
-      "MEMPROSES..."
-    );
-
-
-    showStatus(
-      "statusTransfer",
-      "Sedang memproses transfer...",
-      "loading"
-    );
-
-
-    try {
-
-      const hasil =
-        await apiRequest({
-
-          action: "TRANSFER",
-
-          produkId: produkId,
-
-          lokasiAsal:
-            lokasiAsal,
-
-          lokasiTujuan:
-            lokasiTujuan,
-
-          qty: qty,
-
-          user: user
-
-        });
-
-
-      if (
-        !hasil ||
-        hasil.success !== true
-      ) {
-
-        throw new Error(
-          hasil && hasil.message
-            ? hasil.message
-            : "Transfer gagal disimpan."
-        );
-
-      }
-
-
-      showStatus(
-        "statusTransfer",
-        hasil.message ||
-          "Transfer berhasil disimpan.",
-        "success"
-      );
-
-
-      resetFormTransfer();
-
-
-      // Refresh peringatan stok di background.
-      loadDashboardStock();
-
-
-    } catch (error) {
-
-      showStatus(
-        "statusTransfer",
-        error.message ||
-          "Transfer gagal disimpan.",
-        "error"
-      );
-
-    } finally {
-
-      sedangTransfer = false;
-
-      unlockButton(
-        "btnTransfer"
-      );
-
-    }
-
-  }
-
-
-  // =====================================================
-  // CEK STOK
-  // =====================================================
-
-  let sedangCekStok = false;
-
-
-  async function cekStok() {
-
-    if (sedangCekStok) {
-      return;
-    }
-
-
-    const produkId =
-      document.getElementById(
-        "stokProduk"
-      ).value.trim();
-
-
-    const lokasiId =
-      document.getElementById(
-        "stokLokasi"
-      ).value;
-
-
-    document.getElementById(
-      "hasilStok"
-    ).innerHTML = "";
-
-
-    if (!produkId) {
-
-      showStatus(
-        "statusStok",
-        "Produk wajib dipilih.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    sedangCekStok = true;
-
-    lockButton(
-      "btnStok",
-      "MEMERIKSA..."
-    );
-
-
-    showStatus(
-      "statusStok",
-      "Sedang mengambil data stok...",
-      "loading"
-    );
-
-
-    try {
-
-      const hasil =
-        await apiRequest({
-
-          action: "STOK",
-
-          produkId:
-            produkId,
-
-          lokasiId:
-            lokasiId
-
-        });
-
-
-      if (
-        !hasil ||
-        hasil.success !== true
-      ) {
-
-        throw new Error(
-          hasil && hasil.message
-            ? hasil.message
-            : "Data stok tidak ditemukan."
-        );
-
-      }
-
-
-      let dataList = [];
-
-
-      if (
-        Array.isArray(
-          hasil.data
-        )
-      ) {
-
-        dataList =
-          hasil.data;
-
-      } else if (
-        hasil.data &&
-        typeof hasil.data ===
-          "object"
-      ) {
-
-        dataList =
-          [hasil.data];
-
-      }
-
-
-      if (
-        dataList.length === 0
-      ) {
-
-        throw new Error(
-          "Data stok tidak ditemukan."
-        );
-
-      }
-
-
-      const produkCari =
-        String(
-          produkId
-        )
-        .trim()
-        .toUpperCase();
-
-
-      const lokasiCari =
-        String(
-          lokasiId
-        )
-        .trim()
-        .toUpperCase();
-
-
-      let data =
-        dataList.find(
-          item => {
-
-            if (
-              !item ||
-              typeof item !==
-                "object"
-            ) {
-
-              return false;
-
-            }
-
-
-            const itemProduk =
-              String(
-                item.produkId ??
-                item.idProduk ??
-                item.ID_PRODUK ??
-                item.ID ??
-                ""
-              )
-              .trim()
-              .toUpperCase();
-
-
-            const itemLokasi =
-              String(
-                item.lokasiId ??
-                item.idLokasi ??
-                item.LOKASI_ID ??
-                ""
-              )
-              .trim()
-              .toUpperCase();
-
-
-            return (
-              itemProduk ===
-                produkCari &&
-              itemLokasi ===
-                lokasiCari
-            );
-
-          }
-        );
-
-
-      if (
-        !data &&
-        dataList.length === 1
-      ) {
-
-        const item =
-          dataList[0];
-
-
-        const itemProduk =
-          String(
-            item.produkId ??
-            item.idProduk ??
-            item.ID_PRODUK ??
-            item.ID ??
-            ""
-          )
-          .trim()
-          .toUpperCase();
-
-
-        if (
-          itemProduk ===
-          produkCari
-        ) {
-
-          data = item;
-
-        }
-
-      }
-
-
-      if (!data) {
-
-        throw new Error(
-          "Stok untuk produk dan lokasi tersebut tidak ditemukan."
-        );
-
-      }
-
-
-      const nama =
-        data.nama ??
-        data.namaProduk ??
-        data.produkNama ??
-        data.NAMA_PRODUK ??
-        data.produk ??
-        data.produkId ??
-        produkId;
-
-
-      const tampilProduk =
-        data.produkId ??
-        data.idProduk ??
-        data.ID_PRODUK ??
-        produkId;
-
-
-      const tampilLokasi =
-        data.lokasi ??
-        data.namaLokasi ??
-        data.lokasiNama ??
-        data.LOKASI ??
-        data.lokasiId ??
-        data.idLokasi ??
-        lokasiId;
-
-
-      const stok =
-        data.stok ??
-        data.stock ??
-        data.STOK ??
-        data.qty ??
-        data.QTY ??
-        0;
-
-
-      const satuan =
-        data.satuan ??
-        data.unit ??
-        data.SATUAN ??
-        "";
-
-
-      const minimum =
-        data.minimum ??
-        data.stokMinimum ??
-        0;
-
-
-      const hargaJual =
-        data.hargaJual ??
-        0;
-
-
-      document.getElementById(
-        "hasilStok"
-      ).innerHTML = `
-
-        <div class="lokasi-card">
-
-          <h3>
-            ${escapeHtml(nama)}
-          </h3>
-
-          <div class="muted">
-            ${escapeHtml(tampilProduk)}
-          </div>
-
-          <div class="muted">
-            ${escapeHtml(tampilLokasi)}
-          </div>
-
-          <div class="stok-number">
-            ${escapeHtml(stok)}
-          </div>
-
-          <div class="muted">
-            ${escapeHtml(satuan)}
-          </div>
-
-          <div class="muted" style="margin-top:6px;">
-            Minimum stok:
-            ${escapeHtml(formatNumber(minimum))}
-          </div>
-
-          <div class="muted" style="margin-top:4px;">
-            Harga jual:
-            ${escapeHtml(formatRupiah(hargaJual))}
-          </div>
-
-        </div>
-
-      `;
-
-
-      showStatus(
-        "statusStok",
-        "Stok berhasil ditemukan.",
-        "success"
-      );
-
-
-    } catch (error) {
-
-      showStatus(
-        "statusStok",
-        error.message ||
-          "Gagal mengambil data stok.",
-        "error"
-      );
-
-
-      document.getElementById(
-        "hasilStok"
-      ).innerHTML = "";
-
-    } finally {
-
-      sedangCekStok = false;
-
-      unlockButton(
-        "btnStok"
-      );
-
-    }
-
-  }
-
-
-  // =====================================================
-  // STATUS STOK
-  // =====================================================
-
-  function tentukanStatusStok(
-    stok,
-    minimum
-  ) {
-
-    const stokAngka =
-      Number(stok || 0);
-
-
-    const minimumAngka =
-      Number(minimum || 0);
-
-
-    if (
-      minimumAngka <= 0
-    ) {
-
-      return {
-        text: "MINIMUM BELUM DIATUR",
-        icon: "⚪",
-        className: "stock-status-warning"
-      };
-
-    }
-
-
-    if (
-      stokAngka <= 0
-    ) {
-
-      return {
-        text: "HABIS",
-        icon: "🔴",
-        className: "stock-status-danger"
-      };
-
-    }
-
-
-    if (
-      stokAngka <= minimumAngka
-    ) {
-
-      return {
-        text: "STOK MENIPIS",
-        icon: "🟠",
-        className: "stock-status-warning"
-      };
-
-    }
-
-
-    return {
-      text: "AMAN",
-      icon: "🟢",
-      className: "stock-status-safe"
-    };
-
-  }
-
-
-  // =====================================================
-  // FORMAT ANGKA
-  // =====================================================
-
-  function formatNumber(
-    value
-  ) {
-
-    const number =
-      Number(value || 0);
-
-
-    if (
-      Number.isInteger(number)
-    ) {
-
-      return String(number);
-
-    }
-
-
-    return number.toLocaleString(
-      "id-ID",
-      {
-        maximumFractionDigits: 2
-      }
-    );
-
-  }
-
-
-  // =====================================================
-  // NAMA LOKASI
-  // =====================================================
-
-  function namaLokasi(
-    lokasiId
-  ) {
-
-    const id =
-      String(
-        lokasiId || ""
+      !event.target.closest(
+        ".product-picker"
       )
-      .trim()
-      .toUpperCase();
-
-
-    if (
-      id === "LOC001"
     ) {
 
-      return "TOOKA HUB METRO";
-
-    }
-
-
-    if (
-      id === "LOC002"
-    ) {
-
-      return "TOOKA STORE JEPARA";
-
-    }
-
-
-    return lokasiId || "-";
-
-  }
-
-
-  // =====================================================
-  // DASHBOARD STOCK WARNING
-  // =====================================================
-
-  let dashboardStockLoading = false;
-
-
-  async function loadDashboardStock() {
-
-    if (
-      dashboardStockLoading
-    ) {
-
-      return;
-
-    }
-
-
-    const box =
-      document.getElementById(
-        "dashboardStock"
-      );
-
-
-    const summary =
-      document.getElementById(
-        "dashboardStockSummary"
-      );
-
-
-    const content =
-      document.getElementById(
-        "dashboardStockContent"
-      );
-
-
-    if (
-      !box ||
-      !summary ||
-      !content
-    ) {
-
-      return;
-
-    }
-
-
-    dashboardStockLoading = true;
-
-
-    box.className =
-      "dashboard-stock";
-
-
-    summary.innerHTML = "";
-
-
-    content.innerHTML =
-      '<div class="dashboard-loading">Memeriksa kondisi stok...</div>';
-
-
-    try {
-
-      // Pastikan master produk tersedia.
-      const products =
-        await loadProduk();
-
-
-      // Backend V1.5:
-      // STOK tanpa produk/lokasi mengembalikan
-      // seluruh posisi stok dan sudah membawa
-      // minimum lokasi + harga jual.
-      const hasil =
-        await apiRequest({
-
-          action: "STOK"
-
-        });
-
-
-      if (
-        !hasil ||
-        hasil.success !== true
-      ) {
-
-        throw new Error(
-          hasil && hasil.message
-            ? hasil.message
-            : "Data stok dashboard gagal dimuat."
-        );
-
-      }
-
-
-      const dataList =
-        Array.isArray(
-          hasil.data
+      document
+        .querySelectorAll(
+          ".product-results"
         )
-          ? hasil.data
-          : [];
-
-
-      const productMap =
-        new Map();
-
-
-      products.forEach(
-        product => {
-
-          const id =
-            String(
-              product.id || ""
+        .forEach(
+          element =>
+            element.classList.remove(
+              "show"
             )
-            .trim()
-            .toUpperCase();
-
-
-          if (id) {
-
-            productMap.set(
-              id,
-              product
-            );
-
-          }
-
-        }
-      );
-
-
-      const perhatian =
-        [];
-
-
-      dataList.forEach(
-        item => {
-
-          if (
-            !item ||
-            typeof item !==
-              "object"
-          ) {
-
-            return;
-
-          }
-
-
-          const produkId =
-            String(
-              item.produkId ??
-              item.idProduk ??
-              item.ID_PRODUK ??
-              item.ID ??
-              ""
-            )
-            .trim()
-            .toUpperCase();
-
-
-          if (!produkId) {
-            return;
-          }
-
-
-          const product =
-            productMap.get(
-              produkId
-            );
-
-
-          if (!product) {
-            return;
-          }
-
-
-          // V1.5:
-          // Prioritas minimum dari MASTER_STOK_MINIMUM
-          // yang dikirim backend.
-          const minimum =
-            Number(
-              item.minimum !== undefined
-                ? item.minimum
-                : product.stokMinimum || 0
-            );
-
-
-          // Minimum 0 berarti belum diatur,
-          // bukan barang yang harus diberi alarm.
-          if (
-            minimum <= 0
-          ) {
-
-            return;
-
-          }
-
-
-          const stok =
-            Number(
-              item.stok ??
-              item.stock ??
-              item.STOK ??
-              item.qty ??
-              item.QTY ??
-              0
-            );
-
-
-          // Kalau stok masih di atas minimum,
-          // tidak perlu masuk daftar perhatian.
-          if (
-            stok > minimum
-          ) {
-
-            return;
-
-          }
-
-
-          const lokasiId =
-            item.lokasiId ??
-            item.idLokasi ??
-            item.LOKASI_ID ??
-            item.lokasi ??
-            item.LOKASI ??
-            "";
-
-
-          const status =
-            tentukanStatusStok(
-              stok,
-              minimum
-            );
-
-
-          perhatian.push({
-
-            produkId:
-              produkId,
-
-            nama:
-              product.nama ||
-              item.nama ||
-              produkId,
-
-            lokasi:
-              namaLokasi(
-                lokasiId
-              ),
-
-            lokasiId:
-              lokasiId,
-
-            stok:
-              stok,
-
-            minimum:
-              minimum,
-
-            satuan:
-              product.satuan ||
-              item.satuan ||
-              "",
-
-            status:
-              status
-
-          });
-
-        }
-      );
-
-
-      const habis =
-        perhatian.filter(
-          item =>
-            item.status.text ===
-            "HABIS"
         );
-
-
-      const menipis =
-        perhatian.filter(
-          item =>
-            item.status.text ===
-            "STOK MENIPIS"
-        );
-
-
-      // =================================================
-      // TIDAK ADA MASALAH
-      // =================================================
-
-      if (
-        perhatian.length === 0
-      ) {
-
-        box.className =
-          "dashboard-stock alert-safe";
-
-
-        summary.innerHTML = `
-          <span class="summary-badge summary-safe">
-            🟢 AMAN
-          </span>
-        `;
-
-
-        content.innerHTML = `
-          <div class="dashboard-safe-message">
-            🟢 STOK TERKENDALI
-          </div>
-
-          <div
-            class="muted"
-            style="margin-top:6px;"
-          >
-            Tidak ada stok yang berada pada atau di bawah batas minimum.
-          </div>
-        `;
-
-
-        return;
-
-      }
-
-
-      // =================================================
-      // ADA MASALAH
-      // =================================================
-
-      if (
-        habis.length > 0
-      ) {
-
-        box.className =
-          "dashboard-stock alert-danger";
-
-      } else {
-
-        box.className =
-          "dashboard-stock alert-warning";
-
-      }
-
-
-      summary.innerHTML = `
-
-        <span class="summary-badge summary-danger">
-          🔴 ${habis.length} Habis
-        </span>
-
-        <span class="summary-badge summary-warning">
-          🟠 ${menipis.length} Menipis
-        </span>
-
-      `;
-
-
-      // Habis selalu ditaruh paling atas.
-      perhatian.sort(
-        (a, b) => {
-
-          if (
-            a.status.text ===
-              "HABIS" &&
-            b.status.text !==
-              "HABIS"
-          ) {
-
-            return -1;
-
-          }
-
-
-          if (
-            a.status.text !==
-              "HABIS" &&
-            b.status.text ===
-              "HABIS"
-          ) {
-
-            return 1;
-
-          }
-
-
-          return (
-            (a.stok - a.minimum) -
-            (b.stok - b.minimum)
-          );
-
-        }
-      );
-
-
-      const rows =
-        perhatian
-          .map(
-            item => {
-
-              return `
-
-                <tr>
-
-                  <td>
-
-                    <strong>
-                      ${escapeHtml(
-                        item.nama
-                      )}
-                    </strong>
-
-                    <div class="muted">
-                      ${escapeHtml(
-                        item.produkId
-                      )}
-                    </div>
-
-                  </td>
-
-
-                  <td>
-                    ${escapeHtml(
-                      item.lokasi
-                    )}
-                  </td>
-
-
-                  <td>
-
-                    <strong>
-                      ${escapeHtml(
-                        formatNumber(
-                          item.stok
-                        )
-                      )}
-                    </strong>
-
-                    ${escapeHtml(
-                      item.satuan
-                    )}
-
-                  </td>
-
-
-                  <td>
-
-                    ${escapeHtml(
-                      formatNumber(
-                        item.minimum
-                      )
-                    )}
-
-                    ${escapeHtml(
-                      item.satuan
-                    )}
-
-                  </td>
-
-
-                  <td>
-
-                    <span
-                      class="stock-status-badge ${item.status.className}"
-                    >
-                      ${item.status.icon}
-                      ${item.status.text}
-                    </span>
-
-                  </td>
-
-                </tr>
-
-              `;
-
-            }
-          )
-          .join("");
-
-
-      content.innerHTML = `
-
-        <div
-          style="
-            margin-bottom:12px;
-            font-size:14px;
-            font-weight:bold;
-          "
-        >
-          ⚠️ ${perhatian.length}
-          posisi stok membutuhkan perhatian.
-        </div>
-
-
-        <div class="stock-warning-table-wrap">
-
-          <table class="stock-warning-table">
-
-            <thead>
-
-              <tr>
-
-                <th>
-                  Produk
-                </th>
-
-                <th>
-                  Lokasi
-                </th>
-
-                <th>
-                  Stok
-                </th>
-
-                <th>
-                  Minimum
-                </th>
-
-                <th>
-                  Kondisi
-                </th>
-
-              </tr>
-
-            </thead>
-
-
-            <tbody>
-              ${rows}
-            </tbody>
-
-          </table>
-
-        </div>
-
-      `;
-
-
-    } catch (error) {
-
-      box.className =
-        "dashboard-stock";
-
-
-      summary.innerHTML = "";
-
-
-      content.innerHTML = `
-        <div class="dashboard-error">
-          ⚠️ Peringatan stok belum dapat dimuat.
-        </div>
-
-        <div
-          class="muted"
-          style="margin-top:5px;"
-        >
-          Silakan buka kembali Dashboard untuk mencoba lagi.
-        </div>
-      `;
-
-    } finally {
-
-      dashboardStockLoading = false;
 
     }
 
   }
+);
 
 
-  // =====================================================
-  // CEK BACKEND
-  // =====================================================
+/* =========================================================
+   ENTER KEY
+   ========================================================= */
 
-  async function cekBackend() {
+document.addEventListener(
+  "keydown",
+  function(event) {
 
-    const statusElement =
+    if (
+      event.key ===
+      "Enter" &&
       document.getElementById(
-        "backendStatus"
-      );
+        "loginScreen"
+      ).style.display !==
+      "none"
+    ) {
 
-
-    if (!statusElement) {
-      return;
-    }
-
-
-    statusElement.textContent =
-      "Checking...";
-
-
-    try {
-
-      const response =
-        await fetch(
-          API_URL,
-          {
-            method: "GET",
-            cache: "no-store"
-          }
+      const password =
+        document.getElementById(
+          "loginPassword"
         );
 
 
-      if (!response.ok) {
-
-        statusElement.textContent =
-          "ERROR";
-
-        return;
-
-      }
-
-
-      const text =
-        await response.text();
-
-
-      let data;
-
-
-      try {
-
-        data =
-          JSON.parse(text);
-
-      } catch (error) {
-
-        statusElement.textContent =
-          "ERROR";
-
-        return;
-
-      }
-
-
       if (
-        data &&
-        data.success === true
+        document.activeElement ===
+        password
       ) {
 
-        statusElement.textContent =
-          "ONLINE";
-
-      } else {
-
-        statusElement.textContent =
-          "ERROR";
+        login();
 
       }
-
-
-    } catch (error) {
-
-      statusElement.textContent =
-        "OFFLINE";
 
     }
 
   }
+);
 
 
-  // =====================================================
-  // START
-  // =====================================================
+/* =========================================================
+   START APPLICATION
+   ========================================================= */
 
-  document.addEventListener(
-    "DOMContentLoaded",
-    function() {
+document.addEventListener(
+  "DOMContentLoaded",
+  async function() {
 
-      cekBackend();
+    /*
+     * Login user list tetap public.
+     */
 
-
-      loadProduk()
-        .catch(
-          function() {
-            // Error ditampilkan saat picker digunakan.
-          }
-        );
+    await loadPublicUsers();
 
 
-      // Dashboard langsung mengecek stok
-      // ketika halaman pertama kali dibuka.
-      loadDashboardStock();
+    /*
+     * Kalau ada session lama,
+     * coba validasi ke backend.
+     */
+
+    const restored =
+      await restoreSession();
+
+
+    if (!restored) {
+
+      document.getElementById(
+        "loginScreen"
+      ).style.display =
+        "flex";
 
     }
-  );
 
+  }
+);
 
 </script>
 
