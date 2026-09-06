@@ -6513,16 +6513,18 @@ async function cekStok() {
 
     const hargaJual =
       Number(
-        data.hargaJual ??
-        produkMaster.find(
-          p =>
-            String(
-              p.id
-            ) ===
-            String(
-              produkId
-            )
-        )?.hargaJual ||
+        (
+          data.hargaJual ??
+          produkMaster.find(
+            p =>
+              String(
+                p.id
+              ) ===
+              String(
+                produkId
+              )
+          )?.hargaJual
+        ) ||
         0
       );
 
