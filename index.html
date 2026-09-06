@@ -5340,10 +5340,12 @@ function renderPosReceipt(
 
   const paid =
     Number(
-      data.amountReceived ??
-      document.getElementById(
-        "posAmountReceived"
-      ).value ||
+      (
+        data.amountReceived ??
+        document.getElementById(
+          "posAmountReceived"
+        ).value
+      ) ||
       0
     );
 
@@ -7020,9 +7022,11 @@ async function loadDashboardStock() {
 
         const minimum =
           Number(
-            item.minimum ??
-            item.stokMinimum ??
-            product.stokMinimum ||
+            (
+              item.minimum ??
+              item.stokMinimum ??
+              product.stokMinimum
+            ) ||
             0
           );
 
