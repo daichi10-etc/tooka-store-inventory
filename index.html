@@ -799,6 +799,76 @@
       display: none !important;
     }
 
+    /* =====================================================
+       USER MANAGEMENT
+       ===================================================== */
+
+    .user-admin-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .user-admin-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .user-admin-card h4 {
+      margin-bottom: 6px;
+      font-size: 17px;
+    }
+
+    .user-admin-meta {
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.7;
+      margin-bottom: 14px;
+    }
+
+    .password-badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .password-badge.ready {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .password-badge.empty {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .user-password-form {
+      max-width: 620px;
+    }
+
+    .selected-user-box {
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .selected-user-box strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 800px) {
+      .user-admin-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 800px) {
       .pos-product-area {
         grid-template-columns: 1fr 100px;
@@ -1084,6 +1154,14 @@
         onclick="showPage('stok', this)"
       >
         Cek Stok
+      </button>
+
+      <button
+        id="ownerUsersNav"
+        class="nav-btn hidden"
+        onclick="showPage('usersAdmin', this)"
+      >
+        👤 Kelola User
       </button>
 
     </nav>
@@ -1769,6 +1847,62 @@
       <!-- =================================================
            BARANG MASUK
            ================================================= -->
+
+      <section id="usersAdmin" class="page">
+
+        <div class="title">
+          <h2>Kelola User</h2>
+          <p>Atur atau reset password user. Hanya OWNER yang dapat mengubah password.</p>
+        </div>
+
+        <div id="usersAdminStatus" class="status"></div>
+
+        <div class="panel">
+          <h3>Daftar User</h3>
+          <p class="muted" style="margin-bottom:15px;">
+            Password tidak pernah ditampilkan. Sistem hanya menunjukkan apakah user sudah memiliki password.
+          </p>
+          <div id="usersAdminList" class="user-admin-grid">
+            Memuat user...
+          </div>
+        </div>
+
+        <div class="panel user-password-form">
+          <h3>Set / Reset Password</h3>
+
+          <div id="selectedUserBox" class="selected-user-box hidden">
+            <strong id="selectedUserName">-</strong>
+            <span id="selectedUserMeta" class="muted">-</span>
+          </div>
+
+          <div class="form-grid">
+            <div>
+              <label>User</label>
+              <select id="adminPasswordUser">
+                <option value="">Pilih user...</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Password Baru</label>
+              <input id="adminPassword" type="password" autocomplete="new-password" placeholder="Minimal 6 karakter">
+            </div>
+
+            <div>
+              <label>Konfirmasi Password</label>
+              <input id="adminPasswordConfirmation" type="password" autocomplete="new-password" placeholder="Ulangi password">
+            </div>
+          </div>
+
+          <div style="margin-top:15px;">
+            <button id="btnAdminSetPassword" class="btn btn-primary" onclick="setAdminUserPassword()">
+              SIMPAN PASSWORD
+            </button>
+          </div>
+        </div>
+
+      </section>
+
 
       <section id="masuk" class="page">
 
@@ -3156,6 +3290,19 @@ function updateUserUI() {
   ).textContent =
     lokasiNama;
 
+  const ownerUsersNav =
+    document.getElementById(
+      "ownerUsersNav"
+    );
+
+  if (ownerUsersNav) {
+    if (isOwner()) {
+      ownerUsersNav.classList.remove("hidden");
+    } else {
+      ownerUsersNav.classList.add("hidden");
+    }
+  }
+
 }
 
 
@@ -3631,6 +3778,185 @@ async function submitInitialPassword() {
 
 
 /* =========================================================
+   USER MANAGEMENT - OWNER ONLY
+   ========================================================= */
+
+let usersAdminData = [];
+
+async function loadUsersAdmin() {
+
+  if (!isOwner()) return;
+
+  const list = document.getElementById("usersAdminList");
+  const select = document.getElementById("adminPasswordUser");
+
+  if (!list || !select) return;
+
+  showStatus("usersAdminStatus", "Memuat daftar user...", "loading");
+  list.innerHTML = "Memuat user...";
+
+  try {
+    const hasil = await apiRequest({ action: "USERS" });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(hasil?.message || "Daftar user gagal dimuat.");
+    }
+
+    usersAdminData = Array.isArray(hasil.data) ? hasil.data : [];
+
+    const activeUsers = usersAdminData.filter(
+      user => String(user.status || "").trim().toUpperCase() === "AKTIF"
+    );
+
+    select.innerHTML = '<option value="">Pilih user...</option>';
+
+    activeUsers.forEach(user => {
+      const option = document.createElement("option");
+      option.value = user.id;
+      option.textContent =
+        user.nama + " — " +
+        user.role + " — " +
+        (user.lokasi === "SEMUA" ? "SEMUA LOKASI" : namaLokasi(user.lokasi));
+      select.appendChild(option);
+    });
+
+    select.value = "";
+    updateAdminSelectedUser();
+
+    if (activeUsers.length === 0) {
+      list.innerHTML = '<div class="muted">Tidak ada user aktif.</div>';
+    } else {
+      list.innerHTML = activeUsers.map(user => {
+        const hasPassword = Boolean(user.hasPassword);
+        const badgeClass = hasPassword ? "ready" : "empty";
+        const badgeText = hasPassword ? "PASSWORD SUDAH ADA" : "PASSWORD BELUM ADA";
+        const lokasi = user.lokasi === "SEMUA" ? "SEMUA LOKASI" : namaLokasi(user.lokasi);
+
+        return `
+          <div class="user-admin-card">
+            <h4>${escapeHtml(user.nama)}</h4>
+            <div class="user-admin-meta">
+              ID: ${escapeHtml(user.id)}<br>
+              Role: ${escapeHtml(user.role)}<br>
+              Lokasi: ${escapeHtml(lokasi)}
+            </div>
+            <span class="password-badge ${badgeClass}">${badgeText}</span>
+            <br>
+            <button class="btn btn-dark" onclick="pilihAdminUser('${escapeJs(user.id)}')">
+              ${hasPassword ? "RESET PASSWORD" : "SET PASSWORD"}
+            </button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    showStatus("usersAdminStatus", "Daftar user berhasil dimuat.", "success");
+
+  } catch (error) {
+    list.innerHTML = '<div class="muted">Gagal memuat user.</div>';
+    showStatus("usersAdminStatus", error.message || "Daftar user gagal dimuat.", "error");
+  }
+}
+
+function pilihAdminUser(userId) {
+  const select = document.getElementById("adminPasswordUser");
+  if (!select) return;
+  select.value = userId || "";
+  updateAdminSelectedUser();
+  const password = document.getElementById("adminPassword");
+  if (password) password.focus();
+}
+
+function updateAdminSelectedUser() {
+  const select = document.getElementById("adminPasswordUser");
+  const box = document.getElementById("selectedUserBox");
+  const name = document.getElementById("selectedUserName");
+  const meta = document.getElementById("selectedUserMeta");
+
+  if (!select || !box || !name || !meta) return;
+
+  const user = usersAdminData.find(
+    item => String(item.id) === String(select.value)
+  );
+
+  if (!user) {
+    box.classList.add("hidden");
+    return;
+  }
+
+  name.textContent = user.nama || "-";
+  meta.textContent =
+    user.role + " • " +
+    (user.lokasi === "SEMUA" ? "SEMUA LOKASI" : namaLokasi(user.lokasi));
+  box.classList.remove("hidden");
+}
+
+async function setAdminUserPassword() {
+
+  if (!isOwner()) {
+    showStatus("usersAdminStatus", "Akses hanya untuk OWNER.", "error");
+    return;
+  }
+
+  const userId = document.getElementById("adminPasswordUser").value;
+  const password = document.getElementById("adminPassword").value;
+  const confirmation = document.getElementById("adminPasswordConfirmation").value;
+
+  if (!userId) {
+    showStatus("usersAdminStatus", "Pilih user terlebih dahulu.", "error");
+    return;
+  }
+
+  if (password.length < 6) {
+    showStatus("usersAdminStatus", "Password minimal 6 karakter.", "error");
+    return;
+  }
+
+  if (password !== confirmation) {
+    showStatus("usersAdminStatus", "Konfirmasi password tidak sama.", "error");
+    return;
+  }
+
+  const button = document.getElementById("btnAdminSetPassword");
+  button.disabled = true;
+  button.textContent = "MENYIMPAN...";
+  showStatus("usersAdminStatus", "Menyimpan password...", "loading");
+
+  try {
+    const hasil = await apiRequest({
+      action: "SET_PASSWORD",
+      userId: userId,
+      password: password,
+      confirmation: confirmation
+    });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(hasil?.message || "Password gagal disimpan.");
+    }
+
+    document.getElementById("adminPassword").value = "";
+    document.getElementById("adminPasswordConfirmation").value = "";
+
+    showStatus(
+      "usersAdminStatus",
+      hasil.message || "Password user berhasil diperbarui.",
+      "success"
+    );
+
+    await loadUsersAdmin();
+    document.getElementById("adminPasswordUser").value = userId;
+    updateAdminSelectedUser();
+
+  } catch (error) {
+    showStatus("usersAdminStatus", error.message || "Password gagal disimpan.", "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "SIMPAN PASSWORD";
+  }
+}
+
+
+/* =========================================================
    NAVIGATION
    ========================================================= */
 
@@ -3694,6 +4020,25 @@ function showPage(
   ) {
 
     loadDashboardStock();
+
+  }
+
+  if (
+    pageId ===
+    "usersAdmin"
+  ) {
+
+    if (!isOwner()) {
+      showPage(
+        "pos",
+        document.querySelector(
+          '.nav-btn[onclick*="pos"]'
+        )
+      );
+      return;
+    }
+
+    loadUsersAdmin();
 
   }
 
@@ -7492,6 +7837,17 @@ document.addEventListener(
 
   }
 );
+
+
+/* =========================================================
+   USER ADMIN EVENTS
+   ========================================================= */
+
+document.addEventListener("change", function(event) {
+  if (event.target && event.target.id === "adminPasswordUser") {
+    updateAdminSelectedUser();
+  }
+});
 
 
 /* =========================================================
