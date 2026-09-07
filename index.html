@@ -2611,12 +2611,30 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             "
           >
 
-            <button
-              class="btn btn-primary"
-              onclick="newPosTransaction()"
+            <div
+              style="
+                display:flex;
+                gap:10px;
+                justify-content:center;
+                flex-wrap:wrap;
+              "
             >
-              TRANSAKSI BARU
-            </button>
+
+              <button
+                class="btn btn-success"
+                onclick="sharePosReceipt()"
+              >
+                📤 BAGIKAN BUKTI TRANSAKSI
+              </button>
+
+              <button
+                class="btn btn-primary"
+                onclick="newPosTransaction()"
+              >
+                🛒 TRANSAKSI BARU
+              </button>
+
+            </div>
 
           </div>
 
@@ -6313,6 +6331,8 @@ function getPosBuyerName() {
 let checkoutRunning =
   false;
 
+let lastPosReceipt = null;
+
 
 async function checkoutPOS() {
 
@@ -6726,6 +6746,39 @@ function renderPosReceipt(
       .join("");
 
 
+  lastPosReceipt = {
+
+    transactionId,
+    cashier,
+    location,
+    buyerType,
+    buyerName,
+    total,
+    paid,
+    change,
+    items: items.map(item => ({
+      nama:
+        item.nama ||
+        item.productName ||
+        produkMaster.find(
+          p =>
+            String(p.id) ===
+            String(item.produkId)
+        )?.nama ||
+        item.produkId ||
+        "-",
+      qty: Number(item.qty || 0),
+      harga: Number(item.harga || item.unitPrice || 0),
+      subtotal: Number(
+        item.subtotal ??
+        (Number(item.qty || 0) *
+          Number(item.harga || item.unitPrice || 0))
+      )
+    }))
+
+  };
+
+
   document.getElementById(
     "posReceipt"
   ).innerHTML = `
@@ -6896,10 +6949,119 @@ function renderPosReceipt(
 
 
 /* =========================================================
+   SHARE POS RECEIPT
+   ========================================================= */
+
+function buildPosReceiptText() {
+
+  if (!lastPosReceipt) {
+    return "Bukti transaksi belum tersedia.";
+  }
+
+  const data = lastPosReceipt;
+
+  const lines = data.items
+    .map(item =>
+      `${item.nama} — ${formatNumber(item.qty)} x ${formatRupiah(item.harga)} = ${formatRupiah(item.subtotal)}`
+    )
+    .join("\n");
+
+  return [
+    "TOOKA STORE",
+    "BUKTI TRANSAKSI",
+    "",
+    `No. Transaksi: ${data.transactionId}`,
+    `Kasir: ${data.cashier}`,
+    `Lokasi: ${data.location}`,
+    `Pembeli: ${data.buyerType} — ${data.buyerName}`,
+    "",
+    lines,
+    "",
+    `TOTAL: ${formatRupiah(data.total)}`,
+    `Tunai: ${formatRupiah(data.paid)}`,
+    `Kembalian: ${formatRupiah(data.change)}`,
+    "",
+    "Terima kasih telah berbelanja di TOOKA."
+  ].join("\n");
+
+}
+
+
+async function sharePosReceipt() {
+
+  if (!lastPosReceipt) {
+    showStatus(
+      "statusPOS",
+      "Bukti transaksi belum tersedia.",
+      "error"
+    );
+    return;
+  }
+
+  const text = buildPosReceiptText();
+
+  try {
+
+    if (navigator.share) {
+
+      await navigator.share({
+        title: `Bukti Transaksi ${lastPosReceipt.transactionId}`,
+        text
+      });
+
+      showStatus(
+        "statusPOS",
+        "Bukti transaksi siap dibagikan.",
+        "success"
+      );
+
+      return;
+    }
+
+    const whatsappUrl =
+      "https://wa.me/?text=" +
+      encodeURIComponent(text);
+
+    window.open(
+      whatsappUrl,
+      "_blank",
+      "noopener,noreferrer"
+    );
+
+  } catch (error) {
+
+    if (error?.name === "AbortError") {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+
+      showStatus(
+        "statusPOS",
+        "Bukti transaksi disalin. Silakan paste ke WhatsApp.",
+        "success"
+      );
+    } catch (clipboardError) {
+      showStatus(
+        "statusPOS",
+        "Bukti transaksi tidak dapat dibagikan dari browser ini.",
+        "error"
+      );
+    }
+
+  }
+
+}
+
+
+/* =========================================================
    NEW POS TRANSACTION
    ========================================================= */
 
 function newPosTransaction() {
+
+  lastPosReceipt = null;
 
   posCart = [];
 
