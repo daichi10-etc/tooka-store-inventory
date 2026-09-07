@@ -1553,7 +1553,85 @@
       }
     }
 
-  </style>
+  
+
+    .payment-method-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .payment-method-card {
+      border: 1px solid #dbe5f0;
+      background: #ffffff;
+      color: #183b56;
+      border-radius: 16px;
+      padding: 15px 12px;
+      cursor: pointer;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: .18s ease;
+      box-shadow: 0 3px 10px rgba(37, 99, 235, .05);
+    }
+
+    .payment-method-card:hover {
+      transform: translateY(-1px);
+      border-color: #93c5fd;
+    }
+
+    .payment-method-card.active {
+      border-color: #2563eb;
+      background: linear-gradient(135deg, #eff6ff, #ecfdf5);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, .12);
+    }
+
+    .payment-method-icon {
+      font-size: 25px;
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+
+    .payment-method-card strong {
+      font-size: 13px;
+      letter-spacing: .4px;
+    }
+
+    .payment-method-card small {
+      color: #64748b;
+      font-size: 11px;
+    }
+
+    .payment-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .payment-detail-grid.hidden {
+      display: none;
+    }
+
+    .payment-detail-grid .change-box {
+      margin-top: 0 !important;
+      min-height: 48px;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 680px) {
+      .payment-method-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .payment-detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+</style>
 
 <style>
 /* =====================================================
@@ -2509,21 +2587,47 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
           <h3><span class="section-icon">💵</span> Pembayaran</h3>
 
-          <div class="payment-grid">
+          <div class="payment-method-grid">
 
-            <div>
+            <button
+              type="button"
+              id="payCash"
+              class="payment-method-card active"
+              onclick="setPaymentMethod('CASH')"
+            >
+              <span class="payment-method-icon">💵</span>
+              <strong>CASH</strong>
+              <small>Bayar tunai</small>
+            </button>
 
-              <label>
-                Metode Pembayaran
-              </label>
+            <button
+              type="button"
+              id="payTransfer"
+              class="payment-method-card"
+              onclick="setPaymentMethod('TRANSFER')"
+            >
+              <span class="payment-method-icon">🏦</span>
+              <strong>TRANSFER</strong>
+              <small>Transfer bank</small>
+            </button>
 
-              <input
-                value="CASH"
-                readonly
-              >
+            <button
+              type="button"
+              id="payQris"
+              class="payment-method-card"
+              onclick="setPaymentMethod('QRIS')"
+            >
+              <span class="payment-method-icon">📱</span>
+              <strong>QRIS</strong>
+              <small>Pembayaran QR</small>
+            </button>
 
-            </div>
+          </div>
 
+          <div
+            id="cashPaymentArea"
+            class="payment-detail-grid"
+          >
 
             <div>
 
@@ -2542,19 +2646,57 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
             </div>
 
+            <div
+              class="change-box"
+            >
+
+              <span>
+                Kembalian
+              </span>
+
+              <strong id="posChange">
+                Rp0
+              </strong>
+
+            </div>
+
           </div>
 
-
           <div
-            class="change-box"
-            style="margin-top:15px;"
+            id="nonCashPaymentArea"
+            class="payment-detail-grid hidden"
           >
 
-            Kembalian
+            <div>
 
-            <strong id="posChange">
-              Rp0
-            </strong>
+              <label>
+                Nominal Pembayaran
+              </label>
+
+              <input
+                id="posNonCashAmount"
+                type="text"
+                value="Rp0"
+                readonly
+              >
+
+            </div>
+
+            <div>
+
+              <label>
+                Referensi / No. Transaksi
+                <span class="muted">(opsional)</span>
+              </label>
+
+              <input
+                id="posPaymentReference"
+                type="text"
+                placeholder="Contoh: BCA123456 / QR123456"
+                autocomplete="off"
+              >
+
+            </div>
 
           </div>
 
@@ -3487,6 +3629,8 @@ let produkLoading = false;
 let posBuyerType = "KONSUMEN";
 
 let posPriceType = "RETAIL";
+
+let posPaymentMethod = "CASH";
 
 let posCart = [];
 
@@ -6247,10 +6391,117 @@ function getPosTotal() {
    PAYMENT
    ========================================================= */
 
+function setPaymentMethod(
+  method
+) {
+
+  posPaymentMethod =
+    method;
+
+
+  document.querySelectorAll(
+    ".payment-method-card"
+  ).forEach(
+    card =>
+      card.classList.remove(
+        "active"
+      )
+  );
+
+
+  const activeCard =
+    document.getElementById(
+      method === "CASH"
+        ? "payCash"
+        : method === "TRANSFER"
+          ? "payTransfer"
+          : "payQris"
+    );
+
+
+  if (activeCard) {
+
+    activeCard.classList.add(
+      "active"
+    );
+
+  }
+
+
+  const cashArea =
+    document.getElementById(
+      "cashPaymentArea"
+    );
+
+
+  const nonCashArea =
+    document.getElementById(
+      "nonCashPaymentArea"
+    );
+
+
+  if (cashArea) {
+
+    cashArea.classList.toggle(
+      "hidden",
+      method !== "CASH"
+    );
+
+  }
+
+
+  if (nonCashArea) {
+
+    nonCashArea.classList.toggle(
+      "hidden",
+      method === "CASH"
+    );
+
+  }
+
+
+  const nonCashAmount =
+    document.getElementById(
+      "posNonCashAmount"
+    );
+
+
+  if (nonCashAmount) {
+
+    nonCashAmount.value =
+      formatRupiah(
+        getPosTotal()
+      );
+
+  }
+
+
+  calculateChange();
+
+}
+
+
 function calculateChange() {
 
   const total =
     getPosTotal();
+
+
+  if (
+    posPaymentMethod !==
+    "CASH"
+  ) {
+
+    document.getElementById(
+      "posChange"
+    ).textContent =
+      formatRupiah(
+        0
+      );
+
+    return;
+
+  }
 
 
   const received =
@@ -6382,31 +6633,51 @@ async function checkoutPOS() {
     ).value;
 
 
-  const amountReceived =
-    Number(
-      document.getElementById(
-        "posAmountReceived"
-      ).value ||
-      0
-    );
-
-
   const total =
     getPosTotal();
 
 
+  let amountReceived =
+    total;
+
+
+  const paymentReference =
+    (
+      document.getElementById(
+        "posPaymentReference"
+      )?.value ||
+      ""
+    ).trim();
+
+
   if (
-    amountReceived <
-    total
+    posPaymentMethod ===
+    "CASH"
   ) {
 
-    showStatus(
-      "statusPOS",
-      "Uang diterima masih kurang.",
-      "error"
-    );
+    amountReceived =
+      Number(
+        document.getElementById(
+          "posAmountReceived"
+        ).value ||
+        0
+      );
 
-    return;
+
+    if (
+      amountReceived <
+      total
+    ) {
+
+      showStatus(
+        "statusPOS",
+        "Uang diterima masih kurang.",
+        "error"
+      );
+
+      return;
+
+    }
 
   }
 
@@ -6483,7 +6754,10 @@ async function checkoutPOS() {
           posPriceType,
 
         paymentMethod:
-          "CASH",
+          posPaymentMethod,
+
+        paymentReference:
+          paymentReference,
 
         amountReceived:
           amountReceived,
@@ -6627,6 +6901,17 @@ function renderPosReceipt(
     );
 
 
+  const paymentMethod =
+    data.paymentMethod ||
+    posPaymentMethod ||
+    "CASH";
+
+
+  const paymentReference =
+    data.paymentReference ||
+    "";
+
+
   const paid =
     Number(
       (
@@ -6754,6 +7039,8 @@ function renderPosReceipt(
     buyerType,
     buyerName,
     total,
+    paymentMethod,
+    paymentReference,
     paid,
     change,
     items: items.map(item => ({
@@ -6911,7 +7198,11 @@ function renderPosReceipt(
       <div>
 
         <span>
-          Tunai
+          ${escapeHtml(
+            paymentMethod === "CASH"
+              ? "Tunai"
+              : "Pembayaran"
+          )}
         </span>
 
         <span>
@@ -6923,6 +7214,23 @@ function renderPosReceipt(
         </span>
 
       </div>
+
+      ${
+        paymentReference
+          ? `
+            <div>
+              <span>
+                Referensi
+              </span>
+              <span>
+                ${escapeHtml(
+                  paymentReference
+                )}
+              </span>
+            </div>
+          `
+          : ""
+      }
 
 
       <div>
@@ -6978,7 +7286,11 @@ function buildPosReceiptText() {
     lines,
     "",
     `TOTAL: ${formatRupiah(data.total)}`,
-    `Tunai: ${formatRupiah(data.paid)}`,
+    `Pembayaran: ${data.paymentMethod || "CASH"}`,
+    `Nominal: ${formatRupiah(data.paid)}`,
+    ...(data.paymentReference
+      ? [`Referensi: ${data.paymentReference}`]
+      : []),
     `Kembalian: ${formatRupiah(data.change)}`,
     "",
     "Terima kasih telah berbelanja di TOOKA."
@@ -7103,6 +7415,25 @@ function newPosTransaction() {
     "posAmountReceived"
   ).value =
     "";
+
+
+  const paymentReference =
+    document.getElementById(
+      "posPaymentReference"
+    );
+
+
+  if (paymentReference) {
+
+    paymentReference.value =
+      "";
+
+  }
+
+
+  setPaymentMethod(
+    "CASH"
+  );
 
 
   document.getElementById(
