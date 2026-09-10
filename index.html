@@ -6786,10 +6786,19 @@ async function checkoutPOS() {
     );
 
 
+    /*
+     * TRANSAKSI SUKSES:
+     * Receipt tetap tampil sebagai bukti.
+     * Seluruh input transaksi langsung dikosongkan
+     * agar tidak ada risiko transaksi lama terkirim lagi.
+     */
+    resetPosAfterSuccessfulSale();
+
+
     showStatus(
       "statusPOS",
       hasil.message ||
-        "Transaksi berhasil.",
+        "Transaksi berhasil. Siap untuk transaksi berikutnya.",
       "success"
     );
 
@@ -6842,6 +6851,102 @@ async function checkoutPOS() {
       "BAYAR & SIMPAN";
 
   }
+
+}
+
+
+/* =========================================================
+   RESET POS SETELAH TRANSAKSI BERHASIL
+   =========================================================
+   Receipt tetap ditampilkan.
+   Hanya input transaksi yang dibersihkan agar kasir
+   tidak tanpa sengaja mengulang transaksi lama.
+   ========================================================= */
+
+function resetPosAfterSuccessfulSale() {
+
+  posCart = [];
+
+  posSelectedProduct =
+    null;
+
+
+  const produk =
+    document.getElementById("posProduk");
+
+  if (produk) {
+    produk.value = "";
+  }
+
+
+  const produkCari =
+    document.getElementById("posProdukCari");
+
+  if (produkCari) {
+    produkCari.value = "";
+  }
+
+
+  const produkInfo =
+    document.getElementById("posProdukInfo");
+
+  if (produkInfo) {
+    produkInfo.textContent = "";
+  }
+
+
+  const produkResults =
+    document.getElementById("posProdukResults");
+
+  if (produkResults) {
+    produkResults.innerHTML = "";
+    produkResults.classList.remove("show");
+  }
+
+
+  const qty =
+    document.getElementById("posQty");
+
+  if (qty) {
+    qty.value = "1";
+  }
+
+
+  const specialPrice =
+    document.getElementById("posSpecialPrice");
+
+  if (specialPrice) {
+    specialPrice.value = "";
+  }
+
+
+  const amountReceived =
+    document.getElementById("posAmountReceived");
+
+  if (amountReceived) {
+    amountReceived.value = "";
+  }
+
+
+  const paymentReference =
+    document.getElementById("posPaymentReference");
+
+  if (paymentReference) {
+    paymentReference.value = "";
+  }
+
+
+  /*
+   * Kembalikan transaksi berikutnya ke kondisi default.
+   * Receipt terakhir TIDAK dihapus.
+   */
+  setBuyerType("KONSUMEN");
+  setPriceType("RETAIL");
+  setPaymentMethod("CASH");
+
+
+  renderPosCart();
+  calculateChange();
 
 }
 
