@@ -6850,6 +6850,30 @@ async function checkoutPOS() {
    POS RECEIPT
    ========================================================= */
 
+function formatReceiptDateTime(value) {
+
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+
+}
+
+
 function renderPosReceipt(
   hasil
 ) {
@@ -6860,10 +6884,21 @@ function renderPosReceipt(
 
 
   const transactionId =
+    data.transaksiId ||
     data.transactionId ||
     data.idTransaksi ||
+    hasil.transaksiId ||
     hasil.transactionId ||
+    hasil.idTransaksi ||
     "-";
+
+
+  const transactionTime =
+    data.tanggal ||
+    data.waktu ||
+    hasil.tanggal ||
+    hasil.waktu ||
+    "";
 
 
   const cashier =
@@ -7036,6 +7071,7 @@ function renderPosReceipt(
   lastPosReceipt = {
 
     transactionId,
+    transactionTime,
     cashier,
     location: locationName,
     buyerType,
@@ -7068,189 +7104,117 @@ function renderPosReceipt(
   };
 
 
+  const buyerDisplay =
+    buyerName &&
+    String(buyerName).trim().toUpperCase() !==
+      String(buyerType).trim().toUpperCase()
+      ? `${buyerType} — ${buyerName}`
+      : buyerType;
+
+
+  const paymentHtml =
+    paymentMethod === "CASH"
+      ? `
+          <div class="receipt-payment-status">
+            CASH
+          </div>
+
+          <div class="receipt-payment-row">
+            <span>DIBAYAR</span>
+            <span>${escapeHtml(formatRupiah(paid))}</span>
+          </div>
+
+          <div class="receipt-payment-row">
+            <span>KEMBALI</span>
+            <span>${escapeHtml(formatRupiah(change))}</span>
+          </div>
+        `
+      : `
+          <div class="receipt-payment-status">
+            ${escapeHtml(paymentMethod)} • LUNAS
+          </div>
+          ${
+            paymentReference
+              ? `
+                  <div class="receipt-payment-row">
+                    <span>REF</span>
+                    <span>${escapeHtml(paymentReference)}</span>
+                  </div>
+                `
+              : ""
+          }
+        `;
+
+
   document.getElementById(
     "posReceipt"
   ).innerHTML = `
 
     <div class="receipt-header">
-
-      <h2>
-        TOOKA STORE
-      </h2>
-
-      <div class="muted">
-        BUKTI TRANSAKSI
-      </div>
-
+      <h2>TOOKA</h2>
+      <div class="muted">BUKTI TRANSAKSI</div>
     </div>
-
 
     <div class="receipt-meta">
-
       <div>
-        <strong>
-          No. Transaksi
-        </strong>
-
+        <strong>${escapeHtml(transactionId)}</strong>
         <br>
-
-        ${escapeHtml(
-          transactionId
-        )}
+        ${escapeHtml(formatReceiptDateTime(transactionTime))}
       </div>
 
-
       <div>
-        <strong>
-          Kasir
-        </strong>
-
+        ${escapeHtml(locationName)} (${escapeHtml(cashier)})
         <br>
-
-        ${escapeHtml(
-          cashier
-        )}
+        ${escapeHtml(buyerDisplay)}
       </div>
-
-
-      <div>
-        <strong>
-          Lokasi
-        </strong>
-
-        <br>
-
-        ${escapeHtml(
-          locationName
-        )}
-      </div>
-
-
-      <div>
-        <strong>
-          Pembeli
-        </strong>
-
-        <br>
-
-        ${escapeHtml(
-          buyerType
-        )}
-        —
-        ${escapeHtml(
-          buyerName
-        )}
-      </div>
-
     </div>
 
+    <div class="receipt-items">
+      ${
+        items
+          .map(item => {
+            const nama =
+              item.nama ||
+              item.productName ||
+              produkMaster.find(
+                p => String(p.id) === String(item.produkId)
+              )?.nama ||
+              item.produkId ||
+              "-";
 
-    <table>
+            const qty = Number(item.qty || 0);
+            const harga = Number(item.harga || item.unitPrice || 0);
+            const subtotal = Number(
+              item.subtotal ?? (qty * harga)
+            );
 
-      <thead>
+            return `
+              <div class="receipt-item">
+                <div class="receipt-item-name">${escapeHtml(nama)}</div>
+                <div class="receipt-item-line">
+                  <span>${escapeHtml(formatNumber(qty))} x ${escapeHtml(formatRupiah(harga))}</span>
+                  <span>${escapeHtml(formatRupiah(subtotal))}</span>
+                </div>
+              </div>
+            `;
+          })
+          .join("")
+      }
+    </div>
 
-        <tr>
-
-          <th>
-            Produk
-          </th>
-
-          <th>
-            Qty
-          </th>
-
-          <th>
-            Harga
-          </th>
-
-          <th>
-            Subtotal
-          </th>
-
-        </tr>
-
-      </thead>
-
-      <tbody>
-        ${rows}
-      </tbody>
-
-    </table>
-
+    <div class="receipt-divider">────────────────────</div>
 
     <div class="receipt-summary">
-
       <div class="grand">
-
-        <span>
-          TOTAL
-        </span>
-
-        <span>
-          ${escapeHtml(
-            formatRupiah(
-              total
-            )
-          )}
-        </span>
-
+        <span>TOTAL</span>
+        <span>${escapeHtml(formatRupiah(total))}</span>
       </div>
 
+      ${paymentHtml}
+    </div>
 
-      <div>
-
-        <span>
-          ${escapeHtml(
-            paymentMethod === "CASH"
-              ? "Tunai"
-              : "Pembayaran"
-          )}
-        </span>
-
-        <span>
-          ${escapeHtml(
-            formatRupiah(
-              paid
-            )
-          )}
-        </span>
-
-      </div>
-
-      ${
-        paymentReference
-          ? `
-            <div>
-              <span>
-                Referensi
-              </span>
-              <span>
-                ${escapeHtml(
-                  paymentReference
-                )}
-              </span>
-            </div>
-          `
-          : ""
-      }
-
-
-      <div>
-
-        <span>
-          Kembalian
-        </span>
-
-        <span>
-          ${escapeHtml(
-            formatRupiah(
-              change
-            )
-          )}
-        </span>
-
-      </div>
-
+    <div class="receipt-thanks">
+      Terima kasih 🙏
     </div>
 
   `;
@@ -7270,32 +7234,52 @@ function buildPosReceiptText() {
 
   const data = lastPosReceipt;
 
+  const buyerDisplay =
+    data.buyerName &&
+    String(data.buyerName).trim().toUpperCase() !==
+      String(data.buyerType).trim().toUpperCase()
+      ? `${data.buyerType} — ${data.buyerName}`
+      : data.buyerType;
+
   const lines = data.items
     .map(item =>
-      `${item.nama} — ${formatNumber(item.qty)} x ${formatRupiah(item.harga)} = ${formatRupiah(item.subtotal)}`
+      `${item.nama}\n${formatNumber(item.qty)} x ${formatRupiah(item.harga)}       ${formatRupiah(item.subtotal)}`
     )
-    .join("\n");
+    .join("\n\n");
+
+  const paymentLines =
+    data.paymentMethod === "CASH"
+      ? [
+          "CASH",
+          `DIBAYAR          ${formatRupiah(data.paid)}`,
+          `KEMBALI          ${formatRupiah(data.change)}`
+        ]
+      : [
+          `${data.paymentMethod || "CASH"} • LUNAS`,
+          ...(data.paymentReference
+            ? [`Ref: ${data.paymentReference}`]
+            : [])
+        ];
 
   return [
-    "TOOKA STORE",
+    "TOOKA",
     "BUKTI TRANSAKSI",
     "",
-    `No. Transaksi: ${data.transactionId}`,
-    `Kasir: ${data.cashier}`,
-    `Lokasi: ${data.location}`,
-    `Pembeli: ${data.buyerType} — ${data.buyerName}`,
+    data.transactionId || "-",
+    formatReceiptDateTime(data.transactionTime),
+    "",
+    `${data.location} (${data.cashier})`,
+    buyerDisplay,
+    "────────────────────",
     "",
     lines,
     "",
-    `TOTAL: ${formatRupiah(data.total)}`,
-    `Pembayaran: ${data.paymentMethod || "CASH"}`,
-    `Nominal: ${formatRupiah(data.paid)}`,
-    ...(data.paymentReference
-      ? [`Referensi: ${data.paymentReference}`]
-      : []),
-    `Kembalian: ${formatRupiah(data.change)}`,
+    "────────────────────",
+    `TOTAL            ${formatRupiah(data.total)}`,
     "",
-    "Terima kasih telah berbelanja di TOOKA."
+    ...paymentLines,
+    "",
+    "Terima kasih 🙏"
   ].join("\n");
 
 }
