@@ -6873,15 +6873,17 @@ function renderPosReceipt(
     "-";
 
 
-  const location =
+  const locationName =
     data.locationName ||
+    data.lokasi ||
     namaLokasi(
       data.locationId ||
       data.lokasiId ||
       document.getElementById(
         "posLokasi"
       ).value
-    );
+    ) ||
+    "-";
 
 
   const buyerType =
@@ -7035,7 +7037,7 @@ function renderPosReceipt(
 
     transactionId,
     cashier,
-    location,
+    location: locationName,
     buyerType,
     buyerName,
     total,
@@ -7119,7 +7121,7 @@ function renderPosReceipt(
         <br>
 
         ${escapeHtml(
-          location
+          locationName
         )}
       </div>
 
