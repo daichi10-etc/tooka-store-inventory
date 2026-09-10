@@ -1631,6 +1631,14 @@
         grid-template-columns: 1fr;
       }
     }
+
+    .price-auto-locked {
+      cursor: default !important;
+    }
+
+    .price-auto-locked input {
+      cursor: default;
+    }
 </style>
 
 <style>
@@ -2354,12 +2362,16 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
           <h3><span class="section-icon">🏷️</span> Tipe Harga</h3>
 
+          <div class="muted" style="margin-bottom:10px;">
+            Tipe harga otomatis mengikuti jenis pembeli. Kasir tidak perlu memilih manual.
+          </div>
+
           <div class="price-grid">
 
             <div
               id="priceRetail"
               class="price-option active"
-              onclick="setPriceType('RETAIL')"
+              
             >
 
               <input
@@ -2367,6 +2379,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
                 name="priceType"
                 value="RETAIL"
                 checked
+                disabled
               >
 
               <strong>
@@ -2383,13 +2396,14 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <div
               id="priceSpecial"
               class="price-option"
-              onclick="setPriceType('KHUSUS')"
+              
             >
 
               <input
                 type="radio"
                 name="priceType"
                 value="KHUSUS"
+                disabled
               >
 
               <strong>
@@ -5797,6 +5811,22 @@ function setBuyerType(
 
   }
 
+
+  /*
+   * TIPE HARGA OTOMATIS MENGIKUTI PEMBELI.
+   * KONSUMEN  -> RETAIL
+   * RESELLER  -> KHUSUS
+   * INTERNAL  -> KHUSUS
+   *
+   * Kasir tidak perlu memilih tipe harga manual.
+   */
+  const autoPriceType =
+    type === "KONSUMEN"
+      ? "RETAIL"
+      : "KHUSUS";
+
+  setPriceType(autoPriceType);
+
 }
 
 
@@ -5807,6 +5837,21 @@ function setBuyerType(
 function setPriceType(
   type
 ) {
+
+  /*
+   * Safety rule: harga ditentukan oleh jenis pembeli.
+   * Jika ada pemanggilan yang mencoba memilih harga
+   * secara manual dan tidak sesuai, sistem memaksa
+   * kembali ke aturan bisnis.
+   */
+  if (posBuyerType === "KONSUMEN") {
+    type = "RETAIL";
+  } else if (
+    posBuyerType === "RESELLER" ||
+    posBuyerType === "INTERNAL"
+  ) {
+    type = "KHUSUS";
+  }
 
   posPriceType =
     type;
@@ -5828,6 +5873,15 @@ function setPriceType(
     type ===
       "KHUSUS"
   );
+
+
+  document.getElementById(
+    "priceRetail"
+  ).classList.add("price-auto-locked");
+
+  document.getElementById(
+    "priceSpecial"
+  ).classList.add("price-auto-locked");
 
 
   document.querySelector(
@@ -5920,6 +5974,15 @@ function addPosItem() {
     return;
 
   }
+
+
+  /* Harga selalu mengikuti buyer type, bukan pilihan manual kasir. */
+  posPriceType =
+    posBuyerType === "KONSUMEN"
+      ? "RETAIL"
+      : "KHUSUS";
+
+  setPriceType(posPriceType);
 
 
   let harga =
