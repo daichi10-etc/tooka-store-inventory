@@ -1631,6 +1631,12 @@
         grid-template-columns: 1fr;
       }
     }
+
+/* TOOKA V2.9 — compact receipt presentation */
+.receipt-compact-id{font-weight:800;letter-spacing:.2px}
+.receipt-compact-date,.receipt-compact-location,.receipt-payment{font-size:.9rem;line-height:1.35}
+.receipt-compact-location,.receipt-payment{font-weight:700}
+
 </style>
 
 <style>
@@ -7068,7 +7074,8 @@ function renderPosReceipt(
 
   document.getElementById(
     "posReceipt"
-  ).innerHTML = `
+  ).innerHTML = `<div class="receipt-compact-location">${locationName} (${cashierName})</div>
+
 
     <div class="receipt-header">
 
