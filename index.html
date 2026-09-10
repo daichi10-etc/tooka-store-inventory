@@ -1639,6 +1639,152 @@
     .price-auto-locked input {
       cursor: default;
     }
+
+/* =========================================================
+   RIWAYAT & REKONSILIASI POS
+   ========================================================= */
+
+.pos-history-filters,
+.pos-reconcile-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.pos-history-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.pos-history-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.pos-history-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(15,23,42,.08);
+}
+
+.pos-history-top,
+.pos-history-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.pos-history-id {
+  font-weight: 800;
+}
+
+.pos-history-total {
+  font-weight: 800;
+}
+
+.pos-history-meta {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.pos-history-detail {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #d1d5db;
+}
+
+.pos-history-detail table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pos-history-detail th,
+.pos-history-detail td {
+  padding: 7px 4px;
+  text-align: left;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 13px;
+}
+
+.pos-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.pos-summary-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+
+.pos-summary-card small {
+  display: block;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.pos-summary-card strong {
+  font-size: 18px;
+}
+
+.pos-reconcile-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.pos-reconcile-table th,
+.pos-reconcile-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: right;
+}
+
+.pos-reconcile-table th:first-child,
+.pos-reconcile-table td:first-child {
+  text-align: left;
+}
+
+.reconcile-diff-ok {
+  font-weight: 800;
+}
+
+.reconcile-diff-warning {
+  font-weight: 800;
+}
+
+@media (max-width: 850px) {
+  .pos-history-filters,
+  .pos-reconcile-filters,
+  .pos-summary-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .pos-history-filters,
+  .pos-reconcile-filters,
+  .pos-summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-history-top,
+  .pos-history-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 </style>
 
 <style>
@@ -2118,6 +2264,20 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         onclick="showPage('pos', this)"
       >
         🛒 <span>Kasir</span>
+      </button>
+
+      <button
+        class="nav-btn"
+        onclick="showPage('posHistory', this)"
+      >
+        📋 <span>Riwayat Transaksi</span>
+      </button>
+
+      <button
+        class="nav-btn"
+        onclick="showPage('posReconcile', this)"
+      >
+        💰 <span>Rekonsiliasi Kasir</span>
       </button>
 
       <button
@@ -2793,6 +2953,244 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             </div>
 
           </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- =================================================
+           RIWAYAT TRANSAKSI POS
+           ================================================= -->
+
+      <section id="posHistory" class="page">
+
+        <div class="title">
+          <h2>📋 Riwayat <span>Transaksi</span></h2>
+          <p>Riwayat penjualan POS untuk pengecekan dan cross-check.</p>
+        </div>
+
+        <div id="posHistoryStatus" class="status"></div>
+
+        <div class="panel">
+
+          <h3>Filter Riwayat</h3>
+
+          <div class="pos-history-filters">
+
+            <div>
+              <label>Tanggal Mulai</label>
+              <input id="historyDateStart" type="date">
+            </div>
+
+            <div>
+              <label>Tanggal Selesai</label>
+              <input id="historyDateEnd" type="date">
+            </div>
+
+            <div id="historyLocationWrap">
+              <label>Lokasi</label>
+              <select id="historyLocation">
+                <option value="">Semua Lokasi</option>
+                <option value="LOC001">TOOKA HUB METRO</option>
+                <option value="LOC002">TOOKA STORE JEPARA</option>
+              </select>
+            </div>
+
+            <div id="historyUserWrap">
+              <label>Kasir</label>
+              <select id="historyUser">
+                <option value="">Semua Kasir</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Pembayaran</label>
+              <select id="historyPayment">
+                <option value="">Semua</option>
+                <option value="CASH">CASH</option>
+                <option value="TRANSFER">TRANSFER</option>
+                <option value="QRIS">QRIS</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Pembeli</label>
+              <select id="historyBuyer">
+                <option value="">Semua</option>
+                <option value="KONSUMEN">KONSUMEN</option>
+                <option value="RESELLER">RESELLER</option>
+                <option value="INTERNAL">INTERNAL</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Cari</label>
+              <input id="historySearch" type="text" placeholder="No transaksi / produk / kasir">
+            </div>
+
+            <div>
+              <button class="btn btn-primary" onclick="loadPosHistory()">
+                🔎 TAMPILKAN
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="panel">
+
+          <div class="pos-history-top">
+            <div>
+              <h3>Transaksi POS</h3>
+              <div id="posHistorySummary" class="muted">-</div>
+            </div>
+          </div>
+
+          <div id="posHistoryList" class="pos-history-list">
+            Belum ada data.
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           REKONSILIASI KASIR
+           ================================================= -->
+
+      <section id="posReconcile" class="page">
+
+        <div class="title">
+          <h2>💰 Rekonsiliasi <span>Kasir</span></h2>
+          <p>Bandingkan total pembayaran di sistem dengan saldo aktual.</p>
+        </div>
+
+        <div id="posReconcileStatus" class="status"></div>
+
+        <div class="panel">
+
+          <h3>Periode Rekonsiliasi</h3>
+
+          <div class="pos-reconcile-filters">
+
+            <div>
+              <label>Tanggal</label>
+              <input id="reconcileDate" type="date">
+            </div>
+
+            <div id="reconcileLocationWrap">
+              <label>Lokasi</label>
+              <select id="reconcileLocation">
+                <option value="">Semua Lokasi</option>
+                <option value="LOC001">TOOKA HUB METRO</option>
+                <option value="LOC002">TOOKA STORE JEPARA</option>
+              </select>
+            </div>
+
+            <div id="reconcileUserWrap">
+              <label>Kasir</label>
+              <select id="reconcileUser">
+                <option value="">Semua Kasir</option>
+              </select>
+            </div>
+
+            <div>
+              <button class="btn btn-primary" onclick="loadPosReconciliation()">
+                🔄 HITUNG REKAP
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="panel">
+
+          <h3>Ringkasan Sistem</h3>
+
+          <div id="posReconcileSummary">
+            Pilih tanggal lalu hitung rekap.
+          </div>
+
+          <table class="pos-reconcile-table">
+
+            <thead>
+              <tr>
+                <th>Metode</th>
+                <th>Sistem</th>
+                <th>Aktual</th>
+                <th>Selisih</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              <tr>
+                <td>CASH</td>
+                <td id="reconcileCashSystem">Rp0</td>
+                <td>
+                  <input
+                    id="reconcileCashActual"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    oninput="calculateReconcileDiff()"
+                  >
+                </td>
+                <td id="reconcileCashDiff">Rp0</td>
+              </tr>
+
+              <tr>
+                <td>TRANSFER</td>
+                <td id="reconcileTransferSystem">Rp0</td>
+                <td>
+                  <input
+                    id="reconcileTransferActual"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    oninput="calculateReconcileDiff()"
+                  >
+                </td>
+                <td id="reconcileTransferDiff">Rp0</td>
+              </tr>
+
+              <tr>
+                <td>QRIS</td>
+                <td id="reconcileQrisSystem">Rp0</td>
+                <td>
+                  <input
+                    id="reconcileQrisActual"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    oninput="calculateReconcileDiff()"
+                  >
+                </td>
+                <td id="reconcileQrisDiff">Rp0</td>
+              </tr>
+
+              <tr>
+                <td><strong>TOTAL</strong></td>
+                <td id="reconcileTotalSystem"><strong>Rp0</strong></td>
+                <td id="reconcileTotalActual"><strong>Rp0</strong></td>
+                <td id="reconcileTotalDiff"><strong>Rp0</strong></td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+          <p class="muted" style="margin-top:12px;">
+            Nilai aktual hanya untuk pengecekan di layar pada tahap ini; belum disimpan sebagai jurnal/koreksi.
+          </p>
 
         </div>
 
@@ -4325,6 +4723,1057 @@ async function enterApplication(
 }
 
 
+
+/* =========================================================
+   POS HISTORY & RECONCILIATION
+   ========================================================= */
+
+let posHistoryData = [];
+
+let posReconcileData = null;
+
+
+function todayIsoDate() {
+
+  const now =
+    new Date();
+
+  const year =
+    now.getFullYear();
+
+  const month =
+    String(
+      now.getMonth() + 1
+    ).padStart(
+      2,
+      "0"
+    );
+
+  const day =
+    String(
+      now.getDate()
+    ).padStart(
+      2,
+      "0"
+    );
+
+  return `${year}-${month}-${day}`;
+
+}
+
+
+function setupPosHistoryPage() {
+
+  const today =
+    todayIsoDate();
+
+  const start =
+    document.getElementById(
+      "historyDateStart"
+    );
+
+  const end =
+    document.getElementById(
+      "historyDateEnd"
+    );
+
+  if (
+    start &&
+    !start.value
+  ) {
+    start.value =
+      today;
+  }
+
+  if (
+    end &&
+    !end.value
+  ) {
+    end.value =
+      today;
+  }
+
+  applyPosHistoryAccess();
+
+  loadPosHistory();
+
+}
+
+
+function applyPosHistoryAccess() {
+
+  const location =
+    document.getElementById(
+      "historyLocation"
+    );
+
+  const user =
+    document.getElementById(
+      "historyUser"
+    );
+
+  if (!location || !user) {
+    return;
+  }
+
+  if (isOwner()) {
+
+    location.disabled =
+      false;
+
+    user.disabled =
+      false;
+
+    loadHistoryUserOptions();
+
+  } else {
+
+    location.value =
+      getAssignedLocation();
+
+    location.disabled =
+      true;
+
+    user.innerHTML =
+      `<option value="${escapeHtml(
+        currentUser?.userId ||
+        currentUser?.id ||
+        ""
+      )}">${escapeHtml(
+        currentUser?.nama ||
+        "Saya"
+      )}</option>`;
+
+    user.value =
+      currentUser?.userId ||
+      currentUser?.id ||
+      "";
+
+    user.disabled =
+      true;
+
+  }
+
+}
+
+
+async function loadHistoryUserOptions() {
+
+  if (!isOwner()) {
+    return;
+  }
+
+  const select =
+    document.getElementById(
+      "historyUser"
+    );
+
+  if (!select) {
+    return;
+  }
+
+  try {
+
+    const hasil =
+      await apiRequest({
+        action:
+          "USERS"
+      });
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+      return;
+    }
+
+    select.innerHTML =
+      `<option value="">Semua Kasir</option>`;
+
+    (hasil.data || [])
+      .filter(
+        user =>
+          String(
+            user.status || ""
+          ).toUpperCase() ===
+          "AKTIF"
+      )
+      .forEach(
+        user => {
+
+          const option =
+            document.createElement(
+              "option"
+            );
+
+          option.value =
+            user.id;
+
+          option.textContent =
+            `${user.nama} (${user.role})`;
+
+          select.appendChild(
+            option
+          );
+
+        }
+      );
+
+  } catch (error) {
+    // Tidak mengganggu halaman.
+  }
+
+}
+
+
+async function loadPosHistory() {
+
+  const start =
+    document.getElementById(
+      "historyDateStart"
+    )?.value ||
+    "";
+
+  const end =
+    document.getElementById(
+      "historyDateEnd"
+    )?.value ||
+    "";
+
+  const locationId =
+    document.getElementById(
+      "historyLocation"
+    )?.value ||
+    "";
+
+  const userId =
+    document.getElementById(
+      "historyUser"
+    )?.value ||
+    "";
+
+  const paymentMethod =
+    document.getElementById(
+      "historyPayment"
+    )?.value ||
+    "";
+
+  const buyerType =
+    document.getElementById(
+      "historyBuyer"
+    )?.value ||
+    "";
+
+  const search =
+    document.getElementById(
+      "historySearch"
+    )?.value ||
+    "";
+
+  if (
+    start &&
+    end &&
+    start > end
+  ) {
+
+    showStatus(
+      "posHistoryStatus",
+      "Tanggal mulai tidak boleh melewati tanggal selesai.",
+      "error"
+    );
+
+    return;
+
+  }
+
+  showStatus(
+    "posHistoryStatus",
+    "Memuat riwayat transaksi...",
+    "loading"
+  );
+
+  try {
+
+    const hasil =
+      await apiRequest({
+
+        action:
+          "RIWAYAT_POS",
+
+        tanggalMulai:
+          start,
+
+        tanggalSelesai:
+          end,
+
+        lokasiId:
+          locationId,
+
+        userId:
+          userId,
+
+        paymentMethod:
+          paymentMethod,
+
+        buyerType:
+          buyerType,
+
+        search:
+          search,
+
+        limit:
+          200
+
+      });
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+      throw new Error(
+        hasil?.message ||
+        "Riwayat transaksi gagal dimuat."
+      );
+    }
+
+    posHistoryData =
+      Array.isArray(
+        hasil.data
+      )
+        ? hasil.data
+        : [];
+
+    renderPosHistory(
+      posHistoryData,
+      hasil.summary || {}
+    );
+
+    showStatus(
+      "posHistoryStatus",
+      `${posHistoryData.length} transaksi ditemukan.`,
+      "success"
+    );
+
+  } catch (error) {
+
+    showStatus(
+      "posHistoryStatus",
+      error.message ||
+        "Riwayat transaksi gagal dimuat.",
+      "error"
+    );
+
+    const list =
+      document.getElementById(
+        "posHistoryList"
+      );
+
+    if (list) {
+      list.textContent =
+        "Data tidak dapat dimuat.";
+    }
+
+  }
+
+}
+
+
+function renderPosHistory(
+  data,
+  summary
+) {
+
+  const list =
+    document.getElementById(
+      "posHistoryList"
+    );
+
+  const summaryEl =
+    document.getElementById(
+      "posHistorySummary"
+    );
+
+  if (!list) {
+    return;
+  }
+
+  if (summaryEl) {
+
+    summaryEl.textContent =
+      `${Number(
+        summary.transaksi || 0
+      )} transaksi • Total ${formatRupiah(
+        summary.total || 0
+      )}`;
+
+  }
+
+  if (
+    !data.length
+  ) {
+
+    list.innerHTML =
+      `<div class="muted">Tidak ada transaksi pada filter tersebut.</div>`;
+
+    return;
+
+  }
+
+  list.innerHTML =
+    data
+      .map(
+        function(item, index) {
+
+          const date =
+            item.tanggal
+              ? formatReceiptDateTime(
+                  item.tanggal
+                )
+              : "-";
+
+          const buyer =
+            item.buyerType ===
+              "KONSUMEN"
+              ? "KONSUMEN"
+              : `${item.buyerType} • ${item.buyerName || "-"}`;
+
+          const detailRows =
+            (item.items || [])
+              .map(
+                product =>
+                  `<tr>
+                    <td>${escapeHtml(
+                      product.nama ||
+                      product.produkId ||
+                      "-"
+                    )}</td>
+                    <td>${escapeHtml(
+                      formatNumber(
+                        product.qty
+                      )
+                    )}</td>
+                    <td>${escapeHtml(
+                      formatRupiah(
+                        product.harga
+                      )
+                    )}</td>
+                    <td>${escapeHtml(
+                      formatRupiah(
+                        product.subtotal
+                      )
+                    )}</td>
+                  </tr>`
+              )
+              .join("");
+
+          return `
+            <div
+              class="pos-history-card"
+              onclick="togglePosHistoryDetail(${index})"
+            >
+
+              <div class="pos-history-top">
+
+                <div>
+                  <div class="pos-history-id">
+                    ${escapeHtml(
+                      item.transaksiId
+                    )}
+                  </div>
+
+                  <div class="pos-history-meta">
+                    ${escapeHtml(date)}
+                  </div>
+                </div>
+
+                <div class="pos-history-total">
+                  ${escapeHtml(
+                    formatRupiah(
+                      item.total
+                    )
+                  )}
+                </div>
+
+              </div>
+
+              <div class="pos-history-bottom" style="margin-top:8px;">
+
+                <div class="pos-history-meta">
+                  ${escapeHtml(
+                    item.lokasi
+                  )} • ${escapeHtml(
+                    item.cashier
+                  )}
+                </div>
+
+                <div class="pos-history-meta">
+                  ${escapeHtml(
+                    buyer
+                  )} • ${escapeHtml(
+                    item.paymentMethod
+                  )}
+                </div>
+
+              </div>
+
+              <div
+                id="posHistoryDetail-${index}"
+                class="pos-history-detail hidden"
+                onclick="event.stopPropagation()"
+              >
+
+                <table>
+
+                  <thead>
+                    <tr>
+                      <th>Produk</th>
+                      <th>Qty</th>
+                      <th>Harga</th>
+                      <th>Subtotal</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    ${detailRows}
+                  </tbody>
+
+                </table>
+
+                ${
+                  item.paymentReference
+                    ? `<div class="muted" style="margin-top:10px;">
+                        Ref: ${escapeHtml(
+                          item.paymentReference
+                        )}
+                       </div>`
+                    : ""
+                }
+
+              </div>
+
+            </div>
+          `;
+
+        }
+      )
+      .join("");
+
+}
+
+
+function togglePosHistoryDetail(
+  index
+) {
+
+  const detail =
+    document.getElementById(
+      `posHistoryDetail-${index}`
+    );
+
+  if (!detail) {
+    return;
+  }
+
+  detail.classList.toggle(
+    "hidden"
+  );
+
+}
+
+
+function setupPosReconcilePage() {
+
+  const date =
+    document.getElementById(
+      "reconcileDate"
+    );
+
+  if (
+    date &&
+    !date.value
+  ) {
+    date.value =
+      todayIsoDate();
+  }
+
+  applyPosReconcileAccess();
+
+  clearReconcileActuals();
+
+  loadPosReconciliation();
+
+}
+
+
+function applyPosReconcileAccess() {
+
+  const location =
+    document.getElementById(
+      "reconcileLocation"
+    );
+
+  const user =
+    document.getElementById(
+      "reconcileUser"
+    );
+
+  if (!location || !user) {
+    return;
+  }
+
+  if (isOwner()) {
+
+    location.disabled =
+      false;
+
+    user.disabled =
+      false;
+
+    loadReconcileUserOptions();
+
+  } else {
+
+    location.value =
+      getAssignedLocation();
+
+    location.disabled =
+      true;
+
+    user.innerHTML =
+      `<option value="${escapeHtml(
+        currentUser?.userId ||
+        currentUser?.id ||
+        ""
+      )}">${escapeHtml(
+        currentUser?.nama ||
+        "Saya"
+      )}</option>`;
+
+    user.value =
+      currentUser?.userId ||
+      currentUser?.id ||
+      "";
+
+    user.disabled =
+      true;
+
+  }
+
+}
+
+
+async function loadReconcileUserOptions() {
+
+  if (!isOwner()) {
+    return;
+  }
+
+  const select =
+    document.getElementById(
+      "reconcileUser"
+    );
+
+  if (!select) {
+    return;
+  }
+
+  try {
+
+    const hasil =
+      await apiRequest({
+        action:
+          "USERS"
+      });
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+      return;
+    }
+
+    select.innerHTML =
+      `<option value="">Semua Kasir</option>`;
+
+    (hasil.data || [])
+      .filter(
+        user =>
+          String(
+            user.status || ""
+          ).toUpperCase() ===
+          "AKTIF"
+      )
+      .forEach(
+        user => {
+
+          const option =
+            document.createElement(
+              "option"
+            );
+
+          option.value =
+            user.id;
+
+          option.textContent =
+            `${user.nama} (${user.role})`;
+
+          select.appendChild(
+            option
+          );
+
+        }
+      );
+
+  } catch (error) {
+    // Tidak mengganggu halaman.
+  }
+
+}
+
+
+async function loadPosReconciliation() {
+
+  const tanggal =
+    document.getElementById(
+      "reconcileDate"
+    )?.value ||
+    "";
+
+  const lokasiId =
+    document.getElementById(
+      "reconcileLocation"
+    )?.value ||
+    "";
+
+  const userId =
+    document.getElementById(
+      "reconcileUser"
+    )?.value ||
+    "";
+
+  if (!tanggal) {
+
+    showStatus(
+      "posReconcileStatus",
+      "Tanggal wajib dipilih.",
+      "error"
+    );
+
+    return;
+
+  }
+
+  showStatus(
+    "posReconcileStatus",
+    "Menghitung rekap...",
+    "loading"
+  );
+
+  try {
+
+    const hasil =
+      await apiRequest({
+
+        action:
+          "REKAP_POS",
+
+        tanggal:
+          tanggal,
+
+        lokasiId:
+          lokasiId,
+
+        userId:
+          userId
+
+      });
+
+    if (
+      !hasil ||
+      hasil.success !== true
+    ) {
+      throw new Error(
+        hasil?.message ||
+        "Rekap gagal dimuat."
+      );
+    }
+
+    posReconcileData =
+      hasil.data ||
+      {};
+
+    renderPosReconciliation(
+      posReconcileData
+    );
+
+    showStatus(
+      "posReconcileStatus",
+      "Rekap sistem berhasil dihitung.",
+      "success"
+    );
+
+  } catch (error) {
+
+    showStatus(
+      "posReconcileStatus",
+      error.message ||
+        "Rekap gagal dimuat.",
+      "error"
+    );
+
+  }
+
+}
+
+
+function renderPosReconciliation(
+  data
+) {
+
+  const cash =
+    Number(
+      data.cash || 0
+    );
+
+  const transfer =
+    Number(
+      data.transfer || 0
+    );
+
+  const qris =
+    Number(
+      data.qris || 0
+    );
+
+  const total =
+    Number(
+      data.total || 0
+    );
+
+  document.getElementById(
+    "reconcileCashSystem"
+  ).textContent =
+    formatRupiah(cash);
+
+  document.getElementById(
+    "reconcileTransferSystem"
+  ).textContent =
+    formatRupiah(transfer);
+
+  document.getElementById(
+    "reconcileQrisSystem"
+  ).textContent =
+    formatRupiah(qris);
+
+  document.getElementById(
+    "reconcileTotalSystem"
+  ).textContent =
+    formatRupiah(total);
+
+  const summary =
+    document.getElementById(
+      "posReconcileSummary"
+    );
+
+  if (summary) {
+
+    summary.innerHTML = `
+      <div class="pos-summary-cards">
+
+        <div class="pos-summary-card">
+          <small>Transaksi</small>
+          <strong>${escapeHtml(
+            formatNumber(
+              data.transaksi || 0
+            )
+          )}</strong>
+        </div>
+
+        <div class="pos-summary-card">
+          <small>Kasir</small>
+          <strong style="font-size:15px;">
+            ${escapeHtml(
+              data.cashier ||
+              "Semua"
+            )}
+          </strong>
+        </div>
+
+        <div class="pos-summary-card">
+          <small>Lokasi</small>
+          <strong style="font-size:15px;">
+            ${escapeHtml(
+              data.lokasi ||
+              "Semua Lokasi"
+            )}
+          </strong>
+        </div>
+
+        <div class="pos-summary-card">
+          <small>Total Penjualan</small>
+          <strong>${escapeHtml(
+            formatRupiah(total)
+          )}</strong>
+        </div>
+
+      </div>
+    `;
+
+  }
+
+  calculateReconcileDiff();
+
+}
+
+
+function clearReconcileActuals() {
+
+  [
+    "reconcileCashActual",
+    "reconcileTransferActual",
+    "reconcileQrisActual"
+  ].forEach(
+    id => {
+
+      const el =
+        document.getElementById(
+          id
+        );
+
+      if (el) {
+        el.value =
+          "";
+      }
+
+    }
+  );
+
+  calculateReconcileDiff();
+
+}
+
+
+function calculateReconcileDiff() {
+
+  const system = {
+
+    cash:
+      Number(
+        posReconcileData?.cash ||
+        0
+      ),
+
+    transfer:
+      Number(
+        posReconcileData?.transfer ||
+        0
+      ),
+
+    qris:
+      Number(
+        posReconcileData?.qris ||
+        0
+      )
+
+  };
+
+  const actual = {
+
+    cash:
+      Number(
+        document.getElementById(
+          "reconcileCashActual"
+        )?.value ||
+        0
+      ),
+
+    transfer:
+      Number(
+        document.getElementById(
+          "reconcileTransferActual"
+        )?.value ||
+        0
+      ),
+
+    qris:
+      Number(
+        document.getElementById(
+          "reconcileQrisActual"
+        )?.value ||
+        0
+      )
+
+  };
+
+  const diffs = {
+
+    cash:
+      actual.cash -
+      system.cash,
+
+    transfer:
+      actual.transfer -
+      system.transfer,
+
+    qris:
+      actual.qris -
+      system.qris
+
+  };
+
+  document.getElementById(
+    "reconcileCashDiff"
+  ).textContent =
+    formatRupiah(
+      diffs.cash
+    );
+
+  document.getElementById(
+    "reconcileTransferDiff"
+  ).textContent =
+    formatRupiah(
+      diffs.transfer
+    );
+
+  document.getElementById(
+    "reconcileQrisDiff"
+  ).textContent =
+    formatRupiah(
+      diffs.qris
+    );
+
+  const actualTotal =
+    actual.cash +
+    actual.transfer +
+    actual.qris;
+
+  const systemTotal =
+    system.cash +
+    system.transfer +
+    system.qris;
+
+  const totalDiff =
+    actualTotal -
+    systemTotal;
+
+  document.getElementById(
+    "reconcileTotalActual"
+  ).textContent =
+    formatRupiah(
+      actualTotal
+    );
+
+  document.getElementById(
+    "reconcileTotalDiff"
+  ).textContent =
+    formatRupiah(
+      totalDiff
+    );
+
+}
+
+
+
 /* =========================================================
    USER UI
    ========================================================= */
@@ -5122,6 +6571,26 @@ function showPage(
     loadDashboardStock();
 
   }
+
+  if (
+    pageId ===
+    "posHistory"
+  ) {
+
+    setupPosHistoryPage();
+
+  }
+
+
+  if (
+    pageId ===
+    "posReconcile"
+  ) {
+
+    setupPosReconcilePage();
+
+  }
+
 
   if (
     pageId ===
