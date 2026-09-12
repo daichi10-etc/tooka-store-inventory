@@ -879,6 +879,61 @@
       }
     }
 
+
+    .dashboard-trend {
+      margin-top: 18px;
+    }
+
+    .dashboard-trend-chart {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+      align-items: end;
+      height: 220px;
+      padding: 18px 8px 8px;
+    }
+
+    .trend-day {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      height: 100%;
+    }
+
+    .trend-bar-wrap {
+      width: 100%;
+      height: 150px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .trend-bar {
+      width: min(42px, 70%);
+      min-height: 3px;
+      border-radius: 8px 8px 3px 3px;
+      background: linear-gradient(180deg, #2563eb, #16a34a);
+      transition: height .2s ease;
+    }
+
+    .trend-value {
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .trend-date {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
     @media (max-width: 700px) {
       .cards,
       .form-grid,
@@ -3205,12 +3260,44 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
         <div class="title">
           <h2>📊 <span>Dashboard</span></h2>
-          <p>Ringkasan bisnis TOOKA hari ini</p>
+          <p>Ringkasan bisnis TOOKA berdasarkan periode terpilih</p>
+        </div>
+
+        <div class="panel" style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+            <div>
+              <h3 style="margin:0 0 4px;">📅 Periode Dashboard</h3>
+              <div class="muted">Pilih rentang untuk mengubah seluruh angka dan grafik Dashboard.</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+              <div>
+                <label class="muted" style="display:block;font-size:12px;margin-bottom:4px;">Periode</label>
+                <select id="dashboardPeriod" onchange="applyDashboardPeriod()" style="min-width:150px;">
+                  <option value="today">Hari ini</option>
+                  <option value="7">7 Hari</option>
+                  <option value="30">30 Hari</option>
+                  <option value="month">Bulan ini</option>
+                  <option value="lastMonth">Bulan lalu</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+              <div>
+                <label class="muted" style="display:block;font-size:12px;margin-bottom:4px;">Mulai</label>
+                <input id="dashboardDateStart" type="date" onchange="applyDashboardCustomDates()">
+              </div>
+              <div>
+                <label class="muted" style="display:block;font-size:12px;margin-bottom:4px;">Sampai</label>
+                <input id="dashboardDateEnd" type="date" onchange="applyDashboardCustomDates()">
+              </div>
+              <button type="button" class="btn-primary" onclick="loadDashboardBusiness()">↻ Terapkan</button>
+            </div>
+          </div>
+          <div id="dashboardPeriodLabel" class="muted" style="margin-top:10px;">-</div>
         </div>
 
         <div class="cards">
           <div class="card">
-            <small>Omzet Hari Ini</small>
+            <small>Omzet</small>
             <strong id="dashboardOmzet">Rp0</strong>
             <span class="muted">Penjualan POS</span>
           </div>
@@ -3237,7 +3324,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         <div class="panel">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
             <div>
-              <h3 style="margin-bottom:4px;">💳 Pembayaran Hari Ini</h3>
+              <h3 style="margin-bottom:4px;">💳 Pembayaran</h3>
               <div class="muted">Distribusi omzet berdasarkan metode pembayaran.</div>
             </div>
             <div id="dashboardDate" class="muted">-</div>
@@ -3261,13 +3348,13 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
         <div class="panel">
           <h3>🏪 Performa Lokasi</h3>
-          <div class="muted" style="margin-bottom:12px;">Omzet dan aktivitas POS hari ini.</div>
+          <div class="muted" style="margin-bottom:12px;">Omzet dan aktivitas POS pada periode terpilih.</div>
           <div id="dashboardLocationData" class="muted">Memuat...</div>
         </div>
 
         <div class="panel">
           <h3>🏆 Produk Terlaris</h3>
-          <div class="muted" style="margin-bottom:12px;">Top 5 produk berdasarkan omzet hari ini.</div>
+          <div class="muted" style="margin-bottom:12px;">Top 5 produk berdasarkan omzet pada periode terpilih.</div>
           <div id="dashboardTopProducts" class="muted">Memuat...</div>
         </div>
 
@@ -3289,6 +3376,19 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               <strong id="dashboardBuyerInternal">0</strong>
               <span class="muted">Transaksi</span>
             </div>
+          </div>
+        </div>
+
+        <div class="panel dashboard-trend">
+          <div class="section-head" style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div>
+              <h3 style="margin:0;">📈 Tren Omzet</h3>
+              <p class="muted" style="margin:4px 0 0;">Pergerakan omzet berdasarkan transaksi POS.</p>
+            </div>
+            <span id="dashboardTrendTotal" class="muted">-</span>
+          </div>
+          <div id="dashboardTrendChart" class="dashboard-trend-chart">
+            <div class="muted">Memuat tren omzet...</div>
           </div>
         </div>
 
@@ -6552,7 +6652,13 @@ function showPage(
     "dashboard"
   ) {
 
-    loadDashboardBusiness();
+    const dashboardPeriodEl = document.getElementById("dashboardPeriod");
+    if (dashboardPeriodEl && !dashboardPeriodEl.dataset.initialized) {
+      dashboardPeriodEl.dataset.initialized = "1";
+      applyDashboardPeriod();
+    } else {
+      loadDashboardBusiness();
+    }
     loadDashboardStock();
 
   }
@@ -10246,6 +10352,83 @@ function formatDashboardDate(value) {
   return parts[2] + "/" + parts[1] + "/" + parts[0];
 }
 
+function padDashboard2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function dashboardLocalDate() {
+  const d = new Date();
+  return d.getFullYear() + "-" + padDashboard2(d.getMonth() + 1) + "-" + padDashboard2(d.getDate());
+}
+
+function dashboardShiftDate(dateString, days) {
+  const d = new Date(dateString + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.getFullYear() + "-" + padDashboard2(d.getMonth() + 1) + "-" + padDashboard2(d.getDate());
+}
+
+function dashboardMonthStart(dateString) {
+  const d = new Date(dateString + "T00:00:00");
+  d.setDate(1);
+  return d.getFullYear() + "-" + padDashboard2(d.getMonth() + 1) + "-01";
+}
+
+function dashboardMonthEnd(dateString) {
+  const d = new Date(dateString + "T00:00:00");
+  d.setMonth(d.getMonth() + 1, 0);
+  return d.getFullYear() + "-" + padDashboard2(d.getMonth() + 1) + "-" + padDashboard2(d.getDate());
+}
+
+function setDashboardDates(start, end) {
+  const startEl = document.getElementById("dashboardDateStart");
+  const endEl = document.getElementById("dashboardDateEnd");
+  if (startEl) startEl.value = start;
+  if (endEl) endEl.value = end;
+}
+
+function applyDashboardPeriod() {
+  const periodEl = document.getElementById("dashboardPeriod");
+  const period = periodEl ? periodEl.value : "today";
+  const today = dashboardLocalDate();
+  let start = today;
+  let end = today;
+
+  if (period === "7") {
+    start = dashboardShiftDate(today, -6);
+  } else if (period === "30") {
+    start = dashboardShiftDate(today, -29);
+  } else if (period === "month") {
+    start = dashboardMonthStart(today);
+    end = dashboardMonthEnd(today);
+  } else if (period === "lastMonth") {
+    const previous = dashboardShiftDate(dashboardMonthStart(today), -1);
+    start = dashboardMonthStart(previous);
+    end = dashboardMonthEnd(previous);
+  } else if (period === "custom") {
+    applyDashboardCustomDates();
+    return;
+  }
+
+  setDashboardDates(start, end);
+  loadDashboardBusiness();
+}
+
+function applyDashboardCustomDates() {
+  const periodEl = document.getElementById("dashboardPeriod");
+  const startEl = document.getElementById("dashboardDateStart");
+  const endEl = document.getElementById("dashboardDateEnd");
+  if (periodEl && periodEl.value !== "custom") periodEl.value = "custom";
+  if (!startEl || !endEl || !startEl.value || !endEl.value) return;
+  if (startEl.value > endEl.value) endEl.value = startEl.value;
+  loadDashboardBusiness();
+}
+
+function dashboardPeriodLabel(start, end) {
+  if (!start || !end) return "-";
+  if (start === end) return "Periode: " + formatDashboardDate(start);
+  return "Periode: " + formatDashboardDate(start) + " — " + formatDashboardDate(end);
+}
+
 async function loadDashboardBusiness() {
   if (dashboardBusinessLoading) return;
 
@@ -10259,8 +10442,16 @@ async function loadDashboardBusiness() {
   dashboardBusinessLoading = true;
 
   try {
+    const startEl = document.getElementById("dashboardDateStart");
+    const endEl = document.getElementById("dashboardDateEnd");
+    const today = dashboardLocalDate();
+    const tanggalMulai = (startEl && startEl.value) ? startEl.value : today;
+    const tanggalSelesai = (endEl && endEl.value) ? endEl.value : tanggalMulai;
+
     const hasil = await apiRequest({
-      action: "DASHBOARD"
+      action: "DASHBOARD",
+      tanggalMulai: tanggalMulai,
+      tanggalSelesai: tanggalSelesai
     });
 
     if (!hasil || hasil.success !== true) {
@@ -10293,7 +10484,11 @@ async function loadDashboardBusiness() {
       formatRupiahDashboard(pembayaran.qris);
 
     document.getElementById("dashboardDate").textContent =
-      "Tanggal: " + formatDashboardDate(data.tanggal);
+      dashboardPeriodLabel(data.tanggalMulai || tanggalMulai, data.tanggalSelesai || tanggalSelesai);
+    const periodLabel = document.getElementById("dashboardPeriodLabel");
+    if (periodLabel) {
+      periodLabel.textContent = dashboardPeriodLabel(data.tanggalMulai || tanggalMulai, data.tanggalSelesai || tanggalSelesai);
+    }
 
     document.getElementById("dashboardBuyerKonsumen").textContent =
       Number(buyer.konsumen || 0).toLocaleString("id-ID");
@@ -10378,6 +10573,39 @@ async function loadDashboardBusiness() {
       `;
     }
 
+    const trendChart = document.getElementById("dashboardTrendChart");
+    const trendTotal = document.getElementById("dashboardTrendTotal");
+    const trend = Array.isArray(data.trenHarian) ? data.trenHarian : [];
+
+    if (trendChart) {
+      if (!trend.length) {
+        trendChart.innerHTML = `<div class="muted">Belum ada data omzet.</div>`;
+      } else {
+        const maxOmzet = Math.max(...trend.map(item => Number(item.omzet || 0)), 0);
+        const total7Hari = trend.reduce((sum, item) => sum + Number(item.omzet || 0), 0);
+
+        if (trendTotal) {
+          trendTotal.textContent = "Total periode: " + formatRupiahDashboard(total7Hari);
+        }
+
+        trendChart.innerHTML = trend.map(item => {
+          const omzetHari = Number(item.omzet || 0);
+          const height = maxOmzet > 0 ? Math.max((omzetHari / maxOmzet) * 100, 3) : 3;
+          const parts = String(item.tanggal || "").split("-");
+          const label = parts.length === 3 ? parts[2] + "/" + parts[1] : item.tanggal;
+          return `
+            <div class="trend-day" title="${escapeHtml(label)} — ${formatRupiahDashboard(omzetHari)} — ${Number(item.transaksi || 0)} transaksi">
+              <div class="trend-value">${formatRupiahDashboard(omzetHari)}</div>
+              <div class="trend-bar-wrap">
+                <div class="trend-bar" style="height:${height}%;"></div>
+              </div>
+              <div class="trend-date">${escapeHtml(label)}</div>
+            </div>
+          `;
+        }).join("");
+      }
+    }
+
   } catch (error) {
     console.error("Dashboard bisnis error:", error);
 
@@ -10403,6 +10631,11 @@ async function loadDashboardBusiness() {
     if (productBox) {
       productBox.innerHTML = `<div class="dashboard-error">⚠️ Data belum dapat dimuat.</div>`;
     }
+
+    const trendChart = document.getElementById("dashboardTrendChart");
+    const trendTotal = document.getElementById("dashboardTrendTotal");
+    if (trendChart) trendChart.innerHTML = `<div class="dashboard-error">⚠️ Tren omzet belum dapat dimuat.</div>`;
+    if (trendTotal) trendTotal.textContent = "-";
   } finally {
     dashboardBusinessLoading = false;
   }
