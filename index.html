@@ -3204,137 +3204,121 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
       <section id="dashboard" class="page">
 
         <div class="title">
-
-          <h2>
-            📊 <span>Dashboard</span>
-          </h2>
-
-          <p>
-            Ringkasan inventory TOOKA
-          </p>
-
+          <h2>📊 <span>Dashboard</span></h2>
+          <p>Ringkasan bisnis TOOKA hari ini</p>
         </div>
-
 
         <div class="cards">
-
           <div class="card">
-
-            <small>
-              Status Backend
-            </small>
-
-            <strong id="backendStatus">
-              Checking...
-            </strong>
-
+            <small>Omzet Hari Ini</small>
+            <strong id="dashboardOmzet">Rp0</strong>
+            <span class="muted">Penjualan POS</span>
           </div>
 
-
           <div class="card">
-
-            <small>
-              User Login
-            </small>
-
-            <strong
-              id="dashboardUser"
-              style="font-size:17px;"
-            >
-              -
-            </strong>
-
+            <small>Transaksi</small>
+            <strong id="dashboardTransaksi">0</strong>
+            <span class="muted">Checkout berhasil</span>
           </div>
 
-
           <div class="card">
-
-            <small>
-              Lokasi
-            </small>
-
-            <strong
-              id="dashboardLocation"
-              style="font-size:17px;"
-            >
-              -
-            </strong>
-
+            <small>Item Terjual</small>
+            <strong id="dashboardItemTerjual">0</strong>
+            <span class="muted">Total qty</span>
           </div>
 
+          <div class="card">
+            <small>Rata-rata Transaksi</small>
+            <strong id="dashboardAvgTrx">Rp0</strong>
+            <span class="muted">Omzet ÷ transaksi</span>
+          </div>
         </div>
-
-
-        <div
-          id="dashboardStock"
-          class="dashboard-stock"
-        >
-
-          <div class="dashboard-stock-header">
-
-            <div class="dashboard-stock-title">
-
-              <h3>
-                🔔 Peringatan Stok
-              </h3>
-
-              <p>
-                Kondisi stok berdasarkan batas minimum.
-              </p>
-
-            </div>
-
-            <div
-              id="dashboardStockSummary"
-              class="dashboard-stock-summary"
-            ></div>
-
-          </div>
-
-          <div
-            id="dashboardStockContent"
-            class="muted"
-          >
-            Memeriksa kondisi stok...
-          </div>
-
-        </div>
-
 
         <div class="panel">
-
-          <h3>
-            Lokasi Inventory
-          </h3>
-
-          <div class="lokasi-grid">
-
-            <div class="lokasi-card">
-
-              <h3>
-                TOOKA HUB METRO
-              </h3>
-
-              <div class="muted">
-                LOC001
-              </div>
-
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div>
+              <h3 style="margin-bottom:4px;">💳 Pembayaran Hari Ini</h3>
+              <div class="muted">Distribusi omzet berdasarkan metode pembayaran.</div>
             </div>
-
-            <div class="lokasi-card">
-
-              <h3>
-                TOOKA STORE JEPARA
-              </h3>
-
-              <div class="muted">
-                LOC002
-              </div>
-
-            </div>
-
+            <div id="dashboardDate" class="muted">-</div>
           </div>
 
+          <div class="cards" style="margin-top:15px;">
+            <div class="card">
+              <small>💵 CASH</small>
+              <strong id="dashboardCash">Rp0</strong>
+            </div>
+            <div class="card">
+              <small>🏦 TRANSFER</small>
+              <strong id="dashboardTransfer">Rp0</strong>
+            </div>
+            <div class="card">
+              <small>📱 QRIS</small>
+              <strong id="dashboardQris">Rp0</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>🏪 Performa Lokasi</h3>
+          <div class="muted" style="margin-bottom:12px;">Omzet dan aktivitas POS hari ini.</div>
+          <div id="dashboardLocationData" class="muted">Memuat...</div>
+        </div>
+
+        <div class="panel">
+          <h3>🏆 Produk Terlaris</h3>
+          <div class="muted" style="margin-bottom:12px;">Top 5 produk berdasarkan omzet hari ini.</div>
+          <div id="dashboardTopProducts" class="muted">Memuat...</div>
+        </div>
+
+        <div class="panel">
+          <h3>👥 Komposisi Pembeli</h3>
+          <div class="cards" style="margin-top:12px;">
+            <div class="card">
+              <small>KONSUMEN</small>
+              <strong id="dashboardBuyerKonsumen">0</strong>
+              <span class="muted">Transaksi</span>
+            </div>
+            <div class="card">
+              <small>RESELLER</small>
+              <strong id="dashboardBuyerReseller">0</strong>
+              <span class="muted">Transaksi</span>
+            </div>
+            <div class="card">
+              <small>INTERNAL</small>
+              <strong id="dashboardBuyerInternal">0</strong>
+              <span class="muted">Transaksi</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="dashboardStock" class="dashboard-stock">
+          <div class="dashboard-stock-header">
+            <div class="dashboard-stock-title">
+              <h3>🔔 Peringatan Stok</h3>
+              <p>Kondisi stok berdasarkan batas minimum.</p>
+            </div>
+            <div id="dashboardStockSummary" class="dashboard-stock-summary"></div>
+          </div>
+          <div id="dashboardStockContent" class="muted">Memeriksa kondisi stok...</div>
+        </div>
+
+        <div class="panel">
+          <h3>⚙️ Status Sistem</h3>
+          <div class="cards" style="margin-top:12px;">
+            <div class="card">
+              <small>Status Backend</small>
+              <strong id="backendStatus">Checking...</strong>
+            </div>
+            <div class="card">
+              <small>User Login</small>
+              <strong id="dashboardUser" style="font-size:17px;">-</strong>
+            </div>
+            <div class="card">
+              <small>Lokasi</small>
+              <strong id="dashboardLocation" style="font-size:17px;">-</strong>
+            </div>
+          </div>
         </div>
 
       </section>
@@ -6568,6 +6552,7 @@ function showPage(
     "dashboard"
   ) {
 
+    loadDashboardBusiness();
     loadDashboardStock();
 
   }
@@ -7445,17 +7430,13 @@ function addPosItem() {
   }
 
 
-  /*
-   * posPriceType sudah ditentukan saat buyer dipilih:
-   * KONSUMEN -> RETAIL
-   * RESELLER -> KHUSUS
-   * INTERNAL -> KHUSUS
-   *
-   * Jangan panggil setPriceType() lagi di sini,
-   * karena setPriceType() mengisi ulang harga khusus
-   * dengan harga retail. Itu membuat harga khusus yang
-   * sudah diketik kasir (mis. 12.000) kembali menjadi 13.000.
-   */
+  /* Harga selalu mengikuti buyer type, bukan pilihan manual kasir. */
+  posPriceType =
+    posBuyerType === "KONSUMEN"
+      ? "RETAIL"
+      : "KHUSUS";
+
+  setPriceType(posPriceType);
 
 
   let harga =
@@ -10246,6 +10227,189 @@ function tentukanStatusStok(
 
 
 /* =========================================================
+   DASHBOARD BISNIS
+   ========================================================= */
+
+let dashboardBusinessLoading = false;
+
+function formatRupiahDashboard(value) {
+  const number = Number(value || 0);
+  return "Rp" + number.toLocaleString("id-ID", {
+    maximumFractionDigits: 0
+  });
+}
+
+function formatDashboardDate(value) {
+  if (!value) return "-";
+  const parts = String(value).split("-");
+  if (parts.length !== 3) return value;
+  return parts[2] + "/" + parts[1] + "/" + parts[0];
+}
+
+async function loadDashboardBusiness() {
+  if (dashboardBusinessLoading) return;
+
+  const omzet = document.getElementById("dashboardOmzet");
+  const transaksi = document.getElementById("dashboardTransaksi");
+  const itemTerjual = document.getElementById("dashboardItemTerjual");
+  const avgTrx = document.getElementById("dashboardAvgTrx");
+
+  if (!omzet || !transaksi || !itemTerjual || !avgTrx) return;
+
+  dashboardBusinessLoading = true;
+
+  try {
+    const hasil = await apiRequest({
+      action: "DASHBOARD"
+    });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(
+        hasil?.message ||
+        "Dashboard bisnis gagal dimuat."
+      );
+    }
+
+    const data = hasil.data || {};
+    const pembayaran = data.pembayaran || {};
+    const buyer = data.buyer || {};
+    const lokasiData = Array.isArray(data.lokasiData)
+      ? data.lokasiData
+      : [];
+    const topProduk = Array.isArray(data.topProduk)
+      ? data.topProduk
+      : [];
+
+    omzet.textContent = formatRupiahDashboard(data.omzet);
+    transaksi.textContent = Number(data.transaksi || 0).toLocaleString("id-ID");
+    itemTerjual.textContent = Number(data.itemTerjual || 0).toLocaleString("id-ID");
+    avgTrx.textContent = formatRupiahDashboard(data.rataRataTransaksi);
+
+    document.getElementById("dashboardCash").textContent =
+      formatRupiahDashboard(pembayaran.cash);
+    document.getElementById("dashboardTransfer").textContent =
+      formatRupiahDashboard(pembayaran.transfer);
+    document.getElementById("dashboardQris").textContent =
+      formatRupiahDashboard(pembayaran.qris);
+
+    document.getElementById("dashboardDate").textContent =
+      "Tanggal: " + formatDashboardDate(data.tanggal);
+
+    document.getElementById("dashboardBuyerKonsumen").textContent =
+      Number(buyer.konsumen || 0).toLocaleString("id-ID");
+    document.getElementById("dashboardBuyerReseller").textContent =
+      Number(buyer.reseller || 0).toLocaleString("id-ID");
+    document.getElementById("dashboardBuyerInternal").textContent =
+      Number(buyer.internal || 0).toLocaleString("id-ID");
+
+    const locationBox = document.getElementById("dashboardLocationData");
+
+    if (lokasiData.length === 0) {
+      locationBox.innerHTML = `
+        <div class="muted" style="padding:10px 0;">
+          Belum ada transaksi POS hari ini.
+        </div>
+      `;
+    } else {
+      locationBox.innerHTML = `
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:10px 8px;">Lokasi</th>
+                <th style="text-align:right;padding:10px 8px;">Transaksi</th>
+                <th style="text-align:right;padding:10px 8px;">Item</th>
+                <th style="text-align:right;padding:10px 8px;">Omzet</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lokasiData.map(item => `
+                <tr>
+                  <td style="padding:10px 8px;">
+                    <strong>${escapeHtml(item.lokasi || item.lokasiId || "-")}</strong>
+                    <div class="muted" style="font-size:12px;">${escapeHtml(item.lokasiId || "")}</div>
+                  </td>
+                  <td style="text-align:right;padding:10px 8px;">${Number(item.transaksi || 0).toLocaleString("id-ID")}</td>
+                  <td style="text-align:right;padding:10px 8px;">${Number(item.itemTerjual || 0).toLocaleString("id-ID")}</td>
+                  <td style="text-align:right;padding:10px 8px;"><strong>${formatRupiahDashboard(item.omzet)}</strong></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    const productBox = document.getElementById("dashboardTopProducts");
+
+    if (topProduk.length === 0) {
+      productBox.innerHTML = `
+        <div class="muted" style="padding:10px 0;">
+          Belum ada penjualan produk hari ini.
+        </div>
+      `;
+    } else {
+      productBox.innerHTML = `
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:10px 8px;">#</th>
+                <th style="text-align:left;padding:10px 8px;">Produk</th>
+                <th style="text-align:right;padding:10px 8px;">Qty</th>
+                <th style="text-align:right;padding:10px 8px;">Omzet</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${topProduk.map((item, index) => `
+                <tr>
+                  <td style="padding:10px 8px;"><strong>${index + 1}</strong></td>
+                  <td style="padding:10px 8px;">
+                    <strong>${escapeHtml(item.nama || item.produkId || "-")}</strong>
+                    <div class="muted" style="font-size:12px;">${escapeHtml(item.produkId || "")}</div>
+                  </td>
+                  <td style="text-align:right;padding:10px 8px;">${Number(item.qty || 0).toLocaleString("id-ID")} ${escapeHtml(item.satuan || "")}</td>
+                  <td style="text-align:right;padding:10px 8px;"><strong>${formatRupiahDashboard(item.omzet)}</strong></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+  } catch (error) {
+    console.error("Dashboard bisnis error:", error);
+
+    const targets = [
+      "dashboardOmzet",
+      "dashboardTransaksi",
+      "dashboardItemTerjual",
+      "dashboardAvgTrx"
+    ];
+
+    targets.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = "-";
+    });
+
+    const locationBox = document.getElementById("dashboardLocationData");
+    const productBox = document.getElementById("dashboardTopProducts");
+
+    if (locationBox) {
+      locationBox.innerHTML = `<div class="dashboard-error">⚠️ ${escapeHtml(error.message || "Dashboard gagal dimuat.")}</div>`;
+    }
+
+    if (productBox) {
+      productBox.innerHTML = `<div class="dashboard-error">⚠️ Data belum dapat dimuat.</div>`;
+    }
+  } finally {
+    dashboardBusinessLoading = false;
+  }
+}
+
+
+/* =========================================================
    DASHBOARD STOCK
    ========================================================= */
 
@@ -10916,6 +11080,12 @@ document.addEventListener(
 
     const restored =
       await restoreSession();
+
+
+    if (restored) {
+      loadDashboardBusiness();
+      loadDashboardStock();
+    }
 
 
     if (!restored) {
