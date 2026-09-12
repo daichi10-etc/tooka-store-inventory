@@ -7445,13 +7445,17 @@ function addPosItem() {
   }
 
 
-  /* Harga selalu mengikuti buyer type, bukan pilihan manual kasir. */
-  posPriceType =
-    posBuyerType === "KONSUMEN"
-      ? "RETAIL"
-      : "KHUSUS";
-
-  setPriceType(posPriceType);
+  /*
+   * posPriceType sudah ditentukan saat buyer dipilih:
+   * KONSUMEN -> RETAIL
+   * RESELLER -> KHUSUS
+   * INTERNAL -> KHUSUS
+   *
+   * Jangan panggil setPriceType() lagi di sini,
+   * karena setPriceType() mengisi ulang harga khusus
+   * dengan harga retail. Itu membuat harga khusus yang
+   * sudah diketik kasir (mis. 12.000) kembali menjadi 13.000.
+   */
 
 
   let harga =
