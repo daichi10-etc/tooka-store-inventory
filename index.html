@@ -7382,25 +7382,13 @@ function setPriceType(
     posSelectedProduct
   ) {
 
-    const specialInput =
-      document.getElementById(
-        "posSpecialPrice"
+    document.getElementById(
+      "posSpecialPrice"
+    ).value =
+      Number(
+        posSelectedProduct.hargaJual ||
+        0
       );
-
-    /*
-     * Harga retail hanya menjadi default.
-     * Jangan menimpa harga khusus yang sudah diketik kasir.
-     */
-    if (
-      specialInput.value === "" ||
-      Number(specialInput.value) <= 0
-    ) {
-      specialInput.value =
-        Number(
-          posSelectedProduct.hargaJual ||
-          0
-        );
-    }
 
   }
 
