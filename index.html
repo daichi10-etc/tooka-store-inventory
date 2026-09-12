@@ -7294,6 +7294,8 @@ function setBuyerType(
       ? "RETAIL"
       : "KHUSUS";
 
+  setPriceType(autoPriceType);
+
 }
 
 
@@ -7386,10 +7388,8 @@ function setPriceType(
       );
 
     /*
-     * Isi harga retail hanya sebagai default
-     * saat field harga khusus masih kosong.
-     * Jangan menimpa harga khusus yang sudah
-     * diketik kasir.
+     * Harga retail hanya menjadi default.
+     * Jangan menimpa harga khusus yang sudah diketik kasir.
      */
     if (
       specialInput.value === "" ||
