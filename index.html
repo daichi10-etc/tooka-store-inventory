@@ -2139,6 +2139,22 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
     @media (max-width:800px) { .audit-row { grid-template-columns:1fr; gap:6px; } }
 </style>
 
+
+<style>
+/* =====================================================
+   TOOKA FINANCE V1
+   Additive visual layer only.
+   ===================================================== */
+.finance-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+.finance-summary-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:15px;}
+.finance-payment-cards{margin-top:12px;}
+.finance-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+.finance-table{width:100%;border-collapse:collapse;}
+.finance-table th,.finance-table td{padding:10px 8px;border-bottom:1px solid #e5e7eb;}
+.finance-table th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#64748b;}
+@media(max-width:850px){.finance-filters,.finance-summary-cards{grid-template-columns:1fr 1fr;}}
+@media(max-width:560px){.finance-filters,.finance-summary-cards{grid-template-columns:1fr;}}
+</style>
 </head>
 
 <body>
@@ -2395,6 +2411,14 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         onclick="showPage('auditLog', this)"
       >
         🛡️ <span>Audit Log</span>
+      </button>
+
+      <button
+        id="ownerFinanceNav"
+        class="nav-btn hidden"
+        onclick="showPage('financeReport', this)"
+      >
+        💼 <span>Finance</span>
       </button>
 
     </nav>
@@ -3474,6 +3498,85 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
           <div id="auditLogList" class="audit-log-list">
             Memuat aktivitas...
           </div>
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           FINANCE V1 — LAPORAN PENJUALAN
+           ================================================= -->
+
+      <section id="financeReport" class="page">
+
+        <div class="title">
+          <h2>💼 <span>Finance</span></h2>
+          <p>Laporan penjualan POS berbasis transaksi yang sudah tercatat.</p>
+        </div>
+
+        <div id="financeStatus" class="status"></div>
+
+        <div class="panel">
+          <h3>Filter Laporan</h3>
+          <div class="finance-filters">
+            <div>
+              <label>Tanggal Mulai</label>
+              <input id="financeDateStart" type="date">
+            </div>
+            <div>
+              <label>Tanggal Selesai</label>
+              <input id="financeDateEnd" type="date">
+            </div>
+            <div>
+              <label>Lokasi</label>
+              <select id="financeLocation">
+                <option value="">Semua Lokasi</option>
+                <option value="LOC001">TOOKA HUB METRO</option>
+                <option value="LOC002">TOOKA STORE JEPARA</option>
+              </select>
+            </div>
+            <div>
+              <label>Kasir</label>
+              <select id="financeUser">
+                <option value="">Semua Kasir</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="loadFinanceReport()">📊 HITUNG LAPORAN</button>
+            <button class="btn btn-secondary" onclick="resetFinanceReport()">↺ RESET</button>
+          </div>
+        </div>
+
+        <div class="finance-summary-cards">
+          <div class="card"><small>OMZET</small><strong id="financeOmzet">Rp0</strong><span class="muted">Total penjualan</span></div>
+          <div class="card"><small>TRANSAKSI</small><strong id="financeTransaksi">0</strong><span class="muted">Checkout berhasil</span></div>
+          <div class="card"><small>ITEM TERJUAL</small><strong id="financeItemTerjual">0</strong><span class="muted">Total qty</span></div>
+          <div class="card"><small>RATA-RATA</small><strong id="financeAvgTrx">Rp0</strong><span class="muted">Omzet ÷ transaksi</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="finance-section-head"><div><h3>💳 Penjualan berdasarkan pembayaran</h3><div class="muted">Nilai sistem dari transaksi POS.</div></div><strong id="financePeriodLabel">-</strong></div>
+          <div class="finance-summary-cards finance-payment-cards">
+            <div class="card"><small>💵 CASH</small><strong id="financeCash">Rp0</strong></div>
+            <div class="card"><small>🏦 TRANSFER</small><strong id="financeTransfer">Rp0</strong></div>
+            <div class="card"><small>📱 QRIS</small><strong id="financeQris">Rp0</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>🏪 Omzet per Cabang</h3>
+          <div id="financeLocationData" class="muted">Belum ada data.</div>
+        </div>
+
+        <div class="panel">
+          <h3>👤 Omzet per Kasir</h3>
+          <div id="financeUserData" class="muted">Belum ada data.</div>
+        </div>
+
+        <div class="panel">
+          <h3>🏆 Produk Terlaris</h3>
+          <div id="financeProductData" class="muted">Belum ada data.</div>
         </div>
 
       </section>
@@ -6004,6 +6107,19 @@ function updateUserUI() {
     }
   }
 
+  const ownerFinanceNav =
+    document.getElementById(
+      "ownerFinanceNav"
+    );
+
+  if (ownerFinanceNav) {
+    if (isOwner()) {
+      ownerFinanceNav.classList.remove("hidden");
+    } else {
+      ownerFinanceNav.classList.add("hidden");
+    }
+  }
+
 }
 
 
@@ -6658,6 +6774,159 @@ async function setAdminUserPassword() {
 
 
 /* =========================================================
+   FINANCE V1 — LAPORAN PENJUALAN OWNER ONLY
+   ========================================================= */
+
+function financeLocalDate() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+}
+
+function financeShiftDate(dateString, delta) {
+  const parts = String(dateString || "").split("-").map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return financeLocalDate();
+  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().slice(0, 10);
+}
+
+function setupFinanceReportPage() {
+  if (!isOwner()) return;
+
+  const start = document.getElementById("financeDateStart");
+  const end = document.getElementById("financeDateEnd");
+
+  if (start && !start.value) start.value = financeLocalDate();
+  if (end && !end.value) end.value = financeLocalDate();
+
+  loadFinanceUsers();
+  loadFinanceReport();
+}
+
+async function loadFinanceUsers() {
+  const select = document.getElementById("financeUser");
+  if (!select) return;
+
+  try {
+    const hasil = await apiRequest({ action: "USERS" });
+    if (!hasil || hasil.success !== true) return;
+
+    const users = Array.isArray(hasil.data) ? hasil.data : [];
+    const current = select.value;
+    select.innerHTML = '<option value="">Semua Kasir</option>' + users
+      .filter(u => String(u.status || "").toUpperCase() === "AKTIF")
+      .map(u => `<option value="${escapeHtml(u.id || "")}">${escapeHtml(u.nama || u.id || "-")}</option>`)
+      .join("");
+    if (current) select.value = current;
+  } catch (error) {
+    console.warn("Finance users gagal dimuat:", error);
+  }
+}
+
+function resetFinanceReport() {
+  const today = financeLocalDate();
+  const start = document.getElementById("financeDateStart");
+  const end = document.getElementById("financeDateEnd");
+  const location = document.getElementById("financeLocation");
+  const user = document.getElementById("financeUser");
+
+  if (start) start.value = today;
+  if (end) end.value = today;
+  if (location) location.value = "";
+  if (user) user.value = "";
+
+  loadFinanceReport();
+}
+
+async function loadFinanceReport() {
+  if (!isOwner()) return;
+
+  const start = document.getElementById("financeDateStart");
+  const end = document.getElementById("financeDateEnd");
+  const tanggalMulai = start?.value || financeLocalDate();
+  const tanggalSelesai = end?.value || tanggalMulai;
+
+  if (tanggalMulai > tanggalSelesai) {
+    showStatus("financeStatus", "Tanggal mulai tidak boleh melewati tanggal selesai.", "error");
+    return;
+  }
+
+  showStatus("financeStatus", "Menghitung laporan Finance...", "loading");
+
+  try {
+    const hasil = await apiRequest({
+      action: "FINANCE_REPORT",
+      tanggalMulai: tanggalMulai,
+      tanggalSelesai: tanggalSelesai,
+      lokasiId: document.getElementById("financeLocation")?.value || "",
+      userId: document.getElementById("financeUser")?.value || ""
+    });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(hasil?.message || "Laporan Finance gagal dimuat.");
+    }
+
+    const data = hasil.data || {};
+    const pembayaran = data.pembayaran || {};
+
+    document.getElementById("financeOmzet").textContent = formatRupiahDashboard(data.omzet);
+    document.getElementById("financeTransaksi").textContent = Number(data.transaksi || 0).toLocaleString("id-ID");
+    document.getElementById("financeItemTerjual").textContent = Number(data.itemTerjual || 0).toLocaleString("id-ID");
+    document.getElementById("financeAvgTrx").textContent = formatRupiahDashboard(data.rataRataTransaksi);
+    document.getElementById("financeCash").textContent = formatRupiahDashboard(pembayaran.cash);
+    document.getElementById("financeTransfer").textContent = formatRupiahDashboard(pembayaran.transfer);
+    document.getElementById("financeQris").textContent = formatRupiahDashboard(pembayaran.qris);
+    document.getElementById("financePeriodLabel").textContent = data.tanggalMulai === data.tanggalSelesai
+      ? "Periode: " + data.tanggalMulai
+      : "Periode: " + data.tanggalMulai + " — " + data.tanggalSelesai;
+
+    renderFinanceTable("financeLocationData", data.perLokasi || [], [
+      ["Lokasi", x => `${escapeHtml(x.lokasi || x.lokasiId || "-")}<div class="muted" style="font-size:12px;">${escapeHtml(x.lokasiId || "")}</div>`],
+      ["Transaksi", x => Number(x.transaksi || 0).toLocaleString("id-ID"), "right"],
+      ["Item", x => Number(x.itemTerjual || 0).toLocaleString("id-ID"), "right"],
+      ["Omzet", x => `<strong>${formatRupiahDashboard(x.omzet)}</strong>`, "right"]
+    ]);
+
+    renderFinanceTable("financeUserData", data.perKasir || [], [
+      ["Kasir", x => escapeHtml(x.nama || x.userId || "-"), "left"],
+      ["Lokasi", x => escapeHtml(x.lokasi || "-"), "left"],
+      ["Transaksi", x => Number(x.transaksi || 0).toLocaleString("id-ID"), "right"],
+      ["Item", x => Number(x.itemTerjual || 0).toLocaleString("id-ID"), "right"],
+      ["Omzet", x => `<strong>${formatRupiahDashboard(x.omzet)}</strong>`, "right"]
+    ]);
+
+    renderFinanceTable("financeProductData", data.topProduk || [], [
+      ["#", (_x, i) => `<strong>${i + 1}</strong>`, "left"],
+      ["Produk", x => `${escapeHtml(x.nama || x.produkId || "-")}<div class="muted" style="font-size:12px;">${escapeHtml(x.produkId || "")}</div>`, "left"],
+      ["Qty", x => `${Number(x.qty || 0).toLocaleString("id-ID")} ${escapeHtml(x.satuan || "")}`, "right"],
+      ["Omzet", x => `<strong>${formatRupiahDashboard(x.omzet)}</strong>`, "right"]
+    ]);
+
+    showStatus("financeStatus", "Laporan Finance berhasil dimuat.", "success");
+  } catch (error) {
+    console.error("Finance error:", error);
+    showStatus("financeStatus", error.message || "Laporan Finance gagal dimuat.", "error");
+  }
+}
+
+function renderFinanceTable(elementId, rows, columns) {
+  const box = document.getElementById(elementId);
+  if (!box) return;
+
+  if (!rows.length) {
+    box.innerHTML = '<div class="muted" style="padding:10px 0;">Tidak ada data pada periode/filter ini.</div>';
+    return;
+  }
+
+  box.innerHTML = `<div style="overflow-x:auto;"><table class="finance-table"><thead><tr>${columns.map(c => `<th style="text-align:${c[2] || "left"};">${c[0]}</th>`).join("")}</tr></thead><tbody>${rows.map((row, i) => `<tr>${columns.map(c => `<td style="text-align:${c[2] || "left"};">${c[1](row, i)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+
+
+/* =========================================================
    AUDIT LOG — OWNER ONLY
    ========================================================= */
 
@@ -6854,6 +7123,25 @@ function showPage(
 
   }
 
+
+  if (
+    pageId ===
+    "financeReport"
+  ) {
+
+    if (!isOwner()) {
+      showPage(
+        "pos",
+        document.querySelector(
+          '.nav-btn[onclick*="pos"]'
+        )
+      );
+      return;
+    }
+
+    setupFinanceReportPage();
+
+  }
 
   if (
     pageId ===
