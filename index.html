@@ -2126,6 +2126,17 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
   .pos-welcome{padding:21px;min-height:0;}
   .welcome-art{display:none;}
 }
+
+    /* AUDIT LOG */
+    .audit-toolbar { display:flex; align-items:end; justify-content:space-between; gap:15px; flex-wrap:wrap; }
+    .audit-log-list { display:flex; flex-direction:column; gap:10px; }
+    .audit-row { display:grid; grid-template-columns:165px 1.1fr 120px 1.6fr; gap:12px; align-items:center; padding:13px 14px; border:1px solid #e5e7eb; border-radius:12px; background:#fff; }
+    .audit-time { font-size:12px; color:#6b7280; }
+    .audit-user strong, .audit-action strong { display:block; font-size:13px; }
+    .audit-user span, .audit-action span { display:block; margin-top:3px; font-size:11px; color:#6b7280; }
+    .audit-detail { font-size:12px; color:#374151; line-height:1.45; word-break:break-word; }
+    .audit-empty { padding:28px 10px; text-align:center; color:#6b7280; }
+    @media (max-width:800px) { .audit-row { grid-template-columns:1fr; gap:6px; } }
 </style>
 
 </head>
@@ -2376,6 +2387,14 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         onclick="showPage('usersAdmin', this)"
       >
         👤 <span>Kelola User</span>
+      </button>
+
+      <button
+        id="ownerAuditNav"
+        class="nav-btn hidden"
+        onclick="showPage('auditLog', this)"
+      >
+        🛡️ <span>Audit Log</span>
       </button>
 
     </nav>
@@ -3426,6 +3445,42 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
       <!-- =================================================
            BARANG MASUK
+           ================================================= -->
+
+      <section id="auditLog" class="page">
+
+        <div class="title">
+          <h2>🛡️ <span>Audit Log</span></h2>
+          <p>Jejak aktivitas pengguna di sistem TOOKA.</p>
+        </div>
+
+        <div id="auditLogStatus" class="status"></div>
+
+        <div class="panel">
+          <div class="audit-toolbar">
+            <div>
+              <label>Tampilkan</label>
+              <select id="auditLimit">
+                <option value="50">50 aktivitas terakhir</option>
+                <option value="100">100 aktivitas terakhir</option>
+                <option value="200">200 aktivitas terakhir</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="loadAuditLog()">🔄 MUAT ULANG</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div id="auditLogList" class="audit-log-list">
+            Memuat aktivitas...
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           USER MANAGEMENT
            ================================================= -->
 
       <section id="usersAdmin" class="page">
@@ -5936,6 +5991,19 @@ function updateUserUI() {
     }
   }
 
+  const ownerAuditNav =
+    document.getElementById(
+      "ownerAuditNav"
+    );
+
+  if (ownerAuditNav) {
+    if (isOwner()) {
+      ownerAuditNav.classList.remove("hidden");
+    } else {
+      ownerAuditNav.classList.add("hidden");
+    }
+  }
+
 }
 
 
@@ -6590,6 +6658,110 @@ async function setAdminUserPassword() {
 
 
 /* =========================================================
+   AUDIT LOG — OWNER ONLY
+   ========================================================= */
+
+async function loadAuditLog() {
+
+  if (!isOwner()) return;
+
+  const list = document.getElementById("auditLogList");
+  const limitEl = document.getElementById("auditLimit");
+
+  if (!list) return;
+
+  const limit = Number(limitEl?.value || 50);
+
+  list.innerHTML = '<div class="audit-empty">Memuat aktivitas...</div>';
+
+  showStatus("auditLogStatus", "Memuat Audit Log...", "loading");
+
+  try {
+
+    const hasil = await apiRequest({
+      action: "AUDIT_LOG",
+      limit: limit
+    });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(hasil?.message || "Audit Log gagal dimuat.");
+    }
+
+    const rows = Array.isArray(hasil.data) ? hasil.data : [];
+
+    if (!rows.length) {
+      list.innerHTML = '<div class="audit-empty">Belum ada aktivitas yang tercatat.</div>';
+      showStatus("auditLogStatus", "Audit Log kosong.", "success");
+      return;
+    }
+
+    list.innerHTML = rows.map(function(row) {
+      const timestamp = escapeHtml(formatAuditTimestamp(row.timestamp));
+      const user = escapeHtml(row.user || "-");
+      const role = escapeHtml(row.role || "-");
+      const location = escapeHtml(row.lokasi || "-");
+      const action = escapeHtml(row.action || "-");
+      const reference = escapeHtml(row.reference || "-");
+      const detail = escapeHtml(row.detail || "-");
+
+      return `
+        <div class="audit-row">
+          <div class="audit-time">${timestamp}</div>
+          <div class="audit-user">
+            <strong>${user}</strong>
+            <span>${role} • ${location}</span>
+          </div>
+          <div class="audit-action">
+            <strong>${action}</strong>
+            <span>Ref: ${reference}</span>
+          </div>
+          <div class="audit-detail">${detail}</div>
+        </div>
+      `;
+    }).join("");
+
+    showStatus("auditLogStatus", rows.length + " aktivitas terakhir berhasil dimuat.", "success");
+
+  } catch (error) {
+
+    list.innerHTML = '<div class="audit-empty">Audit Log gagal dimuat.</div>';
+    showStatus("auditLogStatus", error.message || "Audit Log gagal dimuat.", "error");
+
+  }
+
+}
+
+function formatAuditTimestamp(value) {
+
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+}
+
+function escapeHtml(value) {
+
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
+
+
+/* =========================================================
    NAVIGATION
    ========================================================= */
 
@@ -6679,6 +6851,26 @@ function showPage(
   ) {
 
     setupPosReconcilePage();
+
+  }
+
+
+  if (
+    pageId ===
+    "auditLog"
+  ) {
+
+    if (!isOwner()) {
+      showPage(
+        "pos",
+        document.querySelector(
+          '.nav-btn[onclick*="pos"]'
+        )
+      );
+      return;
+    }
+
+    loadAuditLog();
 
   }
 
