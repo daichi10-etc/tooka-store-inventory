@@ -2398,6 +2398,22 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
       </button>
 
       <button
+        id="ownerProdukNav"
+        class="nav-btn hidden"
+        onclick="showPage('produkAdmin', this)"
+      >
+        🧾 <span>Master Produk</span>
+      </button>
+
+      <button
+        id="ownerHargaNav"
+        class="nav-btn hidden"
+        onclick="showPage('hargaAdmin', this)"
+      >
+        💵 <span>Master Harga</span>
+      </button>
+
+      <button
         id="ownerUsersNav"
         class="nav-btn hidden"
         onclick="showPage('usersAdmin', this)"
@@ -3585,6 +3601,133 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
       <!-- =================================================
            USER MANAGEMENT
            ================================================= -->
+
+      <section id="produkAdmin" class="page">
+
+        <div class="title">
+          <h2>Master Produk</h2>
+          <p>Kelola produk langsung dari dashboard. Satuan dasar stok TOOKA = PCS.</p>
+        </div>
+
+        <div id="produkAdminStatus" class="status"></div>
+
+        <div class="panel">
+          <h3>Tambah / Edit Produk</h3>
+          <div class="form-grid">
+            <div>
+              <label>ID Barang</label>
+              <input id="adminProdukId" placeholder="Contoh: AJI001">
+            </div>
+            <div>
+              <label>Nama Barang</label>
+              <input id="adminProdukNama" placeholder="Nama barang">
+            </div>
+            <div>
+              <label>Kategori</label>
+              <input id="adminProdukKategori" placeholder="Kategori barang">
+            </div>
+            <div>
+              <label>Satuan Dasar</label>
+              <input id="adminProdukSatuan" value="PCS" readonly>
+            </div>
+            <div>
+              <label>Harga Jual Retail</label>
+              <input id="adminProdukHarga" type="number" min="0" step="1" placeholder="0">
+            </div>
+            <div>
+              <label>Status</label>
+              <select id="adminProdukStatus">
+                <option value="AKTIF">AKTIF</option>
+                <option value="NONAKTIF">NONAKTIF</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="primary-btn" onclick="saveAdminProduk()">💾 SIMPAN PRODUK</button>
+            <button class="secondary-btn" onclick="resetAdminProdukForm()">↺ BATAL / BARU</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <h3>Daftar Produk</h3>
+            <button class="secondary-btn" onclick="loadAdminProduk()">↻ Refresh</button>
+          </div>
+          <div id="adminProdukList" style="overflow:auto;margin-top:15px;">Memuat produk...</div>
+        </div>
+
+      </section>
+
+
+      <section id="hargaAdmin" class="page">
+
+        <div class="title">
+          <h2>Master Harga</h2>
+          <p>Harga mengikuti kategori pembeli POS yang sudah ada: KONSUMEN, RESELLER, INTERNAL.</p>
+        </div>
+
+        <div id="hargaAdminStatus" class="status"></div>
+
+        <div class="panel">
+          <h3>Tambah / Edit Harga</h3>
+          <div class="form-grid">
+            <div>
+              <label>ID Harga</label>
+              <input id="adminHargaId" readonly placeholder="Otomatis saat tambah">
+            </div>
+            <div>
+              <label>ID Barang</label>
+              <select id="adminHargaProduk"></select>
+            </div>
+            <div>
+              <label>Kategori Pembeli</label>
+              <select id="adminHargaPembeli">
+                <option value="KONSUMEN">KONSUMEN</option>
+                <option value="RESELLER">RESELLER</option>
+                <option value="INTERNAL">INTERNAL</option>
+              </select>
+            </div>
+            <div>
+              <label>Bentuk Jual</label>
+              <select id="adminHargaBentuk" onchange="syncHargaIsiPCS()">
+                <option value="PCS">PCS</option>
+                <option value="RENCENG">RENCENG</option>
+                <option value="DUS">DUS</option>
+              </select>
+            </div>
+            <div>
+              <label>Isi (PCS)</label>
+              <input id="adminHargaIsi" type="number" min="1" step="1" value="1">
+            </div>
+            <div>
+              <label>Harga Jual</label>
+              <input id="adminHargaNilai" type="number" min="0" step="1" placeholder="0">
+            </div>
+            <div>
+              <label>Status</label>
+              <select id="adminHargaStatus">
+                <option value="AKTIF">AKTIF</option>
+                <option value="NONAKTIF">NONAKTIF</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="primary-btn" onclick="saveAdminHarga()">💾 SIMPAN HARGA</button>
+            <button class="secondary-btn" onclick="resetAdminHargaForm()">↺ BATAL / BARU</button>
+          </div>
+          <p class="muted" style="margin-top:12px;">Stok tetap dihitung dalam PCS. RENCENG/DUS hanya menentukan bentuk jual dan jumlah PCS yang dikurangi saat nanti POS memakai Master Harga.</p>
+        </div>
+
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <h3>Daftar Harga</h3>
+            <button class="secondary-btn" onclick="loadAdminHarga()">↻ Refresh</button>
+          </div>
+          <div id="adminHargaList" style="overflow:auto;margin-top:15px;">Memuat harga...</div>
+        </div>
+
+      </section>
+
 
       <section id="usersAdmin" class="page">
 
@@ -6081,6 +6224,12 @@ function updateUserUI() {
   ).textContent =
     lokasiNama;
 
+  const ownerProdukNav = document.getElementById("ownerProdukNav");
+  if (ownerProdukNav) ownerProdukNav.classList.toggle("hidden", !isOwner());
+
+  const ownerHargaNav = document.getElementById("ownerHargaNav");
+  if (ownerHargaNav) ownerHargaNav.classList.toggle("hidden", !isOwner());
+
   const ownerUsersNav =
     document.getElementById(
       "ownerUsersNav"
@@ -6591,6 +6740,277 @@ async function submitInitialPassword() {
 
   }
 
+}
+
+
+/* =========================================================
+   MASTER PRODUK ADMIN + MASTER HARGA
+   ========================================================= */
+
+let adminProdukData = [];
+let adminHargaData = [];
+
+
+function escapeAdminHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+function loadAdminProdukSelect() {
+  const select = document.getElementById("adminHargaProduk");
+  if (!select) return;
+
+  const current = select.value;
+  const activeProducts = adminProdukData.filter(p => String(p.status).toUpperCase() === "AKTIF");
+
+  select.innerHTML = '<option value="">Pilih ID Barang...</option>' +
+    activeProducts.map(p =>
+      '<option value="' + escapeAdminHtml(p.id) + '">' +
+      escapeAdminHtml(p.id + " — " + p.nama) +
+      '</option>'
+    ).join("");
+
+  if (current) select.value = current;
+}
+
+
+async function loadAdminProduk() {
+  if (!isOwner()) return;
+
+  showStatus("produkAdminStatus", "Memuat master produk...", "loading");
+
+  try {
+    const hasil = await apiRequest({ action: "PRODUK_ADMIN" });
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Master Produk gagal dimuat.");
+
+    adminProdukData = Array.isArray(hasil.data) ? hasil.data : [];
+    renderAdminProdukList();
+    loadAdminProdukSelect();
+    showStatus("produkAdminStatus", "Master Produk siap.", "success");
+  } catch (error) {
+    showStatus("produkAdminStatus", error.message || "Gagal memuat Master Produk.", "error");
+  }
+}
+
+
+function renderAdminProdukList() {
+  const el = document.getElementById("adminProdukList");
+  if (!el) return;
+
+  if (!adminProdukData.length) {
+    el.innerHTML = '<div class="muted">Belum ada produk.</div>';
+    return;
+  }
+
+  el.innerHTML = '<table style="width:100%;border-collapse:collapse;min-width:760px;">' +
+    '<thead><tr><th style="text-align:left;padding:10px;">ID Barang</th><th style="text-align:left;padding:10px;">Nama</th><th style="text-align:left;padding:10px;">Kategori</th><th style="text-align:left;padding:10px;">Satuan</th><th style="text-align:right;padding:10px;">Harga Retail</th><th style="text-align:center;padding:10px;">Status</th><th style="padding:10px;">Aksi</th></tr></thead><tbody>' +
+    adminProdukData.map(p =>
+      '<tr style="border-top:1px solid #e5e7eb;">' +
+      '<td style="padding:10px;">' + escapeAdminHtml(p.id) + '</td>' +
+      '<td style="padding:10px;">' + escapeAdminHtml(p.nama) + '</td>' +
+      '<td style="padding:10px;">' + escapeAdminHtml(p.kategori) + '</td>' +
+      '<td style="padding:10px;">PCS</td>' +
+      '<td style="padding:10px;text-align:right;">' + formatRupiah(p.hargaJual || 0) + '</td>' +
+      '<td style="padding:10px;text-align:center;">' + escapeAdminHtml(p.status) + '</td>' +
+      '<td style="padding:10px;text-align:center;"><button class="secondary-btn" onclick="editAdminProduk(\'' + String(p.id).replace(/'/g, "\\'") + '\')">Edit</button></td>' +
+      '</tr>'
+    ).join("") +
+    '</tbody></table>';
+}
+
+
+function editAdminProduk(id) {
+  const p = adminProdukData.find(x => String(x.id) === String(id));
+  if (!p) return;
+
+  document.getElementById("adminProdukId").value = p.id || "";
+  document.getElementById("adminProdukId").readOnly = true;
+  document.getElementById("adminProdukNama").value = p.nama || "";
+  document.getElementById("adminProdukKategori").value = p.kategori || "";
+  document.getElementById("adminProdukSatuan").value = "PCS";
+  document.getElementById("adminProdukHarga").value = Number(p.hargaJual || 0);
+  document.getElementById("adminProdukStatus").value = String(p.status || "AKTIF").toUpperCase();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+
+function resetAdminProdukForm() {
+  document.getElementById("adminProdukId").value = "";
+  document.getElementById("adminProdukId").readOnly = false;
+  document.getElementById("adminProdukNama").value = "";
+  document.getElementById("adminProdukKategori").value = "";
+  document.getElementById("adminProdukSatuan").value = "PCS";
+  document.getElementById("adminProdukHarga").value = "";
+  document.getElementById("adminProdukStatus").value = "AKTIF";
+}
+
+
+async function saveAdminProduk() {
+  if (!isOwner()) return;
+
+  const payload = {
+    action: "PRODUK_SAVE",
+    idBarang: document.getElementById("adminProdukId").value.trim(),
+    nama: document.getElementById("adminProdukNama").value.trim(),
+    kategori: document.getElementById("adminProdukKategori").value.trim(),
+    satuan: "PCS",
+    hargaJual: Number(document.getElementById("adminProdukHarga").value || 0),
+    status: document.getElementById("adminProdukStatus").value
+  };
+
+  if (!payload.idBarang || !payload.nama) {
+    showStatus("produkAdminStatus", "ID Barang dan Nama Barang wajib diisi.", "error");
+    return;
+  }
+
+  showStatus("produkAdminStatus", "Menyimpan produk...", "loading");
+
+  try {
+    const hasil = await apiRequest(payload);
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Gagal menyimpan produk.");
+    resetAdminProdukForm();
+    await loadAdminProduk();
+    showStatus("produkAdminStatus", hasil.message || "Produk tersimpan.", "success");
+  } catch (error) {
+    showStatus("produkAdminStatus", error.message || "Gagal menyimpan produk.", "error");
+  }
+}
+
+
+function syncHargaIsiPCS() {
+  const bentuk = document.getElementById("adminHargaBentuk").value;
+  const isi = document.getElementById("adminHargaIsi");
+  if (bentuk === "PCS") {
+    isi.value = 1;
+    isi.readOnly = true;
+  } else {
+    isi.readOnly = false;
+    if (Number(isi.value || 0) <= 1) isi.value = "";
+  }
+}
+
+
+async function loadAdminHarga() {
+  if (!isOwner()) return;
+
+  showStatus("hargaAdminStatus", "Memuat master harga...", "loading");
+
+  try {
+    if (!adminProdukData.length) {
+      const produkResult = await apiRequest({ action: "PRODUK_ADMIN" });
+      if (produkResult?.success === true) adminProdukData = Array.isArray(produkResult.data) ? produkResult.data : [];
+    }
+
+    loadAdminProdukSelect();
+
+    const hasil = await apiRequest({ action: "HARGA_ADMIN" });
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Master Harga gagal dimuat.");
+
+    adminHargaData = Array.isArray(hasil.data) ? hasil.data : [];
+    renderAdminHargaList();
+    showStatus("hargaAdminStatus", "Master Harga siap.", "success");
+  } catch (error) {
+    showStatus("hargaAdminStatus", error.message || "Gagal memuat Master Harga.", "error");
+  }
+}
+
+
+function renderAdminHargaList() {
+  const el = document.getElementById("adminHargaList");
+  if (!el) return;
+
+  if (!adminHargaData.length) {
+    el.innerHTML = '<div class="muted">Belum ada master harga. Tambahkan harga pertama.</div>';
+    return;
+  }
+
+  el.innerHTML = '<table style="width:100%;border-collapse:collapse;min-width:900px;">' +
+    '<thead><tr><th style="text-align:left;padding:10px;">ID Harga</th><th style="text-align:left;padding:10px;">ID Barang</th><th style="text-align:left;padding:10px;">Pembeli</th><th style="text-align:left;padding:10px;">Bentuk</th><th style="text-align:right;padding:10px;">Isi</th><th style="text-align:right;padding:10px;">Harga</th><th style="text-align:center;padding:10px;">Status</th><th style="padding:10px;">Aksi</th></tr></thead><tbody>' +
+    adminHargaData.map(h =>
+      '<tr style="border-top:1px solid #e5e7eb;">' +
+      '<td style="padding:10px;">' + escapeAdminHtml(h.idHarga) + '</td>' +
+      '<td style="padding:10px;">' + escapeAdminHtml(h.idBarang) + '</td>' +
+      '<td style="padding:10px;">' + escapeAdminHtml(h.kategoriPembeli) + '</td>' +
+      '<td style="padding:10px;">' + escapeAdminHtml(h.bentukJual) + '</td>' +
+      '<td style="padding:10px;text-align:right;">' + Number(h.isiPcs || 0) + ' PCS</td>' +
+      '<td style="padding:10px;text-align:right;">' + formatRupiah(h.harga || 0) + '</td>' +
+      '<td style="padding:10px;text-align:center;">' + escapeAdminHtml(h.status) + '</td>' +
+      '<td style="padding:10px;text-align:center;"><button class="secondary-btn" onclick="editAdminHarga(\'' + String(h.idHarga).replace(/'/g, "\\'") + '\')">Edit</button></td>' +
+      '</tr>'
+    ).join("") +
+    '</tbody></table>';
+}
+
+
+function editAdminHarga(idHarga) {
+  const h = adminHargaData.find(x => String(x.idHarga) === String(idHarga));
+  if (!h) return;
+
+  loadAdminProdukSelect();
+  document.getElementById("adminHargaId").value = h.idHarga || "";
+  document.getElementById("adminHargaProduk").value = h.idBarang || "";
+  document.getElementById("adminHargaPembeli").value = h.kategoriPembeli || "KONSUMEN";
+  document.getElementById("adminHargaBentuk").value = h.bentukJual || "PCS";
+  document.getElementById("adminHargaIsi").value = Number(h.isiPcs || 1);
+  document.getElementById("adminHargaNilai").value = Number(h.harga || 0);
+  document.getElementById("adminHargaStatus").value = h.status || "AKTIF";
+  syncHargaIsiPCS();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+
+function resetAdminHargaForm() {
+  document.getElementById("adminHargaId").value = "";
+  document.getElementById("adminHargaProduk").value = "";
+  document.getElementById("adminHargaPembeli").value = "KONSUMEN";
+  document.getElementById("adminHargaBentuk").value = "PCS";
+  document.getElementById("adminHargaIsi").value = 1;
+  document.getElementById("adminHargaNilai").value = "";
+  document.getElementById("adminHargaStatus").value = "AKTIF";
+  syncHargaIsiPCS();
+}
+
+
+async function saveAdminHarga() {
+  if (!isOwner()) return;
+
+  const payload = {
+    action: "HARGA_SAVE",
+    idHarga: document.getElementById("adminHargaId").value.trim(),
+    idBarang: document.getElementById("adminHargaProduk").value,
+    kategoriPembeli: document.getElementById("adminHargaPembeli").value,
+    bentukJual: document.getElementById("adminHargaBentuk").value,
+    isiPcs: Number(document.getElementById("adminHargaIsi").value || 0),
+    harga: Number(document.getElementById("adminHargaNilai").value || 0),
+    status: document.getElementById("adminHargaStatus").value
+  };
+
+  if (!payload.idBarang || !payload.harga || payload.harga < 0) {
+    if (payload.harga === 0) {
+      // Rp0 diperbolehkan secara backend, tetapi biasanya bukan harga jual.
+    }
+    if (!payload.idBarang) {
+      showStatus("hargaAdminStatus", "ID Barang wajib dipilih.", "error");
+      return;
+    }
+  }
+
+  showStatus("hargaAdminStatus", "Menyimpan harga...", "loading");
+
+  try {
+    const hasil = await apiRequest(payload);
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Gagal menyimpan harga.");
+    resetAdminHargaForm();
+    await loadAdminHarga();
+    showStatus("hargaAdminStatus", hasil.message || "Harga tersimpan.", "success");
+  } catch (error) {
+    showStatus("hargaAdminStatus", error.message || "Gagal menyimpan harga.", "error");
+  }
 }
 
 
@@ -7162,6 +7582,22 @@ function showPage(
 
   }
 
+
+  if (pageId === "produkAdmin") {
+    if (!isOwner()) {
+      showPage("pos", document.querySelector('.nav-btn[onclick*="pos"]'));
+      return;
+    }
+    loadAdminProduk();
+  }
+
+  if (pageId === "hargaAdmin") {
+    if (!isOwner()) {
+      showPage("pos", document.querySelector('.nav-btn[onclick*="pos"]'));
+      return;
+    }
+    loadAdminHarga();
+  }
 
   if (
     pageId ===
@@ -8021,8 +8457,6 @@ function addPosItem() {
     posBuyerType === "KONSUMEN"
       ? "RETAIL"
       : "KHUSUS";
-
-  setPriceType(posPriceType);
 
 
   let harga =
