@@ -3612,6 +3612,20 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         <div id="produkAdminStatus" class="status"></div>
 
         <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div>
+              <h3 style="margin:0;">🔎 Cari Produk</h3>
+              <div class="muted" style="margin-top:4px;">Cari berdasarkan ID Barang atau Nama Barang.</div>
+            </div>
+            <button class="secondary-btn" onclick="focusAdminProdukNew()">＋ TAMBAH PRODUK BARU</button>
+          </div>
+          <div style="margin-top:12px;">
+            <input id="adminProdukSearch" type="search" placeholder="Contoh: AJI001 atau Aji..." autocomplete="off" oninput="searchAdminProduk(this.value)">
+          </div>
+          <div id="adminProdukSearchResults" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="panel">
           <h3>Tambah / Edit Produk</h3>
           <div class="form-grid">
             <div>
@@ -6798,6 +6812,32 @@ async function loadAdminProduk() {
 }
 
 
+function searchAdminProduk(query) {
+  const el = document.getElementById("adminProdukSearchResults");
+  if (!el) return;
+  const q = String(query || "").trim().toUpperCase();
+  if (!q) { el.innerHTML = '<div class="muted">Ketik ID Barang atau Nama Barang untuk mencari.</div>'; return; }
+  const matches = adminProdukData.filter(p => String(p.id || "").toUpperCase().includes(q) || String(p.nama || "").toUpperCase().includes(q)).slice(0, 20);
+  if (!matches.length) { el.innerHTML = '<div class="muted">Produk tidak ditemukan. Jika ini barang baru, klik <b>＋ TAMBAH PRODUK BARU</b>.</div>'; return; }
+  el.innerHTML = matches.map(p =>
+    '<button type="button" data-id="' + escapeAdminHtml(p.id) + '" onclick="editAdminProduk(this.dataset.id)" style="width:100%;text-align:left;border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:10px;margin-top:6px;cursor:pointer;">' +
+      '<strong>' + escapeAdminHtml(p.id) + ' — ' + escapeAdminHtml(p.nama) + '</strong>' +
+      '<div class="muted" style="margin-top:3px;">' + escapeAdminHtml(p.kategori || "Tanpa kategori") + ' · PCS · ' + formatRupiah(p.hargaJual || 0) + ' · ' + escapeAdminHtml(p.status || "") + '</div>' +
+    '</button>' 
+  ).join("");
+}
+
+function focusAdminProdukNew() {
+  resetAdminProdukForm();
+  const search = document.getElementById("adminProdukSearch");
+  if (search) search.value = "";
+  const results = document.getElementById("adminProdukSearchResults");
+  if (results) results.innerHTML = '<div class="muted">Mode tambah produk baru.</div>';
+  const id = document.getElementById("adminProdukId");
+  if (id) id.focus();
+}
+
+
 function renderAdminProdukList() {
   const el = document.getElementById("adminProdukList");
   if (!el) return;
@@ -6817,7 +6857,10 @@ function renderAdminProdukList() {
       '<td style="padding:10px;">PCS</td>' +
       '<td style="padding:10px;text-align:right;">' + formatRupiah(p.hargaJual || 0) + '</td>' +
       '<td style="padding:10px;text-align:center;">' + escapeAdminHtml(p.status) + '</td>' +
-      '<td style="padding:10px;text-align:center;"><button class="secondary-btn" onclick="editAdminProduk(\'' + String(p.id).replace(/'/g, "\\'") + '\')">Edit</button></td>' +
+      '<td style="padding:10px;text-align:center;display:flex;gap:6px;justify-content:center;">' +
+      '<button class="secondary-btn" data-id="' + escapeAdminHtml(p.id) + '" onclick="editAdminProduk(this.dataset.id)">Edit</button>' +
+      '<button class="secondary-btn" data-id="' + escapeAdminHtml(p.id) + '" onclick="deleteAdminProduk(this.dataset.id)">Hapus</button>' +
+      '</td>' +
       '</tr>'
     ).join("") +
     '</tbody></table>';
@@ -6847,39 +6890,40 @@ function resetAdminProdukForm() {
   document.getElementById("adminProdukSatuan").value = "PCS";
   document.getElementById("adminProdukHarga").value = "";
   document.getElementById("adminProdukStatus").value = "AKTIF";
+  const search = document.getElementById("adminProdukSearch");
+  if (search) search.value = "";
+  const results = document.getElementById("adminProdukSearchResults");
+  if (results) results.innerHTML = '<div class="muted">Mode tambah produk baru.</div>';
 }
 
 
-async function saveAdminProduk() {
+async function saveAdminProduk(confirmSimilar = false) {
   if (!isOwner()) return;
-
-  const payload = {
-    action: "PRODUK_SAVE",
-    idBarang: document.getElementById("adminProdukId").value.trim(),
-    nama: document.getElementById("adminProdukNama").value.trim(),
-    kategori: document.getElementById("adminProdukKategori").value.trim(),
-    satuan: "PCS",
-    hargaJual: Number(document.getElementById("adminProdukHarga").value || 0),
-    status: document.getElementById("adminProdukStatus").value
-  };
-
-  if (!payload.idBarang || !payload.nama) {
-    showStatus("produkAdminStatus", "ID Barang dan Nama Barang wajib diisi.", "error");
-    return;
-  }
-
+  const payload = { action: "PRODUK_SAVE", idBarang: document.getElementById("adminProdukId").value.trim(), nama: document.getElementById("adminProdukNama").value.trim(), kategori: document.getElementById("adminProdukKategori").value.trim(), satuan: "PCS", hargaJual: Number(document.getElementById("adminProdukHarga").value || 0), status: document.getElementById("adminProdukStatus").value, confirmSimilar: Boolean(confirmSimilar) };
+  if (!payload.idBarang || !payload.nama) { showStatus("produkAdminStatus", "ID Barang dan Nama Barang wajib diisi.", "error"); return; }
   showStatus("produkAdminStatus", "Menyimpan produk...", "loading");
-
   try {
     const hasil = await apiRequest(payload);
+    if (hasil?.code === "POTENTIAL_DUPLICATE") {
+      const kandidat = Array.isArray(hasil.data?.candidates) ? hasil.data.candidates : [];
+      const daftar = kandidat.map(p => `- ${p.id} — ${p.nama}`).join("\n");
+      if (window.confirm("Ditemukan produk yang berpotensi mirip:\n\n" + (daftar || "- Produk mirip") + "\n\nKalau ini memang barang berbeda, klik OK untuk tetap menyimpan.")) return saveAdminProduk(true);
+      showStatus("produkAdminStatus", "Penyimpanan dibatalkan. Silakan periksa produk yang mirip.", "error"); return;
+    }
     if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Gagal menyimpan produk.");
-    resetAdminProdukForm();
-    await loadAdminProduk();
-    showStatus("produkAdminStatus", hasil.message || "Produk tersimpan.", "success");
-  } catch (error) {
-    showStatus("produkAdminStatus", error.message || "Gagal menyimpan produk.", "error");
-  }
+    resetAdminProdukForm(); await loadAdminProduk(); showStatus("produkAdminStatus", hasil.message || "Produk tersimpan.", "success");
+  } catch (error) { showStatus("produkAdminStatus", error.message || "Gagal menyimpan produk.", "error"); }
 }
+
+async function deleteAdminProduk(id) {
+  if (!isOwner()) return;
+  const p = adminProdukData.find(x => String(x.id) === String(id)); if (!p) return;
+  if (!window.confirm("Hapus/nonaktifkan produk?\n\n" + p.id + " — " + p.nama + "\n\nJika sudah pernah dipakai di transaksi, sistem akan mengubahnya menjadi NONAKTIF agar histori tetap aman.")) return;
+  showStatus("produkAdminStatus", "Memeriksa penggunaan produk...", "loading");
+  try { const hasil = await apiRequest({ action: "PRODUK_DELETE", idBarang: id }); if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Gagal menghapus produk."); await loadAdminProduk(); resetAdminProdukForm(); showStatus("produkAdminStatus", hasil.message || "Produk diproses.", "success"); }
+  catch (error) { showStatus("produkAdminStatus", error.message || "Gagal menghapus produk.", "error"); }
+}
+
 
 
 function syncHargaIsiPCS() {
