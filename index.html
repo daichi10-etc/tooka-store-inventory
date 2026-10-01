@@ -391,6 +391,43 @@
        POS
        ===================================================== */
 
+    .pos-draft-actions {
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:12px;
+    }
+
+    .pos-draft-list {
+      display:grid;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .pos-draft-card {
+      border:1px solid #e5e7eb;
+      border-radius:10px;
+      padding:12px;
+      background:#fff;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .pos-draft-card strong {
+      display:block;
+      margin-bottom:4px;
+    }
+
+    .pos-draft-meta {
+      font-size:12px;
+      color:#6b7280;
+      line-height:1.5;
+    }
+
     .pos-buyer-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -2869,6 +2906,33 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         </div>
 
 
+        <!-- PESANAN TERSIMPAN / DRAFT ORDER -->
+
+        <div class="panel">
+
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div>
+              <h3><span class="section-icon">📦</span> Pesanan Tersimpan</h3>
+              <div class="muted">Simpan order yang belum selesai. Stok dan transaksi belum berubah sampai checkout.</div>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="loadPosDrafts()"
+            >
+              ↻ REFRESH
+            </button>
+          </div>
+
+          <div id="posDraftStatus" class="status"></div>
+          <div id="posDraftList" class="pos-draft-list">
+            <div class="muted">Memuat pesanan tersimpan...</div>
+          </div>
+
+        </div>
+
+
         <!-- PEMBAYARAN -->
 
         <div class="panel">
@@ -2996,6 +3060,15 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               justify-content:flex-end;
             "
           >
+
+            <button
+              id="btnSaveDraft"
+              type="button"
+              class="btn btn-secondary"
+              onclick="savePosDraft()"
+            >
+              💾 SIMPAN PESANAN
+            </button>
 
             <button
               id="btnCheckout"
@@ -4442,6 +4515,8 @@ let posPriceType = "RETAIL";
 let posPaymentMethod = "CASH";
 
 let posCart = [];
+
+let currentPosDraftId = null;
 
 let posSelectedProduct = null;
 
@@ -7584,6 +7659,14 @@ function showPage(
 
   if (
     pageId ===
+    "pos"
+  ) {
+    loadPosDrafts();
+  }
+
+
+  if (
+    pageId ===
     "dashboard"
   ) {
 
@@ -9187,6 +9270,260 @@ function getPosBuyerName() {
 
 
 /* =========================================================
+   POS DRAFT ORDER / PESANAN TERSIMPAN
+   ========================================================= */
+
+function getPosDraftLocationId() {
+  const el = document.getElementById("posLokasi");
+  return el ? el.value : "";
+}
+
+
+function getPosDraftItemsPayload() {
+  return posCart.map(item => ({
+    produkId: item.produkId,
+    qty: Number(item.qty),
+    harga: Number(item.harga)
+  }));
+}
+
+
+async function savePosDraft() {
+
+  if (posCart.length === 0) {
+    showStatus("statusPOS", "Keranjang masih kosong. Tambahkan produk dulu.", "error");
+    return;
+  }
+
+  const buyerName = getPosBuyerName();
+  if (!buyerName) {
+    showStatus("statusPOS", "Informasi pembeli wajib dilengkapi.", "error");
+    return;
+  }
+
+  const button = document.getElementById("btnSaveDraft");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "MENYIMPAN...";
+  }
+
+  showStatus("statusPOS", "Menyimpan pesanan...", "loading");
+
+  try {
+    const hasil = await apiRequest({
+      action: "POS_DRAFT_SAVE",
+      draftId: currentPosDraftId || "",
+      lokasiId: getPosDraftLocationId(),
+      buyerType: posBuyerType,
+      buyerName: buyerName,
+      priceType: posPriceType,
+      items: getPosDraftItemsPayload()
+    });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(hasil?.message || "Pesanan gagal disimpan.");
+    }
+
+    const savedDraftId = hasil.data?.draftId || currentPosDraftId;
+
+    // Setelah tersimpan, draft dilepas dari keranjang aktif.
+    // Jika ingin melanjutkan order ini nanti, kasir membukanya lagi
+    // dari daftar Pesanan Tersimpan.
+    currentPosDraftId = null;
+    clearPosWorkingCartOnly();
+    setBuyerType("KONSUMEN");
+
+    showStatus(
+      "statusPOS",
+      (hasil.message || "Pesanan berhasil disimpan.") + " ID: " + savedDraftId,
+      "success"
+    );
+
+    await loadPosDrafts();
+
+  } catch (error) {
+    showStatus("statusPOS", error.message || "Pesanan gagal disimpan.", "error");
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "💾 SIMPAN PESANAN";
+    }
+  }
+}
+
+
+function clearPosWorkingCartOnly() {
+
+  posCart = [];
+  posSelectedProduct = null;
+
+  const ids = [
+    ["posProduk", ""],
+    ["posProdukCari", ""],
+    ["posProdukInfo", ""],
+    ["posSpecialPrice", ""],
+    ["posQty", "1"]
+  ];
+
+  ids.forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+    if (id === "posProdukInfo" && el) el.textContent = "";
+  });
+
+  const results = document.getElementById("posProdukResults");
+  if (results) {
+    results.innerHTML = "";
+    results.classList.remove("show");
+  }
+
+  renderPosCart();
+  setPaymentMethod("CASH");
+}
+
+
+async function loadPosDrafts() {
+
+  const list = document.getElementById("posDraftList");
+  if (!list) return;
+
+  list.innerHTML = '<div class="muted">Memuat pesanan tersimpan...</div>';
+
+  try {
+    const hasil = await apiRequest({
+      action: "POS_DRAFT_LIST",
+      lokasiId: getPosDraftLocationId()
+    });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(hasil?.message || "Pesanan tersimpan gagal dimuat.");
+    }
+
+    const drafts = Array.isArray(hasil.data) ? hasil.data : [];
+
+    if (!drafts.length) {
+      list.innerHTML = '<div class="muted">Belum ada pesanan tersimpan.</div>';
+      return;
+    }
+
+    list.innerHTML = drafts.map(draft => {
+      const safeId = escapeJs(draft.draftId);
+      const waktu = draft.updatedAt ? formatReceiptDateTime(draft.updatedAt) : "-";
+
+      return `
+        <div class="pos-draft-card">
+          <div>
+            <strong>${escapeHtml(draft.draftId)} — ${escapeHtml(draft.buyerName)}</strong>
+            <div class="pos-draft-meta">
+              ${escapeHtml(draft.itemCount)} qty/item • ${escapeHtml(formatRupiah(draft.total))}<br>
+              ${escapeHtml(draft.priceType)} • Update ${escapeHtml(waktu)}<br>
+              Dibuat oleh ${escapeHtml(draft.user || "-")}
+            </div>
+          </div>
+          <div class="pos-draft-actions" style="margin-top:0;">
+            <button type="button" class="btn btn-primary" onclick="loadPosDraft('${safeId}')">BUKA & LANJUTKAN</button>
+            <button type="button" class="btn btn-danger" onclick="cancelPosDraft('${safeId}')">BATALKAN</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    list.innerHTML = '<div class="muted">Pesanan tersimpan tidak dapat dimuat.</div>';
+    showStatus("posDraftStatus", error.message || "Gagal memuat pesanan tersimpan.", "error");
+  }
+}
+
+
+async function loadPosDraft(draftId) {
+
+  showStatus("statusPOS", "Membuka pesanan tersimpan...", "loading");
+
+  try {
+    const hasil = await apiRequest({
+      action: "POS_DRAFT_LOAD",
+      draftId: draftId
+    });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(hasil?.message || "Pesanan gagal dibuka.");
+    }
+
+    const data = hasil.data || {};
+
+    currentPosDraftId = data.draftId || null;
+    posCart = Array.isArray(data.items) ? data.items.map(item => ({
+      produkId: item.produkId,
+      nama: item.nama,
+      satuan: item.satuan || "PCS",
+      qty: Number(item.qty || 0),
+      harga: Number(item.harga || 0)
+    })) : [];
+
+    setBuyerType(data.buyerType || "KONSUMEN");
+
+    if (String(data.buyerType || "").toUpperCase() === "RESELLER") {
+      const reseller = document.getElementById("posResellerName");
+      if (reseller) reseller.value = data.buyerName || "";
+    }
+
+    if (String(data.buyerType || "").toUpperCase() === "INTERNAL") {
+      const internal = document.getElementById("posInternalBuyer");
+      if (internal) internal.value = data.buyerName || "";
+    }
+
+    setPriceType(data.priceType || "RETAIL");
+    setPaymentMethod("CASH");
+
+    const lokasi = document.getElementById("posLokasi");
+    if (lokasi && data.lokasiId) lokasi.value = data.lokasiId;
+
+    renderPosCart();
+
+    showStatus(
+      "statusPOS",
+      "Pesanan " + currentPosDraftId + " dibuka. Tambahkan item lalu simpan lagi atau checkout.",
+      "success"
+    );
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+  } catch (error) {
+    showStatus("statusPOS", error.message || "Pesanan gagal dibuka.", "error");
+  }
+}
+
+
+async function cancelPosDraft(draftId) {
+
+  if (!confirm("Batalkan pesanan " + draftId + "? Pesanan ini tidak akan masuk transaksi.")) {
+    return;
+  }
+
+  try {
+    const hasil = await apiRequest({
+      action: "POS_DRAFT_DELETE",
+      draftId: draftId
+    });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(hasil?.message || "Pesanan gagal dibatalkan.");
+    }
+
+    if (currentPosDraftId === draftId) {
+      currentPosDraftId = null;
+    }
+
+    await loadPosDrafts();
+    showStatus("statusPOS", hasil.message || "Pesanan dibatalkan.", "success");
+
+  } catch (error) {
+    showStatus("statusPOS", error.message || "Pesanan gagal dibatalkan.", "error");
+  }
+}
+
+
+/* =========================================================
    CHECKOUT POS
    ========================================================= */
 
@@ -9373,6 +9710,9 @@ async function checkoutPOS() {
         amountReceived:
           amountReceived,
 
+        draftId:
+          currentPosDraftId || "",
+
         items:
           items
 
@@ -9404,6 +9744,8 @@ async function checkoutPOS() {
      * agar tidak ada risiko transaksi lama terkirim lagi.
      */
     resetPosAfterSuccessfulSale();
+    currentPosDraftId = null;
+    loadPosDrafts();
 
 
     showStatus(
@@ -9476,6 +9818,7 @@ async function checkoutPOS() {
 
 function resetPosAfterSuccessfulSale() {
 
+  currentPosDraftId = null;
   posCart = [];
 
   posSelectedProduct =
@@ -10076,6 +10419,7 @@ async function sharePosReceipt() {
 function newPosTransaction() {
 
   lastPosReceipt = null;
+  currentPosDraftId = null;
 
   posCart = [];
 
