@@ -9433,6 +9433,7 @@ async function loadPosDrafts() {
           </div>
           <div class="pos-draft-actions" style="margin-top:0;">
             <button type="button" class="btn btn-primary" onclick="loadPosDraft('${safeId}')">BUKA & LANJUTKAN</button>
+            <button type="button" class="btn btn-secondary" onclick="printPosDraft('${safeId}')">🧾 CETAK LIST</button>
             <button type="button" class="btn btn-danger" onclick="cancelPosDraft('${safeId}')">BATALKAN</button>
           </div>
         </div>
@@ -9501,6 +9502,236 @@ async function loadPosDraft(draftId) {
 
   } catch (error) {
     showStatus("statusPOS", error.message || "Pesanan gagal dibuka.", "error");
+  }
+}
+
+
+async function printPosDraft(draftId) {
+
+  /*
+   * Buka jendela print SEBELUM await supaya browser
+   * tidak menganggapnya sebagai popup yang tidak dipicu user.
+   */
+  const printWindow = window.open(
+    "",
+    "_blank",
+    "width=460,height=760"
+  );
+
+  if (!printWindow) {
+    showStatus(
+      "posDraftStatus",
+      "Jendela cetak diblokir browser. Izinkan popup untuk TOOKA.",
+      "error"
+    );
+    return;
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Pesanan Sementara ${escapeHtml(draftId)}</title>
+        <style>
+          * { box-sizing: border-box; }
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #111;
+            background: #fff;
+          }
+          .receipt {
+            max-width: 420px;
+            margin: 0 auto;
+          }
+          .center { text-align: center; }
+          h1 { font-size: 22px; margin: 0 0 4px; }
+          h2 { font-size: 15px; margin: 0 0 12px; }
+          .warning {
+            border: 2px solid #111;
+            padding: 8px;
+            text-align: center;
+            font-weight: 700;
+            margin: 12px 0;
+          }
+          .meta {
+            font-size: 12px;
+            line-height: 1.55;
+            margin-bottom: 12px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+          }
+          th, td {
+            border-bottom: 1px solid #ddd;
+            padding: 7px 3px;
+            vertical-align: top;
+          }
+          th { text-align: left; }
+          .right { text-align: right; }
+          .total {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 2px solid #111;
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            font-weight: 700;
+          }
+          .note {
+            margin-top: 16px;
+            padding-top: 10px;
+            border-top: 1px dashed #999;
+            font-size: 11px;
+            line-height: 1.5;
+            text-align: center;
+          }
+          .footer {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 10px;
+            color: #555;
+          }
+          @media print {
+            body { padding: 8px; }
+            @page { margin: 8mm; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt">
+          <div class="center">
+            <h1>TOOKA</h1>
+            <h2>BUKTI PESANAN SEMENTARA</h2>
+          </div>
+          <div class="warning">
+            BELUM DIBAYAR — BUKAN TRANSAKSI
+          </div>
+          <div id="printContent">Memuat pesanan...</div>
+        </div>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+
+  try {
+    const hasil = await apiRequest({
+      action: "POS_DRAFT_LOAD",
+      draftId: draftId
+    });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(
+        hasil?.message ||
+        "Pesanan gagal dimuat untuk dicetak."
+      );
+    }
+
+    const data = hasil.data || {};
+    const items = Array.isArray(data.items)
+      ? data.items
+      : [];
+
+    if (!items.length) {
+      throw new Error("Pesanan tidak memiliki item.");
+    }
+
+    const total = items.reduce(
+      (sum, item) =>
+        sum +
+        (Number(item.qty || 0) * Number(item.harga || 0)),
+      0
+    );
+
+    const rows = items.map(item => {
+      const qty = Number(item.qty || 0);
+      const harga = Number(item.harga || 0);
+      const subtotal = qty * harga;
+
+      return `
+        <tr>
+          <td>
+            <strong>${escapeHtml(item.nama || item.produkId || "-")}</strong><br>
+            <span>${escapeHtml(item.produkId || "-")}</span>
+          </td>
+          <td class="right">${escapeHtml(formatNumber(qty))} ${escapeHtml(item.satuan || "")}</td>
+          <td class="right">${escapeHtml(formatRupiah(harga))}</td>
+          <td class="right">${escapeHtml(formatRupiah(subtotal))}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const updatedAt = data.updatedAt
+      ? formatReceiptDateTime(data.updatedAt)
+      : "-";
+
+    printWindow.document.getElementById("printContent").innerHTML = `
+      <div class="meta">
+        <strong>ID Pesanan:</strong> ${escapeHtml(data.draftId || draftId)}<br>
+        <strong>Pembeli:</strong> ${escapeHtml(data.buyerName || "-")}<br>
+        <strong>Lokasi:</strong> ${escapeHtml(namaLokasi(data.lokasiId) || data.lokasiId || "-")}<br>
+        <strong>Harga:</strong> ${escapeHtml(data.priceType || "RETAIL")}<br>
+        <strong>Update:</strong> ${escapeHtml(updatedAt)}
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Produk</th>
+            <th class="right">Qty</th>
+            <th class="right">Harga</th>
+            <th class="right">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+
+      <div class="total">
+        <span>TOTAL</span>
+        <span>${escapeHtml(formatRupiah(total))}</span>
+      </div>
+
+      <div class="note">
+        Dokumen ini hanya untuk daftar/persiapan pesanan.<br>
+        Belum merupakan transaksi penjualan dan belum mengurangi stok.<br>
+        Checkout tetap harus dilakukan di POS.
+      </div>
+
+      <div class="footer">
+        TOOKA Store Inventory System
+      </div>
+    `;
+
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+
+    printWindow.onafterprint = () => {
+      try { printWindow.close(); } catch (e) {}
+    };
+
+    showStatus(
+      "posDraftStatus",
+      "Daftar pesanan siap dicetak.",
+      "success"
+    );
+
+  } catch (error) {
+    printWindow.document.getElementById("printContent").innerHTML = `
+      <div class="warning">
+        ${escapeHtml(error.message || "Pesanan gagal dimuat.")}
+      </div>
+    `;
+    showStatus(
+      "posDraftStatus",
+      error.message || "Pesanan gagal dicetak.",
+      "error"
+    );
   }
 }
 
