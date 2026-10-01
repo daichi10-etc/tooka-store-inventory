@@ -3693,7 +3693,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <button class="primary-btn" onclick="resetAdminProdukForm()">＋ TAMBAH PRODUK BARU</button>
           </div>
           <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap;">
-            <input id="adminProdukSearch" placeholder="Cari ID Barang / Nama Barang..." autocomplete="off" style="flex:1;min-width:240px;">
+            <input id="adminProdukSearch" placeholder="Cari ID Barang / Nama Barang..." autocomplete="off" onfocus="searchAdminProduk(false)" style="flex:1;min-width:240px;">
             <button class="secondary-btn" onclick="searchAdminProduk(true)">🔎 CARI</button>
           </div>
           <div id="adminProdukSearchHint" class="muted" style="margin-top:10px;"></div>
@@ -6915,12 +6915,9 @@ async function searchAdminProduk(showLoading = false) {
   const list = document.getElementById("adminProdukList");
 
   if (!keyword) {
-    adminProdukData = [];
-    if (list) list.innerHTML = '<div class="muted">Ketik ID Barang atau Nama Barang untuk mencari.</div>';
-    const hint = document.getElementById("adminProdukSearchHint");
-    if (hint) hint.textContent = '';
-    if (showLoading) showStatus("produkAdminStatus", "Masukkan ID Barang atau Nama Barang.", "error");
-    return;
+    if (showLoading) showStatus("produkAdminStatus", "Memuat daftar produk...", "loading");
+  } else if (showLoading) {
+    showStatus("produkAdminStatus", "Mencari produk...", "loading");
   }
 
   if (showLoading) showStatus("produkAdminStatus", "Mencari produk...", "loading");
@@ -6932,7 +6929,7 @@ async function searchAdminProduk(showLoading = false) {
 
     adminProdukData = Array.isArray(hasil.data) ? hasil.data : [];
     renderAdminProdukSearchResults(adminProdukData, keyword);
-    if (showLoading) showStatus("produkAdminStatus", "Pencarian selesai.", "success");
+    if (showLoading) showStatus("produkAdminStatus", keyword ? "Pencarian selesai." : "Daftar produk dimuat.", "success");
   } catch (error) {
     if (requestId !== adminProdukSearchRequest) return;
     if (list) list.innerHTML = '<div class="muted">Gagal memuat hasil pencarian.</div>';
@@ -6965,7 +6962,7 @@ async function loadAdminProduk() {
 
   adminProdukData = [];
   const list = document.getElementById("adminProdukList");
-  if (list) list.innerHTML = '<div class="muted">Ketik ID Barang atau Nama Barang untuk mencari.</div>';
+  if (list) list.innerHTML = '<div class="muted">Klik kolom pencarian untuk menampilkan daftar produk. Ketik untuk menyaring.</div>';
   const hint = document.getElementById("adminProdukSearchHint");
   if (hint) hint.textContent = '';
   resetAdminProdukForm();
