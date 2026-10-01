@@ -3728,6 +3728,11 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               <input id="adminProdukHarga" type="number" min="0" step="1" placeholder="0">
             </div>
             <div>
+              <label>Stok Minimum</label>
+              <input id="adminProdukStokMinimum" type="number" min="0" step="1" placeholder="Contoh: 5">
+              <div class="muted" style="margin-top:5px;">Batas stok untuk warning Dashboard.</div>
+            </div>
+            <div>
               <label>Status</label>
               <select id="adminProdukStatus">
                 <option value="AKTIF">AKTIF</option>
@@ -6881,8 +6886,8 @@ function renderAdminProdukSearchResults(items, keyword) {
     return;
   }
 
-  el.innerHTML = '<table style="width:100%;border-collapse:collapse;min-width:760px;">' +
-    '<thead><tr><th style="text-align:left;padding:10px;">ID Barang</th><th style="text-align:left;padding:10px;">Nama</th><th style="text-align:left;padding:10px;">Kategori</th><th style="text-align:left;padding:10px;">Satuan</th><th style="text-align:right;padding:10px;">Harga Retail</th><th style="text-align:center;padding:10px;">Status</th><th style="padding:10px;">Aksi</th></tr></thead><tbody>' +
+  el.innerHTML = '<table style="width:100%;border-collapse:collapse;min-width:850px;">' +
+    '<thead><tr><th style="text-align:left;padding:10px;">ID Barang</th><th style="text-align:left;padding:10px;">Nama</th><th style="text-align:left;padding:10px;">Kategori</th><th style="text-align:left;padding:10px;">Satuan</th><th style="text-align:right;padding:10px;">Harga Retail</th><th style="text-align:right;padding:10px;">Stok Minimum</th><th style="text-align:center;padding:10px;">Status</th><th style="padding:10px;">Aksi</th></tr></thead><tbody>' +
     items.map(p =>
       '<tr style="border-top:1px solid #e5e7eb;">' +
       '<td style="padding:10px;">' + escapeAdminHtml(p.id) + '</td>' +
@@ -6890,6 +6895,7 @@ function renderAdminProdukSearchResults(items, keyword) {
       '<td style="padding:10px;">' + escapeAdminHtml(p.kategori) + '</td>' +
       '<td style="padding:10px;">PCS</td>' +
       '<td style="padding:10px;text-align:right;">' + formatRupiah(p.hargaJual || 0) + '</td>' +
+      '<td style="padding:10px;text-align:right;">' + formatNumber(p.stokMinimum || 0) + '</td>' +
       '<td style="padding:10px;text-align:center;">' + escapeAdminHtml(p.status) + '</td>' +
       '<td style="padding:10px;text-align:center;"><button class="secondary-btn" onclick="editAdminProduk(\'' + String(p.id).replace(/'/g, "\\'") + '\')">Edit</button></td>' +
       '</tr>'
@@ -6977,6 +6983,7 @@ function editAdminProduk(id) {
   document.getElementById("adminProdukKategori").value = p.kategori || "";
   document.getElementById("adminProdukSatuan").value = "PCS";
   document.getElementById("adminProdukHarga").value = Number(p.hargaJual || 0);
+  document.getElementById("adminProdukStokMinimum").value = Number(p.stokMinimum || 0);
   document.getElementById("adminProdukStatus").value = String(p.status || "AKTIF").toUpperCase();
   const title = document.getElementById("adminProdukFormTitle");
   if (title) title.textContent = "Edit Produk — " + p.id;
@@ -6991,6 +6998,7 @@ function resetAdminProdukForm() {
   document.getElementById("adminProdukKategori").value = "";
   document.getElementById("adminProdukSatuan").value = "PCS";
   document.getElementById("adminProdukHarga").value = "";
+  document.getElementById("adminProdukStokMinimum").value = "";
   document.getElementById("adminProdukStatus").value = "AKTIF";
   const title = document.getElementById("adminProdukFormTitle");
   if (title) title.textContent = "Tambah Produk Baru";
@@ -7007,11 +7015,17 @@ async function saveAdminProduk() {
     kategori: document.getElementById("adminProdukKategori").value.trim(),
     satuan: "PCS",
     hargaJual: Number(document.getElementById("adminProdukHarga").value || 0),
+    stokMinimum: Number(document.getElementById("adminProdukStokMinimum").value || 0),
     status: document.getElementById("adminProdukStatus").value
   };
 
   if (!payload.idBarang || !payload.nama) {
     showStatus("produkAdminStatus", "ID Barang dan Nama Barang wajib diisi.", "error");
+    return;
+  }
+
+  if (!Number.isFinite(payload.stokMinimum) || payload.stokMinimum < 0) {
+    showStatus("produkAdminStatus", "Stok Minimum tidak valid.", "error");
     return;
   }
 
