@@ -2667,71 +2667,6 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         </div>
 
 
-        <!-- TIPE HARGA -->
-
-        <div class="panel">
-
-          <h3><span class="section-icon">🏷️</span> Tipe Harga</h3>
-
-          <div class="muted" style="margin-bottom:10px;">
-            Kategori pembeli dan tipe harga adalah dua hal berbeda. RETAIL memakai harga jual standar; KHUSUS dapat memakai harga khusus.
-          </div>
-
-          <div class="price-grid">
-
-            <div
-              id="priceRetail"
-              class="price-option active"
-              
-            >
-
-              <input
-                type="radio"
-                name="priceType"
-                value="RETAIL"
-                checked
-                onchange="setPriceType('RETAIL')"
-              >
-
-              <strong>
-                RETAIL
-              </strong>
-
-              <div class="muted">
-                Menggunakan harga jual standar dari MASTER PRODUK untuk PCS. Kemasan khusus mengikuti MASTER_HARGA jika tersedia.
-              </div>
-
-            </div>
-
-
-            <div
-              id="priceSpecial"
-              class="price-option"
-              
-            >
-
-              <input
-                type="radio"
-                name="priceType"
-                value="KHUSUS"
-                onchange="setPriceType('KHUSUS')"
-              >
-
-              <strong>
-                KHUSUS
-              </strong>
-
-              <div class="muted">
-                Harga khusus/negosiasi. Untuk kemasan khusus, MASTER_HARGA menjadi referensi harga dan konversi.
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
         <!-- TAMBAH PRODUK -->
 
         <div class="panel">
@@ -2814,15 +2749,6 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
                 value="1"
               >
 
-            </div>
-
-
-            <!-- Kompatibilitas DOM lama. Tidak lagi menjadi sumber harga. -->
-            <div
-              id="posSpecialPriceArea"
-              class="hidden"
-            >
-              <input id="posSpecialPrice" type="hidden" value="">
             </div>
 
 
@@ -4526,7 +4452,7 @@ let produkLoading = false;
 
 let posBuyerType = "KONSUMEN";
 
-let posPriceType = "RETAIL";
+
 
 let posPaymentMethod = "CASH";
 
@@ -8287,15 +8213,11 @@ function selectPosHarga() {
 
   if (info) {
     info.textContent =
-      "Harga retail: " + formatRupiah(item.harga) +
+      "Harga: " + formatRupiah(item.harga) +
       " · Konversi stok: 1 " + item.bentukJual +
       " = " + item.isiPcs + " PCS";
   }
 
-  if (posPriceType === "KHUSUS") {
-    const input = document.getElementById("posSpecialPrice");
-    if (input) input.value = Number(item.harga || 0);
-  }
 }
 
 
@@ -8326,7 +8248,6 @@ function setBuyerType(type) {
   if (type !== "RESELLER") document.getElementById("posResellerName").value = "";
   if (type !== "INTERNAL") document.getElementById("posInternalBuyer").value = "";
 
-  // Buyer tidak lagi memaksa RETAIL/KHUSUS. Tipe harga berdiri sendiri.
   if (posSelectedProduct) loadPosHarga(posSelectedProduct.id);
   if (posCart.length) refreshPosCartPrices();
 }
@@ -8335,34 +8256,6 @@ function setBuyerType(type) {
 /* =========================================================
    POS PRICE
    ========================================================= */
-
-function setPriceType(type) {
-
-  type = String(type || "RETAIL").toUpperCase();
-  if (type !== "RETAIL" && type !== "KHUSUS") type = "RETAIL";
-  posPriceType = type;
-
-  const retail = document.getElementById("priceRetail");
-  const special = document.getElementById("priceSpecial");
-  if (retail) retail.classList.toggle("active", type === "RETAIL");
-  if (special) special.classList.toggle("active", type === "KHUSUS");
-
-  const r = document.querySelector('input[name="priceType"][value="RETAIL"]');
-  const k = document.querySelector('input[name="priceType"][value="KHUSUS"]');
-  if (r) r.checked = type === "RETAIL";
-  if (k) k.checked = type === "KHUSUS";
-
-  const area = document.getElementById("posSpecialPriceArea");
-  if (area) area.classList.toggle("hidden", type !== "KHUSUS");
-
-  if (type === "KHUSUS" && posSelectedProduct) {
-    const selectedId = document.getElementById("posBentukJual")?.value || "";
-    const master = posHargaOptions.find(function(item) { return String(item.idHarga) === String(selectedId); });
-    const input = document.getElementById("posSpecialPrice");
-    if (input && master) input.value = Number(master.harga || 0);
-  }
-}
-
 
 async function refreshPosCartPrices() {
   if (!posCart.length) return;
@@ -8385,7 +8278,7 @@ async function refreshPosCartPrices() {
         }
         item.idHarga = match.idHarga || "";
         item.hargaMaster = Number(match.harga || 0);
-        item.harga = posPriceType === "RETAIL" ? item.hargaMaster : Number(item.harga || item.hargaMaster);
+        item.harga = item.hargaMaster;
         item.hargaTersedia = true;
       });
     } catch (e) {
@@ -8423,15 +8316,7 @@ function addPosItem() {
     return;
   }
 
-  let harga = Number(hargaMaster.harga || 0);
-
-  if (posPriceType === "KHUSUS") {
-    harga = Number(document.getElementById("posSpecialPrice").value || 0);
-    if (!isFinite(harga) || harga < 0) {
-      showStatus("statusPOS", "Harga khusus tidak valid.", "error");
-      return;
-    }
-  }
+  const harga = Number(hargaMaster.harga || 0);
 
   const key = String(posSelectedProduct.id) + "|" + hargaMaster.bentukJual + "|" + Number(hargaMaster.isiPcs);
   const existing = posCart.find(function(item) { return item.cartKey === key; });
@@ -8468,7 +8353,6 @@ function addPosItem() {
   document.getElementById("posBentukJual").innerHTML = '<option value="">Pilih produk dulu...</option>';
   document.getElementById("posBentukJual").disabled = true;
   document.getElementById("posHargaInfo").textContent = "";
-  document.getElementById("posSpecialPrice").value = "";
   document.getElementById("posQty").value = "1";
 }
 
@@ -8791,7 +8675,7 @@ async function savePosDraft() {
       lokasiId: getPosDraftLocationId(),
       buyerType: posBuyerType,
       buyerName: buyerName,
-      priceType: posPriceType,
+      priceType: "RETAIL",
       items: getPosDraftItemsPayload()
     });
 
@@ -8836,7 +8720,6 @@ function clearPosWorkingCartOnly() {
     ["posProduk", ""],
     ["posProdukCari", ""],
     ["posProdukInfo", ""],
-    ["posSpecialPrice", ""],
     ["posQty", "1"]
   ];
 
@@ -8891,7 +8774,7 @@ async function loadPosDrafts() {
             <strong>${escapeHtml(draft.draftId)} — ${escapeHtml(draft.buyerName)}</strong>
             <div class="pos-draft-meta">
               ${escapeHtml(draft.itemCount)} qty/item • ${escapeHtml(formatRupiah(draft.total))}<br>
-              ${escapeHtml(draft.priceType)} • Update ${escapeHtml(waktu)}<br>
+              Update ${escapeHtml(waktu)}<br>
               Dibuat oleh ${escapeHtml(draft.user || "-")}
             </div>
           </div>
@@ -8952,8 +8835,6 @@ async function loadPosDraft(draftId) {
       const internal = document.getElementById("posInternalBuyer");
       if (internal) internal.value = data.buyerName || "";
     }
-
-    setPriceType(data.priceType || "RETAIL");
     setPaymentMethod("CASH");
     await refreshPosCartPrices();
 
@@ -9144,7 +9025,6 @@ async function printPosDraft(draftId) {
         <strong>ID Pesanan:</strong> ${escapeHtml(data.draftId || draftId)}<br>
         <strong>Pembeli:</strong> ${escapeHtml(data.buyerName || "-")}<br>
         <strong>Lokasi:</strong> ${escapeHtml(namaLokasi(data.lokasiId) || data.lokasiId || "-")}<br>
-        <strong>Harga:</strong> ${escapeHtml(data.priceType || "RETAIL")}<br>
         <strong>Update:</strong> ${escapeHtml(updatedAt)}
       </div>
 
@@ -9427,7 +9307,7 @@ async function checkoutPOS() {
           buyerName,
 
         priceType:
-          posPriceType,
+          "RETAIL",
 
         paymentMethod:
           posPaymentMethod,
@@ -9594,12 +9474,6 @@ function resetPosAfterSuccessfulSale() {
   }
 
 
-  const specialPrice =
-    document.getElementById("posSpecialPrice");
-
-  if (specialPrice) {
-    specialPrice.value = "";
-  }
 
 
   const amountReceived =
@@ -9623,7 +9497,6 @@ function resetPosAfterSuccessfulSale() {
    * Receipt terakhir TIDAK dihapus.
    */
   setBuyerType("KONSUMEN");
-  setPriceType("RETAIL");
   setPaymentMethod("CASH");
 
 
@@ -10190,8 +10063,6 @@ function newPosTransaction() {
   const hargaInfo = document.getElementById("posHargaInfo");
   if (hargaInfo) hargaInfo.textContent = "";
 
-  const specialPrice = document.getElementById("posSpecialPrice");
-  if (specialPrice) specialPrice.value = "";
 
 
   document.getElementById(
@@ -10234,11 +10105,6 @@ function newPosTransaction() {
 
   setBuyerType(
     "KONSUMEN"
-  );
-
-
-  setPriceType(
-    "RETAIL"
   );
 
 
