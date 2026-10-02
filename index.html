@@ -2698,7 +2698,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               </strong>
 
               <div class="muted">
-                Menggunakan harga jual master produk.
+                Mengikuti MASTER_HARGA sesuai kategori pembeli.
               </div>
 
             </div>
@@ -2722,7 +2722,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               </strong>
 
               <div class="muted">
-                Harga khusus sesuai kesepakatan.
+                Mengikuti MASTER_HARGA untuk RESELLER / INTERNAL.
               </div>
 
             </div>
@@ -2781,6 +2781,28 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <div>
 
               <label>
+                Bentuk Jual / Kemasan
+              </label>
+
+              <select
+                id="posBentukJual"
+                onchange="selectPosHarga()"
+              >
+                <option value="">Pilih produk dulu...</option>
+              </select>
+
+              <div
+                id="posHargaInfo"
+                class="muted"
+                style="margin-top:6px;"
+              ></div>
+
+            </div>
+
+
+            <div>
+
+              <label>
                 Qty
               </label>
 
@@ -2795,23 +2817,12 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             </div>
 
 
+            <!-- Kompatibilitas DOM lama. Tidak lagi menjadi sumber harga. -->
             <div
               id="posSpecialPriceArea"
               class="hidden"
             >
-
-              <label>
-                Harga Khusus
-              </label>
-
-              <input
-                id="posSpecialPrice"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="Harga"
-              >
-
+              <input id="posSpecialPrice" type="hidden" value="">
             </div>
 
 
@@ -4524,6 +4535,10 @@ let posCart = [];
 let currentPosDraftId = null;
 
 let posSelectedProduct = null;
+
+let posHargaOptions = [];
+
+let posHargaLoading = false;
 
 
 /* =========================================================
@@ -8155,217 +8170,127 @@ function selectProduk(
 
 async function filterProdukPOS() {
 
-  const search =
-    document.getElementById(
-      "posProdukCari"
-    );
+  const search = document.getElementById("posProdukCari");
+  const results = document.getElementById("posProdukResults");
+  const keyword = search.value.trim().toLowerCase();
 
-
-  const results =
-    document.getElementById(
-      "posProdukResults"
-    );
-
-
-  const keyword =
-    search.value
-      .trim()
-      .toLowerCase();
-
-
-  results.classList.add(
-    "show"
-  );
-
+  results.classList.add("show");
 
   try {
+    const products = await loadProduk();
+    const filtered = products.filter(function(product) {
+      const id = String(product.id || "").toLowerCase();
+      const nama = String(product.nama || "").toLowerCase();
+      const kategori = String(product.kategori || "").toLowerCase();
+      return !keyword || id.includes(keyword) || nama.includes(keyword) || kategori.includes(keyword);
+    }).slice(0, 30);
 
-    const products =
-      await loadProduk();
-
-
-    const filtered =
-      products
-        .filter(
-          product => {
-
-            const id =
-              String(
-                product.id ||
-                ""
-              )
-                .toLowerCase();
-
-            const nama =
-              String(
-                product.nama ||
-                ""
-              )
-                .toLowerCase();
-
-            const kategori =
-              String(
-                product.kategori ||
-                ""
-              )
-                .toLowerCase();
-
-            return (
-              !keyword ||
-              id.includes(
-                keyword
-              ) ||
-              nama.includes(
-                keyword
-              ) ||
-              kategori.includes(
-                keyword
-              )
-            );
-
-          }
-        )
-        .slice(
-          0,
-          30
-        );
-
-
-    if (
-      filtered.length ===
-      0
-    ) {
-
-      results.innerHTML =
-        '<div class="product-empty">Produk tidak ditemukan.</div>';
-
+    if (!filtered.length) {
+      results.innerHTML = '<div class="product-empty">Produk tidak ditemukan.</div>';
       return;
-
     }
 
-
-    results.innerHTML =
-      filtered
-        .map(
-          product => `
-
-            <div
-              class="product-option"
-              onclick="selectPOSProduct(
-                '${escapeJs(product.id)}'
-              )"
-            >
-
-              <strong>
-                ${escapeHtml(
-                  product.id
-                )}
-                —
-                ${escapeHtml(
-                  product.nama
-                )}
-              </strong>
-
-              <span>
-                ${escapeHtml(
-                  product.satuan ||
-                  "-"
-                )}
-                ·
-                ${escapeHtml(
-                  formatRupiah(
-                    product.hargaJual ||
-                    0
-                  )
-                )}
-              </span>
-
-            </div>
-
-          `
-        )
-        .join("");
-
-
+    results.innerHTML = filtered.map(function(product) {
+      return `
+        <div class="product-option" onclick="selectPOSProduct('${escapeJs(product.id)}')">
+          <strong>${escapeHtml(product.id)} — ${escapeHtml(product.nama)}</strong>
+          <span>${escapeHtml(product.satuan || "-")} · Harga Master</span>
+        </div>
+      `;
+    }).join("");
   } catch (error) {
-
-    results.innerHTML =
-      '<div class="product-empty">Gagal memuat produk.</div>';
-
+    results.innerHTML = '<div class="product-empty">Gagal memuat produk.</div>';
   }
-
 }
 
 
-function selectPOSProduct(
-  produkId
-) {
+async function loadPosHarga(produkId) {
 
-  const product =
-    produkMaster.find(
-      item =>
-        String(
-          item.id
-        ).trim() ===
-        String(
-          produkId
-        ).trim()
-    );
+  const select = document.getElementById("posBentukJual");
+  const info = document.getElementById("posHargaInfo");
+  if (!select) return [];
+
+  posHargaOptions = [];
+  posHargaLoading = true;
+  select.innerHTML = '<option value="">Memuat harga...</option>';
+  select.disabled = true;
+  if (info) info.textContent = "";
+
+  try {
+    const hasil = await apiRequest({
+      action: "POS_HARGA",
+      produkId: produkId,
+      buyerType: posBuyerType
+    });
+
+    if (!hasil || hasil.success !== true) {
+      throw new Error(hasil?.message || "Harga Master gagal dimuat.");
+    }
+
+    posHargaOptions = Array.isArray(hasil.data?.harga) ? hasil.data.harga : [];
+
+    if (!posHargaOptions.length) {
+      select.innerHTML = '<option value="">Belum ada harga aktif</option>';
+      if (info) info.textContent = "Belum ada harga aktif di MASTER_HARGA untuk pembeli ini.";
+      return [];
+    }
+
+    select.innerHTML = '<option value="">Pilih bentuk jual...</option>' +
+      posHargaOptions.map(function(item) {
+        return `<option value="${escapeHtml(item.idHarga)}">${escapeHtml(item.bentukJual)} · ${escapeHtml(item.isiPcs)} PCS · ${escapeHtml(formatRupiah(item.harga))}</option>`;
+      }).join("");
+
+    select.disabled = false;
+    return posHargaOptions;
+  } catch (error) {
+    select.innerHTML = '<option value="">Gagal memuat harga</option>';
+    if (info) info.textContent = error.message || "Harga Master gagal dimuat.";
+    return [];
+  } finally {
+    posHargaLoading = false;
+  }
+}
 
 
-  if (!product) {
+async function selectPOSProduct(produkId) {
+
+  const product = produkMaster.find(function(item) {
+    return String(item.id).trim() === String(produkId).trim();
+  });
+
+  if (!product) return;
+
+  posSelectedProduct = product;
+
+  document.getElementById("posProduk").value = product.id;
+  document.getElementById("posProdukCari").value = product.id + " — " + product.nama;
+  document.getElementById("posProdukInfo").textContent =
+    "Satuan stok: " + (product.satuan || "PCS") + " · Harga ditentukan MASTER_HARGA.";
+
+  document.getElementById("posProdukResults").classList.remove("show");
+  await loadPosHarga(product.id);
+}
+
+
+function selectPosHarga() {
+  const select = document.getElementById("posBentukJual");
+  const info = document.getElementById("posHargaInfo");
+  const selectedId = select ? select.value : "";
+  const item = posHargaOptions.find(function(row) {
+    return String(row.idHarga) === String(selectedId);
+  });
+
+  if (!item) {
+    if (info) info.textContent = "";
     return;
   }
 
-
-  posSelectedProduct =
-    product;
-
-
-  document.getElementById(
-    "posProduk"
-  ).value =
-    product.id;
-
-
-  document.getElementById(
-    "posProdukCari"
-  ).value =
-    product.id +
-    " — " +
-    product.nama;
-
-
-  document.getElementById(
-    "posProdukInfo"
-  ).textContent =
-    "Harga retail: " +
-    formatRupiah(
-      product.hargaJual ||
-      0
-    ) +
-    " · Satuan: " +
-    (
-      product.satuan ||
-      "-"
-    );
-
-
-  document.getElementById(
-    "posSpecialPrice"
-  ).value =
-    Number(
-      product.hargaJual ||
-      0
-    );
-
-
-  document.getElementById(
-    "posProdukResults"
-  ).classList.remove(
-    "show"
-  );
-
+  if (info) {
+    info.textContent =
+      "Harga: " + formatRupiah(item.harga) +
+      " · Konversi stok: 1 " + item.bentukJual +
+      " = " + item.isiPcs + " PCS";
+  }
 }
 
 
@@ -8373,104 +8298,39 @@ function selectPOSProduct(
    POS BUYER
    ========================================================= */
 
-function setBuyerType(
-  type
-) {
+function setBuyerType(type) {
 
-  posBuyerType =
-    type;
+  posBuyerType = type;
 
-
-  document
-    .querySelectorAll(
-      ".buyer-btn"
-    )
-    .forEach(
-      button =>
-        button.classList.remove(
-          "active"
-        )
-    );
-
+  document.querySelectorAll(".buyer-btn").forEach(function(button) {
+    button.classList.remove("active");
+  });
 
   const buttonMap = {
-    KONSUMEN:
-      "buyerKonsumen",
-
-    RESELLER:
-      "buyerReseller",
-
-    INTERNAL:
-      "buyerInternal"
+    KONSUMEN: "buyerKonsumen",
+    RESELLER: "buyerReseller",
+    INTERNAL: "buyerInternal"
   };
 
+  const activeButton = document.getElementById(buttonMap[type]);
+  if (activeButton) activeButton.classList.add("active");
 
-  document.getElementById(
-    buttonMap[type]
-  ).classList.add(
-    "active"
-  );
+  document.getElementById("resellerArea").classList.toggle("hidden", type !== "RESELLER");
+  document.getElementById("internalArea").classList.toggle("hidden", type !== "INTERNAL");
 
+  if (type !== "RESELLER") document.getElementById("posResellerName").value = "";
+  if (type !== "INTERNAL") document.getElementById("posInternalBuyer").value = "";
 
-  document.getElementById(
-    "resellerArea"
-  ).classList.toggle(
-    "hidden",
-    type !==
-      "RESELLER"
-  );
+  posPriceType = type === "KONSUMEN" ? "RETAIL" : "KHUSUS";
 
-
-  document.getElementById(
-    "internalArea"
-  ).classList.toggle(
-    "hidden",
-    type !==
-      "INTERNAL"
-  );
-
-
-  if (
-    type !==
-    "RESELLER"
-  ) {
-
-    document.getElementById(
-      "posResellerName"
-    ).value =
-      "";
-
+  // Harga yang sedang dipilih mengikuti kategori buyer baru.
+  if (posSelectedProduct) {
+    loadPosHarga(posSelectedProduct.id);
   }
 
-
-  if (
-    type !==
-    "INTERNAL"
-  ) {
-
-    document.getElementById(
-      "posInternalBuyer"
-    ).value =
-      "";
-
+  if (posCart.length) {
+    refreshPosCartPrices();
   }
-
-
-  /*
-   * TIPE HARGA OTOMATIS MENGIKUTI PEMBELI.
-   * KONSUMEN  -> RETAIL
-   * RESELLER  -> KHUSUS
-   * INTERNAL  -> KHUSUS
-   *
-   * Kasir tidak perlu memilih tipe harga manual.
-   */
-  const autoPriceType =
-    type === "KONSUMEN"
-      ? "RETAIL"
-      : "KHUSUS";
-
-  setPriceType(autoPriceType);
-
 }
 
 
@@ -8478,102 +8338,59 @@ function setBuyerType(
    POS PRICE
    ========================================================= */
 
-function setPriceType(
-  type
-) {
+function setPriceType(type) {
+  // Dipertahankan untuk kompatibilitas dengan fungsi lama.
+  posPriceType = posBuyerType === "KONSUMEN" ? "RETAIL" : "KHUSUS";
 
-  /*
-   * Safety rule: harga ditentukan oleh jenis pembeli.
-   * Jika ada pemanggilan yang mencoba memilih harga
-   * secara manual dan tidak sesuai, sistem memaksa
-   * kembali ke aturan bisnis.
-   */
-  if (posBuyerType === "KONSUMEN") {
-    type = "RETAIL";
-  } else if (
-    posBuyerType === "RESELLER" ||
-    posBuyerType === "INTERNAL"
-  ) {
-    type = "KHUSUS";
+  const retail = document.getElementById("priceRetail");
+  const special = document.getElementById("priceSpecial");
+  if (retail) retail.classList.toggle("active", posPriceType === "RETAIL");
+  if (special) special.classList.toggle("active", posPriceType === "KHUSUS");
+
+  const r = document.querySelector('input[name="priceType"][value="RETAIL"]');
+  const k = document.querySelector('input[name="priceType"][value="KHUSUS"]');
+  if (r) r.checked = posPriceType === "RETAIL";
+  if (k) k.checked = posPriceType === "KHUSUS";
+}
+
+
+async function refreshPosCartPrices() {
+  if (!posCart.length) return;
+
+  const uniqueProducts = [...new Set(posCart.map(function(item) { return String(item.produkId); }))];
+
+  for (const produkId of uniqueProducts) {
+    try {
+      const hasil = await apiRequest({
+        action: "POS_HARGA",
+        produkId: produkId,
+        buyerType: posBuyerType
+      });
+
+      const options = hasil?.data?.harga || [];
+
+      posCart.forEach(function(item) {
+        if (String(item.produkId) !== String(produkId)) return;
+        const match = options.find(function(row) {
+          return String(row.bentukJual).toUpperCase() === String(item.bentukJual).toUpperCase() &&
+            Number(row.isiPcs) === Number(item.isiPcs);
+        });
+        if (match) {
+          item.idHarga = match.idHarga;
+          item.harga = Number(match.harga);
+          item.hargaTersedia = true;
+        } else {
+          item.hargaTersedia = false;
+        }
+      });
+    } catch (e) {
+      posCart.forEach(function(item) {
+        if (String(item.produkId) === String(produkId)) item.hargaTersedia = false;
+      });
+    }
   }
 
-  posPriceType =
-    type;
-
-
-  document.getElementById(
-    "priceRetail"
-  ).classList.toggle(
-    "active",
-    type ===
-      "RETAIL"
-  );
-
-
-  document.getElementById(
-    "priceSpecial"
-  ).classList.toggle(
-    "active",
-    type ===
-      "KHUSUS"
-  );
-
-
-  document.getElementById(
-    "priceRetail"
-  ).classList.add("price-auto-locked");
-
-  document.getElementById(
-    "priceSpecial"
-  ).classList.add("price-auto-locked");
-
-
-  document.querySelector(
-    'input[name="priceType"][value="RETAIL"]'
-  ).checked =
-    type ===
-    "RETAIL";
-
-
-  document.querySelector(
-    'input[name="priceType"][value="KHUSUS"]'
-  ).checked =
-    type ===
-    "KHUSUS";
-
-
-  document.getElementById(
-    "posSpecialPriceArea"
-  ).classList.toggle(
-    "hidden",
-    type !==
-      "KHUSUS"
-  );
-
-
-  if (
-    type ===
-    "KHUSUS" &&
-    posSelectedProduct
-  ) {
-
-    document.getElementById(
-      "posSpecialPrice"
-    ).value =
-      Number(
-        posSelectedProduct.hargaJual ||
-        0
-      );
-
-  }
-
-
-  /*
-   * Harga cart retail mengikuti master.
-   * Harga khusus yang sudah dimasukkan
-   * tetap tersimpan sebagai actual price.
-   */
-
+  renderPosCart();
 }
 
 
@@ -8584,227 +8401,61 @@ function setPriceType(
 function addPosItem() {
 
   if (!posSelectedProduct) {
-
-    showStatus(
-      "statusPOS",
-      "Pilih produk terlebih dahulu.",
-      "error"
-    );
-
+    showStatus("statusPOS", "Pilih produk terlebih dahulu.", "error");
     return;
-
   }
 
+  const hargaSelect = document.getElementById("posBentukJual");
+  const selectedId = hargaSelect ? hargaSelect.value : "";
+  const hargaMaster = posHargaOptions.find(function(item) {
+    return String(item.idHarga) === String(selectedId);
+  });
 
-  const qty =
-    Number(
-      document.getElementById(
-        "posQty"
-      ).value
-    );
-
-
-  if (
-    !qty ||
-    qty <= 0
-  ) {
-
-    showStatus(
-      "statusPOS",
-      "Qty harus lebih dari 0.",
-      "error"
-    );
-
+  if (!hargaMaster) {
+    showStatus("statusPOS", "Pilih bentuk jual dari MASTER_HARGA terlebih dahulu.", "error");
     return;
-
   }
 
-
-  /* Harga selalu mengikuti buyer type, bukan pilihan manual kasir. */
-  posPriceType =
-    posBuyerType === "KONSUMEN"
-      ? "RETAIL"
-      : "KHUSUS";
-
-
-  let harga =
-    Number(
-      posSelectedProduct.hargaJual ||
-      0
-    );
-
-
-  if (
-    posPriceType ===
-    "KHUSUS"
-  ) {
-
-    harga =
-      Number(
-        document.getElementById(
-          "posSpecialPrice"
-        ).value
-      );
-
-
-    if (
-      !harga ||
-      harga < 0
-    ) {
-
-      showStatus(
-        "statusPOS",
-        "Harga khusus tidak valid.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    const retail =
-      Number(
-        posSelectedProduct.hargaJual ||
-        0
-      );
-
-
-    if (
-      retail > 0 &&
-      harga >
-      retail
-    ) {
-
-      showStatus(
-        "statusPOS",
-        "Harga khusus tidak boleh lebih tinggi dari harga retail.",
-        "error"
-      );
-
-      return;
-
-    }
-
+  const qty = Number(document.getElementById("posQty").value);
+  if (!isFinite(qty) || qty <= 0) {
+    showStatus("statusPOS", "Qty harus lebih dari 0.", "error");
+    return;
   }
 
-
-  const existing =
-    posCart.find(
-      item =>
-        String(
-          item.produkId
-        ) ===
-        String(
-          posSelectedProduct.id
-        )
-    );
-
+  const key = String(posSelectedProduct.id) + "|" + hargaMaster.bentukJual + "|" + Number(hargaMaster.isiPcs);
+  const existing = posCart.find(function(item) { return item.cartKey === key; });
 
   if (existing) {
-
-    /*
-     * Jika produk sudah ada,
-     * tambahkan qty.
-     */
-
-    existing.qty +=
-      qty;
-
-    /*
-     * Kalau harga khusus,
-     * gunakan harga baru.
-     */
-
-    if (
-      posPriceType ===
-      "KHUSUS"
-    ) {
-
-      existing.harga =
-        harga;
-
-    } else {
-
-      existing.harga =
-        Number(
-          posSelectedProduct.hargaJual ||
-          0
-        );
-
-    }
-
+    existing.qty += qty;
+    existing.harga = Number(hargaMaster.harga);
+    existing.hargaTersedia = true;
   } else {
-
     posCart.push({
-
-      produkId:
-        posSelectedProduct.id,
-
-      nama:
-        posSelectedProduct.nama,
-
-      satuan:
-        posSelectedProduct.satuan ||
-        "",
-
-      qty:
-        qty,
-
-      harga:
-        harga,
-
-      hargaRetail:
-        Number(
-          posSelectedProduct.hargaJual ||
-          0
-        )
-
+      cartKey: key,
+      produkId: posSelectedProduct.id,
+      nama: posSelectedProduct.nama,
+      satuan: posSelectedProduct.satuan || "PCS",
+      qty: qty,
+      harga: Number(hargaMaster.harga),
+      hargaRetail: Number(posSelectedProduct.hargaJual || 0),
+      idHarga: hargaMaster.idHarga,
+      bentukJual: hargaMaster.bentukJual,
+      isiPcs: Number(hargaMaster.isiPcs),
+      hargaTersedia: true
     });
-
   }
 
-
   renderPosCart();
+  posSelectedProduct = null;
+  posHargaOptions = [];
 
-
-  /*
-   * Reset picker.
-   */
-
-  posSelectedProduct =
-    null;
-
-
-  document.getElementById(
-    "posProduk"
-  ).value =
-    "";
-
-
-  document.getElementById(
-    "posProdukCari"
-  ).value =
-    "";
-
-
-  document.getElementById(
-    "posProdukInfo"
-  ).textContent =
-    "";
-
-
-  document.getElementById(
-    "posSpecialPrice"
-  ).value =
-    "";
-
-
-  document.getElementById(
-    "posQty"
-  ).value =
-    "1";
-
+  document.getElementById("posProduk").value = "";
+  document.getElementById("posProdukCari").value = "";
+  document.getElementById("posProdukInfo").textContent = "";
+  document.getElementById("posBentukJual").innerHTML = '<option value="">Pilih produk dulu...</option>';
+  document.getElementById("posBentukJual").disabled = true;
+  document.getElementById("posHargaInfo").textContent = "";
+  document.getElementById("posQty").value = "1";
 }
 
 
@@ -8814,283 +8465,79 @@ function addPosItem() {
 
 function renderPosCart() {
 
-  const empty =
-    document.getElementById(
-      "posCartEmpty"
-    );
+  const empty = document.getElementById("posCartEmpty");
+  const wrap = document.getElementById("posCartWrap");
+  const body = document.getElementById("posCartBody");
 
-
-  const wrap =
-    document.getElementById(
-      "posCartWrap"
-    );
-
-
-  const body =
-    document.getElementById(
-      "posCartBody"
-    );
-
-
-  if (
-    posCart.length ===
-    0
-  ) {
-
-    empty.classList.remove(
-      "hidden"
-    );
-
-    wrap.classList.add(
-      "hidden"
-    );
-
-    document.getElementById(
-      "posTotal"
-    ).textContent =
-      "Rp0";
-
-    document.getElementById(
-      "posTotalItems"
-    ).textContent =
-      "0";
-
+  if (posCart.length === 0) {
+    empty.classList.remove("hidden");
+    wrap.classList.add("hidden");
+    document.getElementById("posTotal").textContent = "Rp0";
+    document.getElementById("posTotalItems").textContent = "0";
     calculateChange();
-
     return;
-
   }
 
+  empty.classList.add("hidden");
+  wrap.classList.remove("hidden");
 
-  empty.classList.add(
-    "hidden"
-  );
+  body.innerHTML = posCart.map(function(item, index) {
+    const subtotal = Number(item.qty) * Number(item.harga || 0);
+    const statusHarga = item.hargaTersedia === false
+      ? '<div style="color:#b91c1c;font-weight:700;">HARGA MASTER TIDAK TERSEDIA</div>'
+      : '';
 
+    return `
+      <tr>
+        <td>
+          <strong>${escapeHtml(item.nama)}</strong>
+          <div class="muted">${escapeHtml(item.produkId)}</div>
+          <div class="muted">Bentuk: <strong>${escapeHtml(item.bentukJual || "-")}</strong> · Isi ${escapeHtml(item.isiPcs || 0)} PCS</div>
+          ${statusHarga}
+        </td>
+        <td>
+          <div class="qty-control">
+            <button onclick="changePosQty(${index}, -1)">−</button>
+            <strong>${escapeHtml(formatNumber(item.qty))}</strong>
+            <button onclick="changePosQty(${index}, 1)">+</button>
+          </div>
+          <div class="muted">${escapeHtml(item.bentukJual || "unit")}</div>
+        </td>
+        <td>${escapeHtml(formatRupiah(item.harga))}</td>
+        <td><strong>${escapeHtml(formatRupiah(subtotal))}</strong></td>
+        <td><button class="remove-item" onclick="removePosItem(${index})">HAPUS</button></td>
+      </tr>
+    `;
+  }).join("");
 
-  wrap.classList.remove(
-    "hidden"
-  );
+  const total = getPosTotal();
+  const totalItems = posCart.reduce(function(sum, item) { return sum + Number(item.qty); }, 0);
 
-
-  body.innerHTML =
-    posCart
-      .map(
-        (item, index) => {
-
-          const subtotal =
-            item.qty *
-            item.harga;
-
-
-          return `
-
-            <tr>
-
-              <td>
-
-                <strong>
-                  ${escapeHtml(
-                    item.nama
-                  )}
-                </strong>
-
-                <div class="muted">
-                  ${escapeHtml(
-                    item.produkId
-                  )}
-                </div>
-
-              </td>
-
-
-              <td>
-
-                <div class="qty-control">
-
-                  <button
-                    onclick="changePosQty(
-                      ${index},
-                      -1
-                    )"
-                  >
-                    −
-                  </button>
-
-                  <strong>
-                    ${escapeHtml(
-                      formatNumber(
-                        item.qty
-                      )
-                    )}
-                  </strong>
-
-                  <button
-                    onclick="changePosQty(
-                      ${index},
-                      1
-                    )"
-                  >
-                    +
-                  </button>
-
-                </div>
-
-              </td>
-
-
-              <td>
-                ${escapeHtml(
-                  formatRupiah(
-                    item.harga
-                  )
-                )}
-              </td>
-
-
-              <td>
-
-                <strong>
-                  ${escapeHtml(
-                    formatRupiah(
-                      subtotal
-                    )
-                  )}
-                </strong>
-
-              </td>
-
-
-              <td>
-
-                <button
-                  class="remove-item"
-                  onclick="removePosItem(
-                    ${index}
-                  )"
-                >
-                  HAPUS
-                </button>
-
-              </td>
-
-            </tr>
-
-          `;
-
-        }
-      )
-      .join("");
-
-
-  const total =
-    getPosTotal();
-
-
-  const totalItems =
-    posCart.reduce(
-      (
-        sum,
-        item
-      ) =>
-        sum +
-        Number(
-          item.qty
-        ),
-      0
-    );
-
-
-  document.getElementById(
-    "posTotal"
-  ).textContent =
-    formatRupiah(
-      total
-    );
-
-
-  document.getElementById(
-    "posTotalItems"
-  ).textContent =
-    formatNumber(
-      totalItems
-    );
-
-
+  document.getElementById("posTotal").textContent = formatRupiah(total);
+  document.getElementById("posTotalItems").textContent = formatNumber(totalItems);
   calculateChange();
-
 }
 
 
-function changePosQty(
-  index,
-  delta
-) {
-
-  if (
-    !posCart[index]
-  ) {
-    return;
-  }
-
-
-  posCart[index].qty +=
-    delta;
-
-
-  if (
-    posCart[index].qty <=
-    0
-  ) {
-
-    posCart.splice(
-      index,
-      1
-    );
-
-  }
-
-
+function changePosQty(index, delta) {
+  if (!posCart[index]) return;
+  posCart[index].qty += delta;
+  if (posCart[index].qty <= 0) posCart.splice(index, 1);
   renderPosCart();
-
 }
 
 
-function removePosItem(
-  index
-) {
-
-  posCart.splice(
-    index,
-    1
-  );
-
-
+function removePosItem(index) {
+  posCart.splice(index, 1);
   renderPosCart();
-
 }
 
 
 function getPosTotal() {
-
-  return posCart.reduce(
-    (
-      total,
-      item
-    ) =>
-      total +
-      (
-        Number(
-          item.qty
-        ) *
-        Number(
-          item.harga
-        )
-      ),
-    0
-  );
-
+  return posCart.reduce(function(total, item) {
+    return total + Number(item.qty) * Number(item.harga || 0);
+  }, 0);
 }
-
 
 /* =========================================================
    PAYMENT
@@ -9294,7 +8741,10 @@ function getPosDraftItemsPayload() {
   return posCart.map(item => ({
     produkId: item.produkId,
     qty: Number(item.qty),
-    harga: Number(item.harga)
+    harga: Number(item.harga),
+    idHarga: item.idHarga || "",
+    bentukJual: item.bentukJual || "",
+    isiPcs: Number(item.isiPcs || 0)
   }));
 }
 
@@ -9465,11 +8915,16 @@ async function loadPosDraft(draftId) {
 
     currentPosDraftId = data.draftId || null;
     posCart = Array.isArray(data.items) ? data.items.map(item => ({
+      cartKey: String(item.produkId) + "|" + String(item.bentukJual || "") + "|" + Number(item.isiPcs || 0),
       produkId: item.produkId,
       nama: item.nama,
       satuan: item.satuan || "PCS",
       qty: Number(item.qty || 0),
-      harga: Number(item.harga || 0)
+      harga: Number(item.harga || 0),
+      idHarga: item.idHarga || "",
+      bentukJual: item.bentukJual || "",
+      isiPcs: Number(item.isiPcs || 0),
+      hargaTersedia: true
     })) : [];
 
     setBuyerType(data.buyerType || "KONSUMEN");
@@ -9486,6 +8941,7 @@ async function loadPosDraft(draftId) {
 
     setPriceType(data.priceType || "RETAIL");
     setPaymentMethod("CASH");
+    await refreshPosCartPrices();
 
     const lokasi = document.getElementById("posLokasi");
     if (lokasi && data.lokasiId) lokasi.value = data.lokasiId;
@@ -9658,7 +9114,7 @@ async function printPosDraft(draftId) {
             <strong>${escapeHtml(item.nama || item.produkId || "-")}</strong><br>
             <span>${escapeHtml(item.produkId || "-")}</span>
           </td>
-          <td class="right">${escapeHtml(formatNumber(qty))} ${escapeHtml(item.satuan || "")}</td>
+          <td class="right">${escapeHtml(formatNumber(qty))} ${escapeHtml(item.bentukJual || "")}</td>
           <td class="right">${escapeHtml(formatRupiah(harga))}</td>
           <td class="right">${escapeHtml(formatRupiah(subtotal))}</td>
         </tr>
@@ -9682,7 +9138,7 @@ async function printPosDraft(draftId) {
         <thead>
           <tr>
             <th>Produk</th>
-            <th class="right">Qty</th>
+            <th class="right">Qty / Bentuk</th>
             <th class="right">Harga</th>
             <th class="right">Subtotal</th>
           </tr>
@@ -9800,6 +9256,11 @@ async function checkoutPOS() {
   }
 
 
+  // Sinkronkan tampilan harga dengan MASTER_HARGA terbaru
+  // sebelum menghitung nominal pembayaran.
+  await refreshPosCartPrices();
+
+
   const buyerName =
     getPosBuyerName();
 
@@ -9893,6 +9354,17 @@ async function checkoutPOS() {
         harga:
           Number(
             item.harga
+          ),
+
+        idHarga:
+          item.idHarga || "",
+
+        bentukJual:
+          item.bentukJual || "",
+
+        isiPcs:
+          Number(
+            item.isiPcs || 0
           )
 
       })
@@ -10331,9 +9803,8 @@ function renderPosReceipt(
             <tr>
 
               <td>
-                ${escapeHtml(
-                  nama
-                )}
+                <strong>${escapeHtml(nama)}</strong>
+                <div class="muted">${escapeHtml(item.bentukJual || "-")} · ${escapeHtml(item.isiPcs || 0)} PCS/UNIT</div>
               </td>
 
               <td>
@@ -10399,7 +9870,9 @@ function renderPosReceipt(
         item.subtotal ??
         (Number(item.qty || 0) *
           Number(item.harga || item.unitPrice || 0))
-      )
+      ),
+      bentukJual: item.bentukJual || "",
+      isiPcs: Number(item.isiPcs || 0)
     }))
 
   };
@@ -10492,6 +9965,7 @@ function renderPosReceipt(
             return `
               <div class="receipt-item">
                 <div class="receipt-item-name">${escapeHtml(nama)}</div>
+                <div class="muted">${escapeHtml(item.bentukJual || "-")} · ${escapeHtml(item.isiPcs || 0)} PCS/UNIT</div>
                 <div class="receipt-item-line">
                   <span>${escapeHtml(formatNumber(qty))} x ${escapeHtml(formatRupiah(harga))}</span>
                   <span>${escapeHtml(formatRupiah(subtotal))}</span>
@@ -10544,7 +10018,7 @@ function buildPosReceiptText() {
 
   const lines = data.items
     .map(item =>
-      `${item.nama}\n${formatNumber(item.qty)} x ${formatRupiah(item.harga)}       ${formatRupiah(item.subtotal)}`
+      `${item.nama}\n${formatNumber(item.qty)} ${item.bentukJual || "unit"} x ${formatRupiah(item.harga)}       ${formatRupiah(item.subtotal)}`
     )
     .join("\n\n");
 
@@ -10693,10 +10167,17 @@ function newPosTransaction() {
     "1";
 
 
-  document.getElementById(
-    "posSpecialPrice"
-  ).value =
-    "";
+  const bentukJual = document.getElementById("posBentukJual");
+  if (bentukJual) {
+    bentukJual.innerHTML = '<option value="">Pilih produk dulu...</option>';
+    bentukJual.disabled = true;
+  }
+
+  const hargaInfo = document.getElementById("posHargaInfo");
+  if (hargaInfo) hargaInfo.textContent = "";
+
+  const specialPrice = document.getElementById("posSpecialPrice");
+  if (specialPrice) specialPrice.value = "";
 
 
   document.getElementById(
