@@ -2674,7 +2674,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
           <h3><span class="section-icon">🏷️</span> Tipe Harga</h3>
 
           <div class="muted" style="margin-bottom:10px;">
-            Tipe harga otomatis mengikuti jenis pembeli. Kasir tidak perlu memilih manual.
+            Kategori pembeli dan tipe harga adalah dua hal berbeda. RETAIL memakai harga jual standar; KHUSUS dapat memakai harga khusus.
           </div>
 
           <div class="price-grid">
@@ -2690,7 +2690,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
                 name="priceType"
                 value="RETAIL"
                 checked
-                disabled
+                onchange="setPriceType('RETAIL')"
               >
 
               <strong>
@@ -2698,7 +2698,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               </strong>
 
               <div class="muted">
-                Mengikuti MASTER_HARGA sesuai kategori pembeli.
+                Menggunakan harga jual standar dari MASTER PRODUK untuk PCS. Kemasan khusus mengikuti MASTER_HARGA jika tersedia.
               </div>
 
             </div>
@@ -2714,7 +2714,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
                 type="radio"
                 name="priceType"
                 value="KHUSUS"
-                disabled
+                onchange="setPriceType('KHUSUS')"
               >
 
               <strong>
@@ -2722,7 +2722,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               </strong>
 
               <div class="muted">
-                Mengikuti MASTER_HARGA untuk RESELLER / INTERNAL.
+                Harga khusus/negosiasi. Untuk kemasan khusus, MASTER_HARGA menjadi referensi harga dan konversi.
               </div>
 
             </div>
@@ -8194,7 +8194,7 @@ async function filterProdukPOS() {
       return `
         <div class="product-option" onclick="selectPOSProduct('${escapeJs(product.id)}')">
           <strong>${escapeHtml(product.id)} — ${escapeHtml(product.nama)}</strong>
-          <span>${escapeHtml(product.satuan || "-")} · Harga Master</span>
+          <span>${escapeHtml(product.satuan || "-")} · Harga PCS: ${escapeHtml(formatRupiah(product.hargaJual || 0))}</span>
         </div>
       `;
     }).join("");
@@ -8265,7 +8265,7 @@ async function selectPOSProduct(produkId) {
   document.getElementById("posProduk").value = product.id;
   document.getElementById("posProdukCari").value = product.id + " — " + product.nama;
   document.getElementById("posProdukInfo").textContent =
-    "Satuan stok: " + (product.satuan || "PCS") + " · Harga ditentukan MASTER_HARGA.";
+    "Satuan stok: " + (product.satuan || "PCS") + " · Harga PCS dari MASTER PRODUK; kemasan khusus dari MASTER_HARGA.";
 
   document.getElementById("posProdukResults").classList.remove("show");
   await loadPosHarga(product.id);
@@ -8287,9 +8287,14 @@ function selectPosHarga() {
 
   if (info) {
     info.textContent =
-      "Harga: " + formatRupiah(item.harga) +
+      "Harga retail: " + formatRupiah(item.harga) +
       " · Konversi stok: 1 " + item.bentukJual +
       " = " + item.isiPcs + " PCS";
+  }
+
+  if (posPriceType === "KHUSUS") {
+    const input = document.getElementById("posSpecialPrice");
+    if (input) input.value = Number(item.harga || 0);
   }
 }
 
@@ -8321,16 +8326,9 @@ function setBuyerType(type) {
   if (type !== "RESELLER") document.getElementById("posResellerName").value = "";
   if (type !== "INTERNAL") document.getElementById("posInternalBuyer").value = "";
 
-  posPriceType = type === "KONSUMEN" ? "RETAIL" : "KHUSUS";
-
-  // Harga yang sedang dipilih mengikuti kategori buyer baru.
-  if (posSelectedProduct) {
-    loadPosHarga(posSelectedProduct.id);
-  }
-
-  if (posCart.length) {
-    refreshPosCartPrices();
-  }
+  // Buyer tidak lagi memaksa RETAIL/KHUSUS. Tipe harga berdiri sendiri.
+  if (posSelectedProduct) loadPosHarga(posSelectedProduct.id);
+  if (posCart.length) refreshPosCartPrices();
 }
 
 
@@ -8339,18 +8337,30 @@ function setBuyerType(type) {
    ========================================================= */
 
 function setPriceType(type) {
-  // Dipertahankan untuk kompatibilitas dengan fungsi lama.
-  posPriceType = posBuyerType === "KONSUMEN" ? "RETAIL" : "KHUSUS";
+
+  type = String(type || "RETAIL").toUpperCase();
+  if (type !== "RETAIL" && type !== "KHUSUS") type = "RETAIL";
+  posPriceType = type;
 
   const retail = document.getElementById("priceRetail");
   const special = document.getElementById("priceSpecial");
-  if (retail) retail.classList.toggle("active", posPriceType === "RETAIL");
-  if (special) special.classList.toggle("active", posPriceType === "KHUSUS");
+  if (retail) retail.classList.toggle("active", type === "RETAIL");
+  if (special) special.classList.toggle("active", type === "KHUSUS");
 
   const r = document.querySelector('input[name="priceType"][value="RETAIL"]');
   const k = document.querySelector('input[name="priceType"][value="KHUSUS"]');
-  if (r) r.checked = posPriceType === "RETAIL";
-  if (k) k.checked = posPriceType === "KHUSUS";
+  if (r) r.checked = type === "RETAIL";
+  if (k) k.checked = type === "KHUSUS";
+
+  const area = document.getElementById("posSpecialPriceArea");
+  if (area) area.classList.toggle("hidden", type !== "KHUSUS");
+
+  if (type === "KHUSUS" && posSelectedProduct) {
+    const selectedId = document.getElementById("posBentukJual")?.value || "";
+    const master = posHargaOptions.find(function(item) { return String(item.idHarga) === String(selectedId); });
+    const input = document.getElementById("posSpecialPrice");
+    if (input && master) input.value = Number(master.harga || 0);
+  }
 }
 
 
@@ -8361,32 +8371,25 @@ async function refreshPosCartPrices() {
 
   for (const produkId of uniqueProducts) {
     try {
-      const hasil = await apiRequest({
-        action: "POS_HARGA",
-        produkId: produkId,
-        buyerType: posBuyerType
-      });
-
+      const hasil = await apiRequest({ action: "POS_HARGA", produkId: produkId, buyerType: posBuyerType });
       const options = hasil?.data?.harga || [];
 
       posCart.forEach(function(item) {
         if (String(item.produkId) !== String(produkId)) return;
         const match = options.find(function(row) {
-          return String(row.bentukJual).toUpperCase() === String(item.bentukJual).toUpperCase() &&
-            Number(row.isiPcs) === Number(item.isiPcs);
+          return String(row.bentukJual).toUpperCase() === String(item.bentukJual).toUpperCase() && Number(row.isiPcs) === Number(item.isiPcs);
         });
-        if (match) {
-          item.idHarga = match.idHarga;
-          item.harga = Number(match.harga);
-          item.hargaTersedia = true;
-        } else {
+        if (!match) {
           item.hargaTersedia = false;
+          return;
         }
+        item.idHarga = match.idHarga || "";
+        item.hargaMaster = Number(match.harga || 0);
+        item.harga = posPriceType === "RETAIL" ? item.hargaMaster : Number(item.harga || item.hargaMaster);
+        item.hargaTersedia = true;
       });
     } catch (e) {
-      posCart.forEach(function(item) {
-        if (String(item.produkId) === String(produkId)) item.hargaTersedia = false;
-      });
+      posCart.forEach(function(item) { if (String(item.produkId) === String(produkId)) item.hargaTersedia = false; });
     }
   }
 
@@ -8407,12 +8410,10 @@ function addPosItem() {
 
   const hargaSelect = document.getElementById("posBentukJual");
   const selectedId = hargaSelect ? hargaSelect.value : "";
-  const hargaMaster = posHargaOptions.find(function(item) {
-    return String(item.idHarga) === String(selectedId);
-  });
+  const hargaMaster = posHargaOptions.find(function(item) { return String(item.idHarga) === String(selectedId); });
 
   if (!hargaMaster) {
-    showStatus("statusPOS", "Pilih bentuk jual dari MASTER_HARGA terlebih dahulu.", "error");
+    showStatus("statusPOS", "Pilih bentuk jual terlebih dahulu.", "error");
     return;
   }
 
@@ -8422,12 +8423,23 @@ function addPosItem() {
     return;
   }
 
+  let harga = Number(hargaMaster.harga || 0);
+
+  if (posPriceType === "KHUSUS") {
+    harga = Number(document.getElementById("posSpecialPrice").value || 0);
+    if (!isFinite(harga) || harga < 0) {
+      showStatus("statusPOS", "Harga khusus tidak valid.", "error");
+      return;
+    }
+  }
+
   const key = String(posSelectedProduct.id) + "|" + hargaMaster.bentukJual + "|" + Number(hargaMaster.isiPcs);
   const existing = posCart.find(function(item) { return item.cartKey === key; });
 
   if (existing) {
     existing.qty += qty;
-    existing.harga = Number(hargaMaster.harga);
+    existing.hargaMaster = Number(hargaMaster.harga || 0);
+    existing.harga = harga;
     existing.hargaTersedia = true;
   } else {
     posCart.push({
@@ -8436,9 +8448,10 @@ function addPosItem() {
       nama: posSelectedProduct.nama,
       satuan: posSelectedProduct.satuan || "PCS",
       qty: qty,
-      harga: Number(hargaMaster.harga),
-      hargaRetail: Number(posSelectedProduct.hargaJual || 0),
-      idHarga: hargaMaster.idHarga,
+      harga: harga,
+      hargaMaster: Number(hargaMaster.harga || 0),
+      hargaRetail: Number(hargaMaster.harga || 0),
+      idHarga: hargaMaster.idHarga || "",
       bentukJual: hargaMaster.bentukJual,
       isiPcs: Number(hargaMaster.isiPcs),
       hargaTersedia: true
@@ -8455,6 +8468,7 @@ function addPosItem() {
   document.getElementById("posBentukJual").innerHTML = '<option value="">Pilih produk dulu...</option>';
   document.getElementById("posBentukJual").disabled = true;
   document.getElementById("posHargaInfo").textContent = "";
+  document.getElementById("posSpecialPrice").value = "";
   document.getElementById("posQty").value = "1";
 }
 
