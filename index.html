@@ -8145,13 +8145,25 @@ async function preloadPosPricing(force) {
 
   posPricingLoading = true;
   try {
-    const hasil = await apiRequest({ action: "POS_PRICING_ALL" });
-    if (!hasil || hasil.success !== true) {
-      throw new Error(hasil?.message || "Data harga gagal dimuat.");
-    }
+    // MASTER_PRODUK sudah diload oleh POS. Jangan minta ulang semua produk dari server.
+    const products = Array.isArray(produkMaster) ? produkMaster : [];
 
-    const products = Array.isArray(hasil.data?.produk) ? hasil.data.produk : [];
-    const rows = Array.isArray(hasil.data?.harga) ? hasil.data.harga : [];
+    // Endpoint baru hanya mengirim MASTER_HARGA aktif. Jika backend belum di-deploy,
+    // jangan membuat POS mati total; loadPosHarga() akan memakai fallback POS_HARGA.
+    let rows = [];
+    try {
+      const hasil = await apiRequest({ action: "POS_PRICING_ALL" });
+      if (hasil && hasil.success === true) {
+        rows = Array.isArray(hasil.data?.harga) ? hasil.data.harga : [];
+      } else {
+        throw new Error(hasil?.message || "Data harga gagal dimuat.");
+      }
+    } catch (preloadError) {
+      console.warn("POS_PRICING_ALL gagal; POS akan memakai fallback per-produk POS_HARGA.", preloadError);
+      posPricingCache = { KONSUMEN: {}, RESELLER: {}, INTERNAL: {} };
+      posPricingLoaded = false;
+      return false;
+    }
 
     posPricingCache = { KONSUMEN: {}, RESELLER: {}, INTERNAL: {} };
 
@@ -8224,20 +8236,52 @@ async function preloadPosPricing(force) {
 }
 
 
+function renderPosHargaOptions(options, select, info) {
+  if (!options.length) {
+    select.innerHTML = '<option value="">Harga belum tersedia</option>';
+    select.disabled = true;
+    if (info) info.textContent = "Harga produk belum tersedia.";
+    return [];
+  }
+  select.innerHTML = '<option value="">Pilih bentuk jual...</option>' +
+    options.map(function(item) {
+      return `<option value="${escapeHtml(item.idHarga)}">${escapeHtml(item.bentukJual)} · ${escapeHtml(item.isiPcs)} PCS · ${escapeHtml(formatRupiah(item.harga))}</option>`;
+    }).join("");
+  select.disabled = false;
+  return options;
+}
+
+
 async function loadPosHarga(produkId) {
   const select = document.getElementById("posBentukJual");
   const info = document.getElementById("posHargaInfo");
   if (!select) return [];
 
   if (!posPricingLoaded) {
-    select.innerHTML = '<option value="">Memuat data harga...</option>';
+    select.innerHTML = '<option value="">Memuat bentuk jual...</option>';
     select.disabled = true;
-    try {
-      await preloadPosPricing();
-    } catch (error) {
-      select.innerHTML = '<option value="">Gagal memuat harga</option>';
-      if (info) info.textContent = error.message || "Data harga gagal dimuat.";
-      return [];
+    const preloadOk = await preloadPosPricing();
+    if (!preloadOk) {
+      // Fallback kompatibel dengan backend V2.3/V2.4: hanya request harga produk ini.
+      try {
+        const hasilFallback = await apiRequest({
+          action: "POS_HARGA",
+          produkId: produkId,
+          buyerType: posBuyerType || "KONSUMEN"
+        });
+        if (!hasilFallback || hasilFallback.success !== true) throw new Error(hasilFallback?.message || "Harga produk gagal dimuat.");
+        const fallbackRows = Array.isArray(hasilFallback.data?.harga) ? hasilFallback.data.harga : [];
+        const buyer = posBuyerType || "KONSUMEN";
+        posPricingCache[buyer] = posPricingCache[buyer] || {};
+        posPricingCache[buyer][String(produkId)] = fallbackRows;
+        posHargaOptions = fallbackRows.map(function(x) { return { ...x }; });
+        posPricingLoaded = false;
+        return renderPosHargaOptions(posHargaOptions, select, info);
+      } catch (fallbackError) {
+        select.innerHTML = '<option value="">Gagal memuat harga</option>';
+        if (info) info.textContent = fallbackError.message || "Data harga gagal dimuat.";
+        return [];
+      }
     }
   }
 
@@ -8245,19 +8289,7 @@ async function loadPosHarga(produkId) {
   const options = (posPricingCache[buyer] && posPricingCache[buyer][String(produkId)]) || [];
   posHargaOptions = options.map(function(x) { return { ...x }; });
 
-  if (!posHargaOptions.length) {
-    select.innerHTML = '<option value="">Harga belum tersedia</option>';
-    select.disabled = true;
-    if (info) info.textContent = "Harga produk belum tersedia.";
-    return [];
-  }
-
-  select.innerHTML = '<option value="">Pilih bentuk jual...</option>' +
-    posHargaOptions.map(function(item) {
-      return `<option value="${escapeHtml(item.idHarga)}">${escapeHtml(item.bentukJual)} · ${escapeHtml(item.isiPcs)} PCS · ${escapeHtml(formatRupiah(item.harga))}</option>`;
-    }).join("");
-  select.disabled = false;
-  return posHargaOptions;
+  return renderPosHargaOptions(posHargaOptions, select, info);
 }
 
 
