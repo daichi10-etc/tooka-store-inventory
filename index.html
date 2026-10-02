@@ -1018,7 +1018,7 @@
     }
 
     /* =====================================================
-       TOOKA UI/UX V2.5 — VISUAL REDESIGN
+       TOOKA UI/UX V2.9 — MASTER HARGA STABLE
        Fungsi/backend tidak diubah.
        ===================================================== */
 
@@ -3719,6 +3719,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               <select id="adminHargaBentuk" onchange="syncHargaIsiPCS()">
                 <option value="PCS">PCS</option>
                 <option value="RENCENG">RENCENG</option>
+                <option value="PACK">PACK</option>
                 <option value="DUS">DUS</option>
               </select>
             </div>
@@ -3742,7 +3743,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <button class="primary-btn" onclick="saveAdminHarga()">💾 SIMPAN HARGA</button>
             <button class="secondary-btn" onclick="resetAdminHargaForm()">↺ BATAL / BARU</button>
           </div>
-          <p class="muted" style="margin-top:12px;">Stok tetap dihitung dalam PCS. RENCENG/DUS hanya menentukan bentuk jual dan jumlah PCS yang dikurangi saat nanti POS memakai Master Harga.</p>
+          <p class="muted" style="margin-top:12px;">Stok tetap dihitung dalam PCS. PCS, RENCENG, PACK, dan DUS menentukan bentuk jual; Isi PCS menentukan jumlah stok yang dikurangi saat POS.</p>
         </div>
 
         <div class="panel">
@@ -4472,6 +4473,7 @@ let posPricingCache = {
   INTERNAL: {}
 };
 let posPricingLoaded = false;
+let posPricingPrimaryAvailable = false;
 let posPricingLoading = false;
 let posPricingLoadingPromise = null;
 
@@ -7086,6 +7088,14 @@ function resetAdminHargaForm() {
 }
 
 
+function invalidatePosPricingCache() {
+  posPricingLoaded = false;
+  posPricingPrimaryAvailable = false;
+  posPricingLoading = false;
+  posPricingLoadingPromise = null;
+}
+
+
 async function saveAdminHarga() {
   if (!isOwner()) return;
 
@@ -7117,6 +7127,22 @@ async function saveAdminHarga() {
     if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Gagal menyimpan harga.");
     resetAdminHargaForm();
     await loadAdminHarga();
+
+    // MASTER_HARGA berubah -> cache POS wajib dianggap stale.
+    // Jika POS sedang terbuka, langsung sinkronkan sekali.
+    invalidatePosPricingCache();
+    const posPage = document.getElementById("pos");
+    if (posPage && posPage.classList.contains("active")) {
+      await loadProduk();
+      await preloadPosPricing(true);
+      if (posSelectedProduct) {
+        await loadPosHarga(posSelectedProduct.id);
+      }
+      if (posCart.length) {
+        await refreshPosCartPrices();
+      }
+    }
+
     showStatus("hargaAdminStatus", hasil.message || "Harga tersimpan.", "success");
   } catch (error) {
     showStatus("hargaAdminStatus", error.message || "Gagal menyimpan harga.", "error");
@@ -7618,12 +7644,17 @@ function showPage(
   }
 
 
-  if (
-    pageId ===
-    "pos"
-  ) {
+  if (pageId === "pos") {
+    // Satu jalur inisialisasi POS: MASTER_PRODUK -> pricing cache -> draft list.
+    (async function() {
+      try {
+        await loadProduk();
+        await preloadPosPricing(false);
+      } catch (error) {
+        console.warn("POS pricing preload gagal:", error);
+      }
+    })();
     loadPosDrafts();
-    preloadPosPricing();
   }
 
 
@@ -8140,8 +8171,10 @@ async function filterProdukPOS() {
 }
 
 
-function initPosPricingBaseCache() {
-  const products = Array.isArray(produkMaster) ? produkMaster : [];
+function initPosPricingBaseCache(productsOverride) {
+  const products = Array.isArray(productsOverride)
+    ? productsOverride
+    : (Array.isArray(produkMaster) ? produkMaster : []);
   const buyers = ["KONSUMEN", "RESELLER", "INTERNAL"];
   posPricingCache = { KONSUMEN: {}, RESELLER: {}, INTERNAL: {} };
 
@@ -8244,29 +8277,47 @@ async function preloadPosPricing(force) {
   if (posPricingLoading) return posPricingLoadingPromise || false;
   if (posPricingLoaded && !force) return true;
 
-  // IMPORTANT: cache dasar dibangun SEKETIKA dari MASTER_PRODUK.
-  // Jadi klik produk tidak pernah menunggu Apps Script.
-  initPosPricingBaseCache();
   posPricingLoaded = false;
+  posPricingPrimaryAvailable = false;
 
   posPricingLoading = true;
   posPricingLoadingPromise = (async function() {
     try {
-      const hasil = await apiRequest({ action: "POS_PRICING_ALL" });
-      if (!hasil || hasil.success !== true) {
-        throw new Error(hasil?.message || "Data harga gagal dimuat.");
+      // MASTER_PRODUK wajib siap sebelum cache harga dibangun.
+      // Ini mencegah cache kosong yang membuat semua bentuk jual terlihat
+      // "tidak tersedia" saat POS baru dibuka.
+      let products = Array.isArray(produkMaster) ? produkMaster : [];
+      if (!products.length) {
+        try {
+          products = await loadProduk();
+        } catch (error) {
+          console.warn("MASTER_PRODUK gagal dimuat sebelum pricing:", error);
+        }
       }
 
-      const rows = Array.isArray(hasil.data?.harga) ? hasil.data.harga : [];
-      applyPosPricingRows(rows);
-      posPricingLoaded = true;
+      initPosPricingBaseCache(products);
+
+      try {
+        const hasil = await apiRequest({ action: "POS_PRICING_ALL" });
+        if (hasil && hasil.success === true) {
+          const rows = Array.isArray(hasil.data?.harga)
+            ? hasil.data.harga
+            : [];
+
+          applyPosPricingRows(rows);
+          posPricingPrimaryAvailable = true;
+          posPricingLoaded = true;
+        }
+      } catch (primaryError) {
+        // PCS tetap tersedia dari MASTER_PRODUK. Produk yang dipilih akan
+        // mengambil POS_HARGA secara on-demand sebagai fallback.
+        console.warn("POS_PRICING_ALL gagal; gunakan fallback per produk.", primaryError);
+      }
+
       refreshCurrentPosHargaIfNeeded();
-      return true;
+      return posPricingLoaded;
     } catch (error) {
-      // PCS dari MASTER_PRODUK tetap bisa dipakai. Jangan blok POS hanya
-      // karena endpoint MASTER_HARGA gagal/lambat.
-      console.warn("POS_PRICING_ALL gagal; POS tetap memakai cache MASTER_PRODUK.", error);
-      posPricingLoaded = false;
+      console.warn("Preload harga gagal; cache dasar tetap dipakai.", error);
       return false;
     } finally {
       posPricingLoading = false;
@@ -8293,18 +8344,78 @@ function renderPosHargaOptions(options, select, info) {
 }
 
 
-function loadPosHarga(produkId) {
+async function fetchPosHargaFallback(produkId, buyer) {
+  const id = String(produkId || "").trim();
+  const pembeli = String(buyer || "KONSUMEN").trim().toUpperCase();
+  if (!id) return [];
+
+  try {
+    const hasil = await apiRequest({
+      action: "POS_HARGA",
+      produkId: id,
+      buyerType: pembeli
+    });
+
+    if (hasil && hasil.success === true) {
+      const rows = Array.isArray(hasil.data?.harga) ? hasil.data.harga : [];
+      if (rows.length) {
+        posPricingCache[pembeli] = posPricingCache[pembeli] || {};
+        posPricingCache[pembeli][id] = rows.map(function(x) { return { ...x }; });
+        sortPosPricingCache();
+        return posPricingCache[pembeli][id];
+      }
+    }
+  } catch (error) {
+    console.warn("Fallback POS_HARGA gagal untuk " + id + ":", error);
+  }
+
+  return [];
+}
+
+async function loadPosHarga(produkId) {
   const select = document.getElementById("posBentukJual");
   const info = document.getElementById("posHargaInfo");
   if (!select) return [];
 
+  const id = String(produkId || "").trim();
   const buyer = posBuyerType || "KONSUMEN";
-  const options = (posPricingCache[buyer] && posPricingCache[buyer][String(produkId)]) || [];
-  posHargaOptions = options.map(function(x) { return { ...x }; });
+  const product = produkMaster.find(function(item) {
+    return String(item.id || "").trim() === id;
+  });
 
-  // ZERO SERVER WAIT: semua yang dilakukan saat produk dipilih adalah
-  // membaca object di browser memory.
-  return renderPosHargaOptions(posHargaOptions, select, info);
+  // Selalu punya minimal PCS dari MASTER_PRODUK, bahkan ketika endpoint
+  // pricing sedang gagal atau belum selesai.
+  let options = (posPricingCache[buyer] && posPricingCache[buyer][id]) || [];
+  if (!options.length && product) {
+    options = [{
+      idHarga: "BASE-" + product.id,
+      idBarang: product.id,
+      kategoriPembeli: buyer,
+      bentukJual: "PCS",
+      isiPcs: 1,
+      harga: Number(product.hargaJual || 0),
+      status: "AKTIF",
+      source: "MASTER_PRODUK"
+    }];
+    posPricingCache[buyer] = posPricingCache[buyer] || {};
+    posPricingCache[buyer][id] = options;
+  }
+
+  posHargaOptions = options.map(function(x) { return { ...x }; });
+  renderPosHargaOptions(posHargaOptions, select, info);
+
+  // Bila preload global gagal, ambil hanya produk yang sedang dipilih.
+  // Tidak ada request server per klik pada jalur normal.
+  if (!posPricingPrimaryAvailable) {
+    const fallbackRows = await fetchPosHargaFallback(id, buyer);
+    if (fallbackRows.length) {
+      options = fallbackRows;
+      posHargaOptions = options.map(function(x) { return { ...x }; });
+      renderPosHargaOptions(posHargaOptions, select, info);
+    }
+  }
+
+  return posHargaOptions;
 }
 
 async function selectPOSProduct(produkId) {
@@ -8374,26 +8485,49 @@ function setPriceType(type) {
 }
 
 
-function refreshPosCartPrices() {
+async function refreshPosCartPrices() {
   if (!posCart.length) return;
 
   const buyer = posBuyerType || "KONSUMEN";
   const map = posPricingCache[buyer] || {};
 
-  posCart.forEach(function(item) {
-    const options = map[String(item.produkId)] || [];
-    const match = options.find(function(row) {
+  for (const item of posCart) {
+    let options = map[String(item.produkId)] || [];
+    let match = options.find(function(row) {
       return String(row.bentukJual).toUpperCase() === String(item.bentukJual).toUpperCase() && Number(row.isiPcs) === Number(item.isiPcs);
     });
+
+    // HOTFIX: bila POS_PRICING_ALL gagal/stale, jangan langsung menandai
+    // item sebagai "HARGA MASTER TIDAK TERSEDIA". Ambil harga produk ini
+    // langsung dari endpoint POS_HARGA. Ini juga membuat draft lama tetap
+    // bisa dibuka/cetak tanpa harus input ulang Master Harga.
     if (!match) {
-      item.hargaTersedia = false;
-      return;
+      options = await fetchPosHargaFallback(item.produkId, buyer);
+      match = options.find(function(row) {
+        return String(row.bentukJual).toUpperCase() === String(item.bentukJual).toUpperCase() && Number(row.isiPcs) === Number(item.isiPcs);
+      });
     }
-    item.idHarga = match.idHarga || "";
+
+    if (!match) {
+      // Jangan menghapus harga yang sudah tersimpan di draft/cart hanya karena
+      // endpoint lookup sedang gagal. Harga tersimpan tetap valid untuk tampilan
+      // dan cetak; backend akan melakukan validasi final saat checkout.
+      if (Number(item.harga || 0) >= 0 && item.bentukJual && Number(item.isiPcs || 0) > 0) {
+        item.hargaTersedia = true;
+        continue;
+      }
+      item.hargaTersedia = false;
+      continue;
+    }
+
+    item.idHarga = match.idHarga || item.idHarga || "";
     item.hargaMaster = Number(match.harga || 0);
     item.harga = Number(match.harga || 0);
+    item.bentukJual = match.bentukJual || item.bentukJual;
+    item.isiPcs = Number(match.isiPcs || item.isiPcs || 0);
     item.hargaTersedia = true;
-  });
+  }
+
   renderPosCart();
 }
 
@@ -8880,7 +9014,7 @@ async function loadPosDrafts() {
             <strong>${escapeHtml(draft.draftId)} — ${escapeHtml(draft.buyerName)}</strong>
             <div class="pos-draft-meta">
               ${escapeHtml(draft.itemCount)} qty/item • ${escapeHtml(formatRupiah(draft.total))}<br>
-              ${escapeHtml(draft.priceType)} • Update ${escapeHtml(waktu)}<br>
+              ${escapeHtml(draft.buyerType || "KONSUMEN")} • Update ${escapeHtml(waktu)}<br>
               Dibuat oleh ${escapeHtml(draft.user || "-")}
             </div>
           </div>
@@ -8903,6 +9037,8 @@ async function loadPosDrafts() {
 async function loadPosDraft(draftId) {
 
   showStatus("statusPOS", "Membuka pesanan tersimpan...", "loading");
+  await loadProduk();
+  await preloadPosPricing(false);
 
   try {
     const hasil = await apiRequest({
@@ -8942,7 +9078,7 @@ async function loadPosDraft(draftId) {
       if (internal) internal.value = data.buyerName || "";
     }
 
-    setPriceType(data.priceType || "RETAIL");
+    // priceType adalah legacy compatibility saja; harga tetap mengikuti MASTER_HARGA/MASTER_PRODUK.
     setPaymentMethod("CASH");
     await refreshPosCartPrices();
 
@@ -9117,7 +9253,7 @@ async function printPosDraft(draftId) {
             <strong>${escapeHtml(item.nama || item.produkId || "-")}</strong><br>
             <span>${escapeHtml(item.produkId || "-")}</span>
           </td>
-          <td class="right">${escapeHtml(formatNumber(qty))} ${escapeHtml(item.bentukJual || "")}</td>
+          <td class="right">${escapeHtml(formatNumber(qty))} ${escapeHtml(item.bentukJual || "")}<br><span style="font-size:10px;">${escapeHtml(formatNumber(item.isiPcs || 1))} PCS/UNIT</span></td>
           <td class="right">${escapeHtml(formatRupiah(harga))}</td>
           <td class="right">${escapeHtml(formatRupiah(subtotal))}</td>
         </tr>
@@ -9133,7 +9269,7 @@ async function printPosDraft(draftId) {
         <strong>ID Pesanan:</strong> ${escapeHtml(data.draftId || draftId)}<br>
         <strong>Pembeli:</strong> ${escapeHtml(data.buyerName || "-")}<br>
         <strong>Lokasi:</strong> ${escapeHtml(namaLokasi(data.lokasiId) || data.lokasiId || "-")}<br>
-        <strong>Harga:</strong> ${escapeHtml(data.priceType || "RETAIL")}<br>
+        <strong>Kategori Pembeli:</strong> ${escapeHtml(data.buyerType || "KONSUMEN")}<br>
         <strong>Update:</strong> ${escapeHtml(updatedAt)}
       </div>
 
