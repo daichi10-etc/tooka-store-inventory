@@ -3719,6 +3719,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               <select id="adminHargaBentuk" onchange="syncHargaIsiPCS()">
                 <option value="PCS">PCS</option>
                 <option value="RENCENG">RENCENG</option>
+                <option value="PACK">PACK</option>
                 <option value="DUS">DUS</option>
               </select>
             </div>
@@ -3742,7 +3743,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <button class="primary-btn" onclick="saveAdminHarga()">💾 SIMPAN HARGA</button>
             <button class="secondary-btn" onclick="resetAdminHargaForm()">↺ BATAL / BARU</button>
           </div>
-          <p class="muted" style="margin-top:12px;">Stok tetap dihitung dalam PCS. RENCENG/DUS hanya menentukan bentuk jual dan jumlah PCS yang dikurangi saat nanti POS memakai Master Harga.</p>
+          <p class="muted" style="margin-top:12px;">Stok tetap dihitung dalam PCS. PCS, RENCENG, PACK, dan DUS menentukan bentuk jual; Isi PCS menentukan jumlah stok yang dikurangi saat POS.</p>
         </div>
 
         <div class="panel">
