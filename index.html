@@ -3719,7 +3719,6 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               <select id="adminHargaBentuk" onchange="syncHargaIsiPCS()">
                 <option value="PCS">PCS</option>
                 <option value="RENCENG">RENCENG</option>
-                <option value="PACK">PACK</option>
                 <option value="DUS">DUS</option>
               </select>
             </div>
@@ -3743,7 +3742,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <button class="primary-btn" onclick="saveAdminHarga()">💾 SIMPAN HARGA</button>
             <button class="secondary-btn" onclick="resetAdminHargaForm()">↺ BATAL / BARU</button>
           </div>
-          <p class="muted" style="margin-top:12px;">Stok tetap dihitung dalam PCS. PCS, RENCENG, PACK, dan DUS menentukan bentuk jual; Isi PCS menentukan jumlah stok yang dikurangi saat POS.</p>
+          <p class="muted" style="margin-top:12px;">Stok tetap dihitung dalam PCS. RENCENG/DUS hanya menentukan bentuk jual dan jumlah PCS yang dikurangi saat nanti POS memakai Master Harga.</p>
         </div>
 
         <div class="panel">
@@ -7087,13 +7086,6 @@ function resetAdminHargaForm() {
 }
 
 
-function invalidatePosPricingCache() {
-  posPricingLoaded = false;
-  posPricingLoading = false;
-  posPricingLoadingPromise = null;
-}
-
-
 async function saveAdminHarga() {
   if (!isOwner()) return;
 
@@ -7125,16 +7117,6 @@ async function saveAdminHarga() {
     if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Gagal menyimpan harga.");
     resetAdminHargaForm();
     await loadAdminHarga();
-
-    // MASTER_HARGA berubah -> cache POS wajib dianggap stale.
-    // Jika POS sedang terbuka, langsung sinkronkan sekali.
-    invalidatePosPricingCache();
-    const posPage = document.getElementById("pos");
-    if (posPage && posPage.classList.contains("active")) {
-      await loadProduk();
-      await preloadPosPricing(true);
-    }
-
     showStatus("hargaAdminStatus", hasil.message || "Harga tersimpan.", "success");
   } catch (error) {
     showStatus("hargaAdminStatus", error.message || "Gagal menyimpan harga.", "error");
@@ -7640,13 +7622,8 @@ function showPage(
     pageId ===
     "pos"
   ) {
-    // Jangan bangun cache sebelum MASTER_PRODUK siap.
-    loadProduk().then(function() {
-      return preloadPosPricing(false);
-    }).catch(function(error) {
-      console.warn("POS pricing preload gagal:", error);
-    });
     loadPosDrafts();
+    preloadPosPricing();
   }
 
 
@@ -8316,39 +8293,17 @@ function renderPosHargaOptions(options, select, info) {
 }
 
 
-async function loadPosHarga(produkId) {
+function loadPosHarga(produkId) {
   const select = document.getElementById("posBentukJual");
   const info = document.getElementById("posHargaInfo");
   if (!select) return [];
 
-  const id = String(produkId || "").trim();
   const buyer = posBuyerType || "KONSUMEN";
-  let options = (posPricingCache[buyer] && posPricingCache[buyer][id]) || [];
-
-  // Jalur normal: semua harga sudah ada di browser.
-  // Jika cache global gagal/masih stale, ambil harga produk ini saja sebagai fallback.
-  if (!posPricingLoaded) {
-    try {
-      const hasil = await apiRequest({
-        action: "POS_HARGA",
-        produkId: id,
-        buyerType: buyer
-      });
-      if (hasil && hasil.success === true) {
-        const rows = Array.isArray(hasil.data?.harga) ? hasil.data.harga : [];
-        if (rows.length) {
-          posPricingCache[buyer] = posPricingCache[buyer] || {};
-          posPricingCache[buyer][id] = rows.map(function(x) { return { ...x }; });
-          options = posPricingCache[buyer][id];
-          sortPosPricingCache();
-        }
-      }
-    } catch (error) {
-      console.warn("Fallback POS_HARGA gagal:", error);
-    }
-  }
-
+  const options = (posPricingCache[buyer] && posPricingCache[buyer][String(produkId)]) || [];
   posHargaOptions = options.map(function(x) { return { ...x }; });
+
+  // ZERO SERVER WAIT: semua yang dilakukan saat produk dipilih adalah
+  // membaca object di browser memory.
   return renderPosHargaOptions(posHargaOptions, select, info);
 }
 
@@ -8925,7 +8880,7 @@ async function loadPosDrafts() {
             <strong>${escapeHtml(draft.draftId)} — ${escapeHtml(draft.buyerName)}</strong>
             <div class="pos-draft-meta">
               ${escapeHtml(draft.itemCount)} qty/item • ${escapeHtml(formatRupiah(draft.total))}<br>
-              ${escapeHtml(draft.buyerType || "KONSUMEN")} • Update ${escapeHtml(waktu)}<br>
+              ${escapeHtml(draft.priceType)} • Update ${escapeHtml(waktu)}<br>
               Dibuat oleh ${escapeHtml(draft.user || "-")}
             </div>
           </div>
@@ -8948,8 +8903,6 @@ async function loadPosDrafts() {
 async function loadPosDraft(draftId) {
 
   showStatus("statusPOS", "Membuka pesanan tersimpan...", "loading");
-  await loadProduk();
-  await preloadPosPricing(false);
 
   try {
     const hasil = await apiRequest({
@@ -8989,7 +8942,7 @@ async function loadPosDraft(draftId) {
       if (internal) internal.value = data.buyerName || "";
     }
 
-    // priceType adalah legacy compatibility saja; harga tetap mengikuti MASTER_HARGA/MASTER_PRODUK.
+    setPriceType(data.priceType || "RETAIL");
     setPaymentMethod("CASH");
     await refreshPosCartPrices();
 
@@ -9164,7 +9117,7 @@ async function printPosDraft(draftId) {
             <strong>${escapeHtml(item.nama || item.produkId || "-")}</strong><br>
             <span>${escapeHtml(item.produkId || "-")}</span>
           </td>
-          <td class="right">${escapeHtml(formatNumber(qty))} ${escapeHtml(item.bentukJual || "")}<br><span style="font-size:10px;">${escapeHtml(formatNumber(item.isiPcs || 1))} PCS/UNIT</span></td>
+          <td class="right">${escapeHtml(formatNumber(qty))} ${escapeHtml(item.bentukJual || "")}</td>
           <td class="right">${escapeHtml(formatRupiah(harga))}</td>
           <td class="right">${escapeHtml(formatRupiah(subtotal))}</td>
         </tr>
@@ -9180,7 +9133,7 @@ async function printPosDraft(draftId) {
         <strong>ID Pesanan:</strong> ${escapeHtml(data.draftId || draftId)}<br>
         <strong>Pembeli:</strong> ${escapeHtml(data.buyerName || "-")}<br>
         <strong>Lokasi:</strong> ${escapeHtml(namaLokasi(data.lokasiId) || data.lokasiId || "-")}<br>
-        <strong>Kategori Pembeli:</strong> ${escapeHtml(data.buyerType || "KONSUMEN")}<br>
+        <strong>Harga:</strong> ${escapeHtml(data.priceType || "RETAIL")}<br>
         <strong>Update:</strong> ${escapeHtml(updatedAt)}
       </div>
 
