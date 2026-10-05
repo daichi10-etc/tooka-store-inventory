@@ -4161,7 +4161,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
           </h2>
 
           <p>
-            Catat barang yang keluar dari inventory.
+            Catat barang yang benar-benar keluar dari inventory di luar transaksi POS. Bukan untuk koreksi selisih stok.
           </p>
 
         </div>
@@ -4252,55 +4252,39 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <div>
 
               <label>
-                Harga
-              </label>
-
-              <input
-                id="keluarHarga"
-                type="number"
-                min="0"
-              >
-
-            </div>
-
-
-            <div>
-
-              <label>
-                Tujuan
+                Alasan / Jenis Pengeluaran
               </label>
 
               <select id="keluarTujuan">
 
-                <option value="KONSUMEN">
-                  KONSUMEN
+                <option value="RUSAK">
+                  RUSAK
                 </option>
 
-                <option value="DEKAJE METRO">
-                  DEKAJE METRO
+                <option value="KEDALUWARSA">
+                  KEDALUWARSA
                 </option>
 
-                <option value="DEKAJE WAY JEPARA">
-                  DEKAJE WAY JEPARA
+                <option value="PRODUKSI">
+                  PRODUKSI / PEMAKAIAN INTERNAL
                 </option>
 
-                <option value="RAWUUH 16C">
-                  RAWUUH 16C
+                <option value="SAMPLE">
+                  SAMPLE / PROMO
                 </option>
 
-                <option value="RAWUUH 15A">
-                  RAWUUH 15A
+                <option value="PEMBERIAN">
+                  PEMBERIAN / GRATIS
                 </option>
 
-                <option value="PRODUKSI RAWUUH">
-                  PRODUKSI RAWUUH
-                </option>
-
-                <option value="RUMAH PRODUKSI WA' ADAH">
-                  RUMAH PRODUKSI WA' ADAH
+                <option value="LAINNYA">
+                  LAINNYA
                 </option>
 
               </select>
+
+            </div>
+
 
             </div>
 
@@ -4570,7 +4554,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
           </h2>
 
           <p>
-            Lihat posisi stok berdasarkan produk dan lokasi.
+            Lihat posisi stok berdasarkan produk dan lokasi. Angka stok tidak diedit dari halaman ini.
           </p>
 
         </div>
@@ -4649,7 +4633,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
                 class="btn btn-primary"
                 onclick="cekStok()"
               >
-                CEK STOK
+                LIHAT STOK
               </button>
 
             </div>
@@ -4659,6 +4643,10 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         </div>
 
         <div id="hasilStok"></div>
+
+        <div class="panel">
+          <div class="muted">Halaman Stok hanya membaca data sistem. Jika stok fisik berbeda, gunakan Stock Opname agar selisih dicatat sebagai Adjustment dengan histori yang jelas.</div>
+        </div>
 
       </section>
 
@@ -8494,22 +8482,6 @@ function selectProduk(
   }
 
 
-  if (
-    type ===
-    "keluar"
-  ) {
-
-    document.getElementById(
-      "keluarHarga"
-    ).value =
-      Number(
-        product.hargaJual ||
-        0
-      );
-
-  }
-
-
   if (results) {
 
     results.innerHTML =
@@ -11034,7 +11006,7 @@ async function barangMasuk() {
 
 
 /* =========================================================
-   BARANG KELUAR
+   BARANG KELUAR NON-POS
    ========================================================= */
 
 let sedangKeluar =
@@ -11068,13 +11040,7 @@ async function barangKeluar() {
     );
 
 
-  const harga =
-    Number(
-      document.getElementById(
-        "keluarHarga"
-      ).value ||
-      0
-    );
+  const harga = 0;
 
 
   const tujuan =
@@ -11198,12 +11164,6 @@ async function barangKeluar() {
 
     document.getElementById(
       "keluarQty"
-    ).value =
-      "";
-
-
-    document.getElementById(
-      "keluarHarga"
     ).value =
       "";
 
@@ -11533,7 +11493,7 @@ async function simpanStockOpname() {
 
 
 /* =========================================================
-   CEK STOK
+   LIHAT STOK (READ ONLY)
    ========================================================= */
 
 let sedangCekStok =
