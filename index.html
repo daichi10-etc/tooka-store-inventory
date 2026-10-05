@@ -3955,33 +3955,22 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
 
             <div>
-
-              <label>
-                Qty
-              </label>
-
-              <input
-                id="masukQty"
-                type="number"
-                min="0.01"
-                step="0.01"
-              >
-
+              <label>Bentuk Masuk</label>
+              <select id="masukBentuk" onchange="syncModalBarangBentuk()">
+                <option value="PCS|1">PCS · 1 PCS</option>
+              </select>
             </div>
-
-
             <div>
-
-              <label>
-                Harga
-              </label>
-
-              <input
-                id="masukHarga"
-                type="number"
-                min="0"
-              >
-
+              <label>Isi PCS</label>
+              <input id="masukIsiPcs" type="number" min="1" step="1" value="1" readonly>
+            </div>
+            <div>
+              <label>Qty Kemasan</label>
+              <input id="masukQty" type="number" min="0.01" step="0.01" oninput="hitungModalBarang()">
+            </div>
+            <div>
+              <label>Nilai / Kemasan</label>
+              <input id="masukHarga" type="number" min="0" step="0.01" oninput="hitungModalBarang()">
             </div>
 
 
@@ -3992,11 +3981,20 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               </label>
 
               <select id="masukSumber">
-                <option value="MODAL_OWNER">MODAL OWNER</option>
+                <option value="MODAL_OWNER">OWNER</option>
+                <option value="LAINNYA">LAINNYA</option>
               </select>
 
             </div>
 
+
+            <div>
+              <label>Qty Stok</label>
+              <input id="masukQtyPcs" type="number" readonly value="0">
+            </div>
+            <div class="full">
+              <div id="masukSummary" class="muted">Pilih produk dan bentuk barang terlebih dahulu.</div>
+            </div>
 
             <div class="full">
 
@@ -7949,6 +7947,10 @@ function showPage(
     });
   }
 
+  if (pageId === "masuk") {
+    (async function(){ try { await loadProduk(); await preloadPosPricing(false); renderModalBarangBentuk(document.getElementById("masukProduk")?.value||""); } catch(error){ showStatus("statusMasuk",error.message||"Modal barang gagal dimuat.","error"); } })();
+  }
+
 
   if (
     pageId ===
@@ -8437,6 +8439,15 @@ function selectProduk(
         console.warn("Fallback harga pembelian gagal:", error);
       }
       renderPembelianBentuk(product.id);
+    })();
+  }
+  if (type === "masuk") {
+    (async function(){
+      try {
+        const cached=getModalBarangBentukOptions(product.id);
+        if(!cached.some(function(item){return item.bentukJual!=="PCS";})) await fetchPosHargaFallback(product.id,"KONSUMEN");
+      } catch(error){ console.warn("Fallback bentuk modal barang gagal:",error); }
+      renderModalBarangBentuk(product.id);
     })();
   }
 
@@ -10900,193 +10911,26 @@ let sedangMasuk =
   false;
 
 
+function getModalBarangBentukOptions(produkId) {
+  const id = String(produkId || '').trim();
+  if (!id) return [{bentukJual:'PCS', isiPcs:1}];
+  const options = (posPricingCache.KONSUMEN && posPricingCache.KONSUMEN[id]) || [];
+  const unique=[]; const seen=new Set();
+  options.forEach(function(item){ const bentuk=String(item.bentukJual||'PCS').trim().toUpperCase(); const isi=Number(item.isiPcs||1); if(!['PCS','RENCENG','PACK','DUS'].includes(bentuk)||!isFinite(isi)||isi<=0)return; const key=bentuk+'|'+isi; if(seen.has(key))return; seen.add(key); unique.push({bentukJual:bentuk,isiPcs:isi}); });
+  if(!unique.some(x=>x.bentukJual==='PCS'&&x.isiPcs===1)) unique.unshift({bentukJual:'PCS',isiPcs:1});
+  const order={PCS:1,RENCENG:2,PACK:3,DUS:4}; unique.sort((a,b)=>(order[a.bentukJual]||99)-(order[b.bentukJual]||99)||a.isiPcs-b.isiPcs);
+  return unique;
+}
+function renderModalBarangBentuk(produkId){ const select=document.getElementById('masukBentuk'); if(!select)return; const options=getModalBarangBentukOptions(produkId); select.innerHTML=options.map(x=>`<option value="${escapeHtml(x.bentukJual+'|'+x.isiPcs)}">${escapeHtml(x.bentukJual)} · ${escapeHtml(x.isiPcs)} PCS</option>`).join(''); syncModalBarangBentuk(); }
+function syncModalBarangBentuk(){ const select=document.getElementById('masukBentuk'), isi=document.getElementById('masukIsiPcs'); if(!select||!isi)return; const p=String(select.value||'PCS|1').split('|'); const n=Number(p[1]||1); isi.value=isFinite(n)&&n>0?n:1; hitungModalBarang(); }
+function hitungModalBarang(){ const q=Number(document.getElementById('masukQty')?.value||0), i=Number(document.getElementById('masukIsiPcs')?.value||1), h=Number(document.getElementById('masukHarga')?.value||0), qp=q*i; const out=document.getElementById('masukQtyPcs'), sum=document.getElementById('masukSummary'); if(out)out.value=qp>0?qp:0; if(sum)sum.textContent=q>0?'Stok masuk: '+qp+' PCS · Nilai modal: '+formatRupiah(q*h)+' · Tidak mengurangi kas TOOKA.':'Masukkan qty kemasan untuk menghitung stok.'; }
+
 async function barangMasuk() {
-
-  if (sedangMasuk) {
-    return;
-  }
-
-
-  const produkId =
-    document.getElementById(
-      "masukProduk"
-    ).value.trim();
-
-
-  const lokasiId =
-    document.getElementById(
-      "masukLokasi"
-    ).value;
-
-
-  const qty =
-    Number(
-      document.getElementById(
-        "masukQty"
-      ).value
-    );
-
-
-  const harga =
-    Number(
-      document.getElementById(
-        "masukHarga"
-      ).value ||
-      0
-    );
-
-
-  const keterangan =
-    document.getElementById(
-      "masukKeterangan"
-    ).value.trim();
-
-
-  if (!produkId) {
-
-    showStatus(
-      "statusMasuk",
-      "Produk wajib dipilih.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  if (
-    !qty ||
-    qty <= 0
-  ) {
-
-    showStatus(
-      "statusMasuk",
-      "Qty harus lebih dari 0.",
-      "error"
-    );
-
-    return;
-
-  }
-
-
-  sedangMasuk =
-    true;
-
-
-  lockButton(
-    "btnMasuk",
-    "MENYIMPAN..."
-  );
-
-
-  showStatus(
-    "statusMasuk",
-    "Menyimpan modal barang...",
-    "loading"
-  );
-
-
-  try {
-
-    const hasil =
-      await apiRequest({
-
-        action:
-          "MASUK",
-
-        produkId:
-          produkId,
-
-        lokasiId:
-          lokasiId,
-
-        qty:
-          qty,
-
-        tujuan:
-          (document.getElementById("masukSumber")?.value || "MODAL_OWNER"),
-
-        harga:
-          harga,
-
-        keterangan:
-          keterangan
-
-      });
-
-
-    if (
-      !hasil ||
-      hasil.success !== true
-    ) {
-
-      throw new Error(
-        hasil?.message ||
-        "Modal barang gagal."
-      );
-
-    }
-
-
-    showStatus(
-      "statusMasuk",
-      hasil.message ||
-        "Modal barang berhasil.",
-      "success"
-    );
-
-
-    document.getElementById(
-      "masukQty"
-    ).value =
-      "";
-
-
-    document.getElementById(
-      "masukHarga"
-    ).value =
-      "";
-
-
-    document.getElementById(
-      "masukKeterangan"
-    ).value =
-      "";
-
-
-    resetProductPicker(
-      "masuk"
-    );
-
-
-    loadDashboardStock()
-      .catch(
-        () => {}
-      );
-
-
-  } catch (error) {
-
-    showStatus(
-      "statusMasuk",
-      error.message ||
-        "Barang masuk gagal.",
-      "error"
-    );
-
-  } finally {
-
-    sedangMasuk =
-      false;
-
-    unlockButton(
-      "btnMasuk"
-    );
-
-  }
-
+  if(sedangMasuk)return;
+  const produkId=String(document.getElementById('masukProduk')?.value||'').trim(), lokasiId=String(document.getElementById('masukLokasi')?.value||'').trim(), bv=String(document.getElementById('masukBentuk')?.value||'PCS|1'), parts=bv.split('|'), bentukMasuk=parts[0]||'PCS', isiPcs=Number(document.getElementById('masukIsiPcs')?.value||1), qtyKemasan=Number(document.getElementById('masukQty')?.value||0), hargaKemasan=Number(document.getElementById('masukHarga')?.value||0), qtyPcs=qtyKemasan*isiPcs, sumber=String(document.getElementById('masukSumber')?.value||'MODAL_OWNER').trim().toUpperCase(), keterangan=String(document.getElementById('masukKeterangan')?.value||'').trim();
+  if(!produkId)return showStatus('statusMasuk','Produk wajib dipilih.','error'); if(!lokasiId)return showStatus('statusMasuk','Lokasi wajib dipilih.','error'); if(!isFinite(isiPcs)||isiPcs<=0)return showStatus('statusMasuk','Isi PCS tidak valid.','error'); if(!isFinite(qtyKemasan)||qtyKemasan<=0)return showStatus('statusMasuk','Qty kemasan harus lebih dari 0.','error'); if(!isFinite(hargaKemasan)||hargaKemasan<0)return showStatus('statusMasuk','Nilai per kemasan tidak valid.','error');
+  sedangMasuk=true; lockButton('btnMasuk','MENYIMPAN...'); showStatus('statusMasuk','Menyimpan modal barang dan stok...','loading');
+  try{ const hasil=await apiRequest({action:'MASUK',produkId,lokasiId,qty:qtyPcs,qtyKemasan,bentukMasuk,isiPcs,harga:hargaKemasan,hargaKemasan,tujuan:sumber,keterangan}); if(!hasil||hasil.success!==true)throw new Error(hasil?.message||'Modal barang gagal.'); const d=hasil.data||{}; showStatus('statusMasuk',(hasil.message||'Modal barang berhasil.')+' ID: '+(d.transaksiId||'-'),'success'); document.getElementById('masukQty').value=''; document.getElementById('masukHarga').value=''; document.getElementById('masukKeterangan').value=''; document.getElementById('masukQtyPcs').value='0'; resetProductPicker('masuk'); renderModalBarangBentuk(''); loadDashboardStock().catch(()=>{}); }catch(error){showStatus('statusMasuk',error.message||'Modal barang gagal.','error');}finally{sedangMasuk=false;unlockButton('btnMasuk');}
 }
 
 
