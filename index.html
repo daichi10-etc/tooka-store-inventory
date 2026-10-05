@@ -2422,6 +2422,13 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
       <button
         class="nav-btn"
+        onclick="showPage('pembelian', this)"
+      >
+        🛒 <span>Pembelian</span>
+      </button>
+
+      <button
+        class="nav-btn"
         onclick="showPage('keluar', this)"
       >
         📤 <span>Barang Keluar</span>
@@ -4024,6 +4031,119 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
         </div>
 
+      </section>
+
+
+      <!-- =================================================
+           PEMBELIAN
+           ================================================= -->
+
+      <section id="pembelian" class="page">
+
+        <div class="title">
+          <h2>🛒 <span>Pembelian</span></h2>
+          <p>Barang masuk dari supplier sekaligus mencatat pembayaran Finance.</p>
+        </div>
+
+        <div id="statusPembelian" class="status"></div>
+
+        <div class="panel">
+          <h3>Input Pembelian</h3>
+
+          <div class="form-grid">
+
+            <div>
+              <label>Tanggal</label>
+              <input id="pembelianTanggal" type="date">
+            </div>
+
+            <div>
+              <label>Lokasi</label>
+              <select id="pembelianLokasi">
+                <option value="LOC001">TOOKA HUB METRO</option>
+                <option value="LOC002">TOOKA STORE JEPARA</option>
+              </select>
+            </div>
+
+            <div class="full">
+              <label>Produk</label>
+              <div class="product-picker">
+                <input
+                  id="pembelianProdukCari"
+                  placeholder="Ketik ID atau nama produk..."
+                  autocomplete="off"
+                  oninput="filterProduk('pembelian')"
+                  onfocus="filterProduk('pembelian')"
+                >
+                <div id="pembelianProdukResults" class="product-results"></div>
+              </div>
+              <input id="pembelianProduk" type="hidden">
+              <div id="pembelianProdukInfo" class="muted"></div>
+            </div>
+
+            <div>
+              <label>Bentuk Beli</label>
+              <select id="pembelianBentuk" onchange="syncPembelianBentuk()">
+                <option value="">Pilih produk dulu...</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Isi</label>
+              <input id="pembelianIsiPcs" type="number" value="1" min="1" step="1" readonly>
+              <div class="muted">PCS per kemasan</div>
+            </div>
+
+            <div>
+              <label>Qty Kemasan</label>
+              <input id="pembelianQty" type="number" min="0.01" step="0.01" oninput="hitungTotalPembelian()">
+            </div>
+
+            <div>
+              <label>Harga / Kemasan</label>
+              <input id="pembelianHarga" type="number" min="1" step="1" oninput="hitungTotalPembelian()">
+            </div>
+
+            <div>
+              <label>Total Pembelian</label>
+              <input id="pembelianTotal" type="text" readonly>
+            </div>
+
+            <div>
+              <label>Metode Pembayaran</label>
+              <select id="pembelianPayment" onchange="syncPembelianAkun()">
+                <option value="CASH">CASH</option>
+                <option value="TRANSFER">TRANSFER</option>
+                <option value="QRIS">QRIS</option>
+              </select>
+              <div id="pembelianAkunInfo" class="muted"></div>
+            </div>
+
+            <div>
+              <label>Supplier</label>
+              <input id="pembelianSupplier" placeholder="Nama supplier...">
+            </div>
+
+            <div class="full">
+              <label>Keterangan</label>
+              <textarea id="pembelianKeterangan" placeholder="Opsional"></textarea>
+            </div>
+
+            <div class="full">
+              <div class="panel" style="margin:0;background:rgba(255,255,255,.03);">
+                <strong>Ringkasan</strong>
+                <div id="pembelianSummary" class="muted" style="margin-top:8px;">Belum ada produk.</div>
+              </div>
+            </div>
+
+            <div class="full">
+              <button id="btnPembelian" class="btn btn-success" onclick="simpanPembelianFrontend()">
+                SIMPAN PEMBELIAN
+              </button>
+            </div>
+
+          </div>
+        </div>
       </section>
 
 
@@ -7827,6 +7947,13 @@ function showPage(
   }
 
 
+  if (pageId === "pembelian") {
+    setupPembelianPage().catch(function(error) {
+      showStatus("statusPembelian", error.message || "Pembelian gagal dimuat.", "error");
+    });
+  }
+
+
   if (
     pageId ===
     "dashboard"
@@ -8295,6 +8422,10 @@ function selectProduk(
       "show"
     );
 
+  }
+
+  if (type === "pembelian") {
+    renderPembelianBentuk(product.id);
   }
 
 }
@@ -10548,6 +10679,204 @@ function newPosTransaction() {
       "smooth"
   });
 
+}
+
+
+/* =========================================================
+   PEMBELIAN V1
+   ========================================================= */
+
+let sedangPembelian = false;
+let pembelianClientRequestId = null;
+
+function getTodayLocalTOOKA() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  const local = new Date(now.getTime() - offset * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+async function setupPembelianPage() {
+  await loadProduk();
+  await preloadPosPricing(false);
+
+  const tanggal = document.getElementById("pembelianTanggal");
+  if (tanggal && !tanggal.value) tanggal.value = getTodayLocalTOOKA();
+
+  const lokasi = document.getElementById("pembelianLokasi");
+  if (lokasi && typeof currentUser !== "undefined" && currentUser?.role !== "OWNER") {
+    if (currentUser?.lokasi) lokasi.value = currentUser.lokasi;
+    lokasi.disabled = true;
+  }
+
+  const payment = document.getElementById("pembelianPayment");
+  if (payment && !payment.value) payment.value = "CASH";
+
+  syncPembelianAkun();
+
+  const produkId = document.getElementById("pembelianProduk")?.value || "";
+  if (produkId) renderPembelianBentuk(produkId);
+}
+
+function getPembelianPricingOptions(produkId) {
+  const id = String(produkId || "").trim();
+  if (!id) return [];
+  const options = (posPricingCache.KONSUMEN && posPricingCache.KONSUMEN[id]) || [];
+  const unique = [];
+  const seen = new Set();
+  options.forEach(function(item) {
+    const bentuk = String(item.bentukJual || "PCS").trim().toUpperCase();
+    const isi = Number(item.isiPcs || 1);
+    if (!["PCS", "RENCENG", "PACK", "DUS"].includes(bentuk)) return;
+    if (!isFinite(isi) || isi <= 0) return;
+    const key = bentuk + "|" + isi;
+    if (seen.has(key)) return;
+    seen.add(key);
+    unique.push({ bentukJual: bentuk, isiPcs: isi, harga: Number(item.harga || 0), idHarga: item.idHarga || "" });
+  });
+  unique.sort(function(a, b) {
+    const order = {PCS:1, RENCENG:2, PACK:3, DUS:4};
+    return (order[a.bentukJual] || 99) - (order[b.bentukJual] || 99) || a.isiPcs - b.isiPcs;
+  });
+  return unique;
+}
+
+function renderPembelianBentuk(produkId) {
+  const select = document.getElementById("pembelianBentuk");
+  const info = document.getElementById("pembelianProdukInfo");
+  if (!select) return;
+
+  const options = getPembelianPricingOptions(produkId);
+  if (!options.length) {
+    select.innerHTML = '<option value="PCS|1">PCS · 1 PCS</option>';
+    select.value = "PCS|1";
+  } else {
+    select.innerHTML = '<option value="">Pilih bentuk...</option>' + options.map(function(item) {
+      return `<option value="${escapeHtml(item.bentukJual + "|" + item.isiPcs)}">${escapeHtml(item.bentukJual)} · ${escapeHtml(item.isiPcs)} PCS</option>`;
+    }).join("");
+    const pcs = options.find(x => x.bentukJual === "PCS") || options[0];
+    select.value = pcs.bentukJual + "|" + pcs.isiPcs;
+  }
+
+  if (info) {
+    const product = produkMaster.find(x => String(x.id).trim() === String(produkId).trim());
+    info.textContent = product ? "Satuan: " + (product.satuan || "-") + " · Harga jual PCS: " + formatRupiah(product.hargaJual || 0) : "";
+  }
+  syncPembelianBentuk();
+}
+
+function syncPembelianBentuk() {
+  const select = document.getElementById("pembelianBentuk");
+  const isi = document.getElementById("pembelianIsiPcs");
+  if (!select || !isi) return;
+  const value = String(select.value || "PCS|1");
+  const parts = value.split("|");
+  const bentuk = parts[0] || "PCS";
+  const isiPcs = Number(parts[1] || 1);
+  isi.value = isFinite(isiPcs) && isiPcs > 0 ? isiPcs : 1;
+  if (bentuk === "PCS") isi.value = 1;
+  hitungTotalPembelian();
+}
+
+function hitungTotalPembelian() {
+  const qty = Number(document.getElementById("pembelianQty")?.value || 0);
+  const harga = Number(document.getElementById("pembelianHarga")?.value || 0);
+  const isi = Number(document.getElementById("pembelianIsiPcs")?.value || 1);
+  const total = qty * harga;
+  const qtyPcs = qty * isi;
+  const totalEl = document.getElementById("pembelianTotal");
+  const summary = document.getElementById("pembelianSummary");
+  if (totalEl) totalEl.value = total > 0 ? formatRupiah(total) : "";
+  if (summary) {
+    if (!qty || !harga) {
+      summary.textContent = "Belum ada nilai pembelian.";
+    } else {
+      summary.textContent = "Stok masuk: " + qtyPcs + " PCS · Total pembayaran: " + formatRupiah(total) + " · Status: LUNAS";
+    }
+  }
+}
+
+function syncPembelianAkun() {
+  const payment = String(document.getElementById("pembelianPayment")?.value || "CASH").toUpperCase();
+  const lokasi = String(document.getElementById("pembelianLokasi")?.value || "LOC001").toUpperCase();
+  let akun = "ACC001 — Kas Metro";
+  if (payment === "CASH") akun = lokasi === "LOC002" ? "ACC002 — Kas Jepara" : "ACC001 — Kas Metro";
+  if (payment === "TRANSFER") akun = "ACC003 — Bank / Transfer";
+  if (payment === "QRIS") akun = "ACC004 — QRIS";
+  const el = document.getElementById("pembelianAkunInfo");
+  if (el) el.textContent = "Akun otomatis: " + akun;
+}
+
+async function simpanPembelianFrontend() {
+  if (sedangPembelian) return;
+
+  const produkId = String(document.getElementById("pembelianProduk")?.value || "").trim();
+  const lokasiId = String(document.getElementById("pembelianLokasi")?.value || "").trim();
+  const bentukValue = String(document.getElementById("pembelianBentuk")?.value || "");
+  const parts = bentukValue.split("|");
+  const bentukBeli = parts[0] || "";
+  const isiPcs = Number(document.getElementById("pembelianIsiPcs")?.value || 0);
+  const qtyKemasan = Number(document.getElementById("pembelianQty")?.value || 0);
+  const hargaKemasan = Number(document.getElementById("pembelianHarga")?.value || 0);
+  const tanggal = String(document.getElementById("pembelianTanggal")?.value || "").trim();
+  const supplier = String(document.getElementById("pembelianSupplier")?.value || "").trim();
+  const paymentMethod = String(document.getElementById("pembelianPayment")?.value || "").trim().toUpperCase();
+  const keterangan = String(document.getElementById("pembelianKeterangan")?.value || "").trim();
+
+  if (!produkId) return showStatus("statusPembelian", "Produk wajib dipilih.", "error");
+  if (!bentukBeli) return showStatus("statusPembelian", "Bentuk beli wajib dipilih.", "error");
+  if (!tanggal) return showStatus("statusPembelian", "Tanggal wajib diisi.", "error");
+  if (!supplier) return showStatus("statusPembelian", "Supplier wajib diisi.", "error");
+  if (!qtyKemasan || qtyKemasan <= 0) return showStatus("statusPembelian", "Qty kemasan harus lebih dari 0.", "error");
+  if (!hargaKemasan || hargaKemasan <= 0) return showStatus("statusPembelian", "Harga per kemasan harus lebih dari 0.", "error");
+
+  sedangPembelian = true;
+  if (!pembelianClientRequestId) {
+    pembelianClientRequestId = "REQ-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+  }
+  lockButton("btnPembelian", "MENYIMPAN...");
+  showStatus("statusPembelian", "Menyimpan pembelian, stok, dan Finance...", "loading");
+
+  try {
+    const hasil = await apiRequest({
+      action: "PEMBELIAN",
+      tanggal: tanggal,
+      supplier: supplier,
+      lokasiId: lokasiId,
+      produkId: produkId,
+      bentukBeli: bentukBeli,
+      isiPcs: isiPcs,
+      qtyKemasan: qtyKemasan,
+      hargaKemasan: hargaKemasan,
+      paymentMethod: paymentMethod,
+      keterangan: keterangan,
+      clientRequestId: pembelianClientRequestId
+    });
+
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Pembelian gagal.");
+
+    const d = hasil.data || {};
+    showStatus("statusPembelian", (hasil.message || "Pembelian berhasil.") + " ID: " + (d.idPembelian || "-"), "success");
+
+    document.getElementById("pembelianQty").value = "";
+    document.getElementById("pembelianHarga").value = "";
+    document.getElementById("pembelianSupplier").value = "";
+    document.getElementById("pembelianKeterangan").value = "";
+    hitungTotalPembelian();
+    resetProductPicker("pembelian");
+    const bentuk = document.getElementById("pembelianBentuk");
+    if (bentuk) bentuk.innerHTML = '<option value="">Pilih produk dulu...</option>';
+    const isi = document.getElementById("pembelianIsiPcs");
+    if (isi) isi.value = 1;
+    syncPembelianAkun();
+    pembelianClientRequestId = null;
+    loadDashboardStock().catch(() => {});
+  } catch (error) {
+    showStatus("statusPembelian", error.message || "Pembelian gagal.", "error");
+  } finally {
+    sedangPembelian = false;
+    unlockButton("btnPembelian");
+  }
 }
 
 
