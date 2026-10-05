@@ -8425,7 +8425,23 @@ function selectProduk(
   }
 
   if (type === "pembelian") {
-    renderPembelianBentuk(product.id);
+    // Gunakan cache global terlebih dahulu. Jika hanya PCS yang tersedia,
+    // ambil pricing produk secara targeted agar RENCENG/PACK/DUS tetap
+    // muncul meskipun POS_PRICING_ALL sedang tidak tersedia/sinkron.
+    (async function() {
+      try {
+        const cached = getPembelianPricingOptions(product.id);
+        const hasPackaging = cached.some(function(item) {
+          return String(item.bentukJual || "").toUpperCase() !== "PCS";
+        });
+        if (!hasPackaging) {
+          await fetchPosHargaFallback(product.id, "KONSUMEN");
+        }
+      } catch (error) {
+        console.warn("Fallback harga pembelian gagal:", error);
+      }
+      renderPembelianBentuk(product.id);
+    })();
   }
 
 }
