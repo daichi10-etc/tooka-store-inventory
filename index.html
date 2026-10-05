@@ -3788,11 +3788,24 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
                 <option value="RENCENG">RENCENG</option>
                 <option value="PACK">PACK</option>
                 <option value="DUS">DUS</option>
+                <option value="PROMO">PROMO</option>
               </select>
             </div>
             <div>
               <label>Isi (PCS)</label>
               <input id="adminHargaIsi" type="number" min="1" step="1" value="1">
+            </div>
+            <div id="adminHargaPromoArea" class="hidden">
+              <label>Label Promo</label>
+              <input id="adminHargaPromoLabel" type="text" maxlength="80" placeholder="Contoh: BELI 2 GRATIS 1">
+            </div>
+            <div id="adminHargaPromoBayarArea" class="hidden">
+              <label>Qty Bayar</label>
+              <input id="adminHargaPromoBayar" type="number" min="1" step="1" value="2">
+            </div>
+            <div id="adminHargaPromoBonusArea" class="hidden">
+              <label>Qty Gratis</label>
+              <input id="adminHargaPromoBonus" type="number" min="1" step="1" value="1">
             </div>
             <div>
               <label>Harga Jual</label>
@@ -3810,7 +3823,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <button class="primary-btn" onclick="saveAdminHarga()">💾 SIMPAN HARGA</button>
             <button class="secondary-btn" onclick="resetAdminHargaForm()">↺ BATAL / BARU</button>
           </div>
-          <p class="muted" style="margin-top:12px;">Stok tetap dihitung dalam PCS. PCS, RENCENG, PACK, dan DUS menentukan bentuk jual; Isi PCS menentukan jumlah stok yang dikurangi saat POS.</p>
+          <p class="muted" style="margin-top:12px;">Stok tetap dihitung dalam PCS. PCS, RENCENG, PACK, dan DUS menentukan bentuk jual; PROMO memakai Qty Bayar + Qty Gratis dan total Qty otomatis menjadi stok yang dikurangi saat POS.</p>
         </div>
 
         <div class="panel">
@@ -7236,17 +7249,28 @@ async function saveAdminProduk() {
 
 
 function syncHargaIsiPCS() {
-  const bentuk = document.getElementById("adminHargaBentuk").value;
+  const bentuk = document.getElementById("adminHargaBentuk")?.value || "PCS";
   const isi = document.getElementById("adminHargaIsi");
-  if (bentuk === "PCS") {
-    isi.value = 1;
-    isi.readOnly = true;
+  const promo = bentuk === "PROMO";
+  const promoArea = document.getElementById("adminHargaPromoArea");
+  const bayarArea = document.getElementById("adminHargaPromoBayarArea");
+  const bonusArea = document.getElementById("adminHargaPromoBonusArea");
+  [promoArea, bayarArea, bonusArea].forEach(function(el){ if(el) el.classList.toggle("hidden", !promo); });
+  const bayar = document.getElementById("adminHargaPromoBayar");
+  const bonus = document.getElementById("adminHargaPromoBonus");
+  if (promo) {
+    if (bayar && Number(bayar.value || 0) < 1) bayar.value = 2;
+    if (bonus && Number(bonus.value || 0) < 1) bonus.value = 1;
+    const total = Number(bayar?.value || 0) + Number(bonus?.value || 0);
+    if (isi) { isi.value = total > 0 ? total : 1; isi.readOnly = true; }
   } else {
-    isi.readOnly = false;
-    if (Number(isi.value || 0) <= 1) isi.value = "";
+    if (isi) { isi.readOnly = bentuk === "PCS"; if (bentuk === "PCS") isi.value = 1; else if (Number(isi.value || 0) <= 1) isi.value = ""; }
   }
 }
 
+
+document.getElementById("adminHargaPromoBayar")?.addEventListener("input", syncHargaIsiPCS);
+document.getElementById("adminHargaPromoBonus")?.addEventListener("input", syncHargaIsiPCS);
 
 async function loadAdminHarga() {
   if (!isOwner()) return;
@@ -7289,7 +7313,7 @@ function renderAdminHargaList() {
       '<td style="padding:10px;">' + escapeAdminHtml(h.idHarga) + '</td>' +
       '<td style="padding:10px;">' + escapeAdminHtml(h.idBarang) + '</td>' +
       '<td style="padding:10px;">' + escapeAdminHtml(h.kategoriPembeli) + '</td>' +
-      '<td style="padding:10px;">' + escapeAdminHtml(h.bentukJual) + '</td>' +
+      '<td style="padding:10px;">' + escapeAdminHtml(h.bentukJual + (h.promoLabel ? ' · ' + h.promoLabel : '')) + '</td>' +
       '<td style="padding:10px;text-align:right;">' + Number(h.isiPcs || 0) + ' PCS</td>' +
       '<td style="padding:10px;text-align:right;">' + formatRupiah(h.harga || 0) + '</td>' +
       '<td style="padding:10px;text-align:center;">' + escapeAdminHtml(h.status) + '</td>' +
@@ -7311,6 +7335,9 @@ function editAdminHarga(idHarga) {
   document.getElementById("adminHargaBentuk").value = h.bentukJual || "PCS";
   document.getElementById("adminHargaIsi").value = Number(h.isiPcs || 1);
   document.getElementById("adminHargaNilai").value = Number(h.harga || 0);
+  document.getElementById("adminHargaPromoLabel").value = h.promoLabel || "";
+  document.getElementById("adminHargaPromoBayar").value = Number(h.promoQtyBayar || 2);
+  document.getElementById("adminHargaPromoBonus").value = Number(h.promoQtyBonus || 1);
   document.getElementById("adminHargaStatus").value = h.status || "AKTIF";
   syncHargaIsiPCS();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -7324,6 +7351,9 @@ function resetAdminHargaForm() {
   document.getElementById("adminHargaBentuk").value = "PCS";
   document.getElementById("adminHargaIsi").value = 1;
   document.getElementById("adminHargaNilai").value = "";
+  document.getElementById("adminHargaPromoLabel").value = "";
+  document.getElementById("adminHargaPromoBayar").value = 2;
+  document.getElementById("adminHargaPromoBonus").value = 1;
   document.getElementById("adminHargaStatus").value = "AKTIF";
   syncHargaIsiPCS();
 }
@@ -7348,8 +7378,18 @@ async function saveAdminHarga() {
     bentukJual: document.getElementById("adminHargaBentuk").value,
     isiPcs: Number(document.getElementById("adminHargaIsi").value || 0),
     harga: Number(document.getElementById("adminHargaNilai").value || 0),
+    promoLabel: document.getElementById("adminHargaPromoLabel")?.value.trim() || "",
+    promoQtyBayar: Number(document.getElementById("adminHargaPromoBayar")?.value || 0),
+    promoQtyBonus: Number(document.getElementById("adminHargaPromoBonus")?.value || 0),
     status: document.getElementById("adminHargaStatus").value
   };
+
+  if (payload.bentukJual === "PROMO") {
+    if (!payload.promoLabel) { showStatus("hargaAdminStatus", "Label promo wajib diisi.", "error"); return; }
+    if (payload.promoQtyBayar <= 0 || payload.promoQtyBonus <= 0) { showStatus("hargaAdminStatus", "Qty Bayar dan Qty Gratis wajib lebih dari 0.", "error"); return; }
+    payload.isiPcs = payload.promoQtyBayar + payload.promoQtyBonus;
+    document.getElementById("adminHargaIsi").value = payload.isiPcs;
+  }
 
   if (!payload.idBarang || !payload.harga || payload.harga < 0) {
     if (payload.harga === 0) {
@@ -8731,7 +8771,8 @@ function renderPosHargaOptions(options, select, info) {
   }
   select.innerHTML = '<option value="">Pilih bentuk jual...</option>' +
     options.map(function(item) {
-      return `<option value="${escapeHtml(item.idHarga)}">${escapeHtml(item.bentukJual)} · ${escapeHtml(item.isiPcs)} PCS · ${escapeHtml(formatRupiah(item.harga))}</option>`;
+      const label = item.bentukJual === "PROMO" && item.promoLabel ? item.promoLabel : item.bentukJual;
+      return `<option value="${escapeHtml(item.idHarga)}">${escapeHtml(label)} · ${escapeHtml(item.isiPcs)} PCS · ${escapeHtml(formatRupiah(item.harga))}</option>`;
     }).join("");
   select.disabled = false;
   return options;
@@ -8838,8 +8879,10 @@ function selectPosHarga() {
     return;
   }
   if (info) {
-    info.textContent = "Harga: " + formatRupiah(item.harga) +
-      " · Stok: 1 " + item.bentukJual + " = " + item.isiPcs + " PCS";
+    const label = item.bentukJual === "PROMO" && item.promoLabel ? item.promoLabel : item.bentukJual;
+    const promoInfo = item.bentukJual === "PROMO" ? " · Bayar " + item.promoQtyBayar + " + Gratis " + item.promoQtyBonus : "";
+    info.textContent = "Harga: " + formatRupiah(item.harga) + promoInfo +
+      " · Stok: 1 " + label + " = " + item.isiPcs + " PCS";
   }
 }
 
@@ -8919,6 +8962,9 @@ async function refreshPosCartPrices() {
     item.harga = Number(match.harga || 0);
     item.bentukJual = match.bentukJual || item.bentukJual;
     item.isiPcs = Number(match.isiPcs || item.isiPcs || 0);
+    item.promoLabel = match.promoLabel || item.promoLabel || "";
+    item.promoQtyBayar = Number(match.promoQtyBayar || item.promoQtyBayar || 0);
+    item.promoQtyBonus = Number(match.promoQtyBonus || item.promoQtyBonus || 0);
     item.hargaTersedia = true;
   }
 
@@ -8959,6 +9005,9 @@ function addPosItem() {
     existing.hargaMaster = harga;
     existing.harga = harga;
     existing.idHarga = hargaMaster.idHarga || "";
+    existing.promoLabel = hargaMaster.promoLabel || "";
+    existing.promoQtyBayar = Number(hargaMaster.promoQtyBayar || 0);
+    existing.promoQtyBonus = Number(hargaMaster.promoQtyBonus || 0);
     existing.hargaTersedia = true;
   } else {
     posCart.push({
@@ -8973,6 +9022,9 @@ function addPosItem() {
       idHarga: hargaMaster.idHarga || "",
       bentukJual: hargaMaster.bentukJual,
       isiPcs: Number(hargaMaster.isiPcs),
+      promoLabel: hargaMaster.promoLabel || "",
+      promoQtyBayar: Number(hargaMaster.promoQtyBayar || 0),
+      promoQtyBonus: Number(hargaMaster.promoQtyBonus || 0),
       hargaTersedia: true
     });
   }
@@ -9032,7 +9084,7 @@ function renderPosCart() {
             <strong>${escapeHtml(formatNumber(item.qty))}</strong>
             <button onclick="changePosQty(${index}, 1)">+</button>
           </div>
-          <div class="muted">${escapeHtml(item.bentukJual || "unit")}</div>
+          <div class="muted">${escapeHtml(item.bentukJual === "PROMO" && item.promoLabel ? item.promoLabel : (item.bentukJual || "unit"))}</div>
         </td>
         <td>${escapeHtml(formatRupiah(item.harga))}</td>
         <td><strong>${escapeHtml(formatRupiah(subtotal))}</strong></td>
@@ -10337,7 +10389,7 @@ function renderPosReceipt(
 
               <td>
                 <strong>${escapeHtml(nama)}</strong>
-                <div class="muted">${escapeHtml(item.bentukJual || "-")} · ${escapeHtml(item.isiPcs || 0)} PCS/UNIT</div>
+                <div class="muted">${escapeHtml(item.bentukJual === "PROMO" && item.promoLabel ? item.promoLabel : (item.bentukJual || "-"))} · ${escapeHtml(item.isiPcs || 0)} PCS/UNIT</div>
               </td>
 
               <td>
@@ -10498,7 +10550,7 @@ function renderPosReceipt(
             return `
               <div class="receipt-item">
                 <div class="receipt-item-name">${escapeHtml(nama)}</div>
-                <div class="muted">${escapeHtml(item.bentukJual || "-")} · ${escapeHtml(item.isiPcs || 0)} PCS/UNIT</div>
+                <div class="muted">${escapeHtml(item.bentukJual === "PROMO" && item.promoLabel ? item.promoLabel : (item.bentukJual || "-"))} · ${escapeHtml(item.isiPcs || 0)} PCS/UNIT</div>
                 <div class="receipt-item-line">
                   <span>${escapeHtml(formatNumber(qty))} x ${escapeHtml(formatRupiah(harga))}</span>
                   <span>${escapeHtml(formatRupiah(subtotal))}</span>
@@ -10829,7 +10881,7 @@ function getPembelianPricingOptions(produkId) {
     unique.push({ bentukJual: bentuk, isiPcs: isi, harga: Number(item.harga || 0), idHarga: item.idHarga || "" });
   });
   unique.sort(function(a, b) {
-    const order = {PCS:1, RENCENG:2, PACK:3, DUS:4};
+    const order = {PCS:1, PROMO:2, RENCENG:3, PACK:4, DUS:5};
     return (order[a.bentukJual] || 99) - (order[b.bentukJual] || 99) || a.isiPcs - b.isiPcs;
   });
   return unique;
