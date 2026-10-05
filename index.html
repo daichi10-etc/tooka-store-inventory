@@ -2445,7 +2445,14 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         class="nav-btn"
         onclick="showPage('stok', this)"
       >
-        📦 <span>Cek Stok</span>
+        📦 <span>Stok</span>
+      </button>
+
+      <button
+        class="nav-btn"
+        onclick="showPage('stockOpname', this)"
+      >
+        📋 <span>Stock Opname</span>
       </button>
 
       <button
@@ -4472,6 +4479,85 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
 
       <!-- =================================================
+           STOCK OPNAME
+           ================================================= -->
+
+      <section id="stockOpname" class="page">
+
+        <div class="title">
+          <h2>📋 <span>Stock Opname</span></h2>
+          <p>Bandingkan stok sistem dengan stok fisik. Jika berbeda, sistem membuat adjustment stok otomatis.</p>
+        </div>
+
+        <div id="statusStockOpname" class="status"></div>
+
+        <div class="panel">
+          <h3>Input Stock Opname</h3>
+
+          <div class="form-grid">
+            <div>
+              <label>Produk</label>
+              <div class="product-picker">
+                <input id="opnameProdukCari" placeholder="Ketik ID atau nama produk..." autocomplete="off" oninput="filterProduk('opname')" onfocus="filterProduk('opname')">
+                <div id="opnameProdukResults" class="product-results"></div>
+              </div>
+              <input id="opnameProduk" type="hidden">
+              <div id="opnameProdukInfo" class="muted"></div>
+            </div>
+
+            <div>
+              <label>Lokasi</label>
+              <select id="opnameLokasi" onchange="ambilStokOpname()">
+                <option value="LOC001">TOOKA HUB METRO</option>
+                <option value="LOC002">TOOKA STORE JEPARA</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Tanggal Opname</label>
+              <input id="opnameTanggal" type="date">
+            </div>
+
+            <div>
+              <label>Stok Sistem</label>
+              <input id="opnameStokSistem" type="number" readonly value="">
+            </div>
+
+            <div>
+              <label>Stok Fisik</label>
+              <input id="opnameStokFisik" type="number" min="0" step="1" placeholder="Jumlah hasil hitung fisik" oninput="hitungSelisihOpname()">
+            </div>
+
+            <div>
+              <label>Selisih</label>
+              <input id="opnameSelisih" type="number" readonly value="">
+            </div>
+
+            <div class="full">
+              <div id="opnameSummary" class="muted">Pilih produk lalu ambil stok sistem.</div>
+            </div>
+
+            <div class="full">
+              <label>Alasan / Catatan</label>
+              <textarea id="opnameKeterangan" placeholder="Contoh: Hitung fisik gudang Metro"></textarea>
+            </div>
+
+            <div class="full">
+              <button id="btnAmbilStokOpname" class="btn btn-primary" onclick="ambilStokOpname()">AMBIL STOK SISTEM</button>
+              <button id="btnSimpanOpname" class="btn btn-success" onclick="simpanStockOpname()" style="margin-left:8px;">SIMPAN OPNAME</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Catatan</h3>
+          <div class="muted">Simpan opname hanya mencatat hasil pemeriksaan. Jika ada selisih, sistem otomatis membuat transaksi ADJUSTMENT tanpa memengaruhi Finance.</div>
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
            STOK
            ================================================= -->
 
@@ -4480,7 +4566,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         <div class="title">
 
           <h2>
-            📦 <span>Cek Stok</span>
+            📦 <span>Stok</span>
           </h2>
 
           <p>
@@ -7951,6 +8037,19 @@ function showPage(
     (async function(){ try { await loadProduk(); await preloadPosPricing(false); renderModalBarangBentuk(document.getElementById("masukProduk")?.value||""); } catch(error){ showStatus("statusMasuk",error.message||"Modal barang gagal dimuat.","error"); } })();
   }
 
+  if (pageId === "stockOpname") {
+    (async function(){
+      try {
+        await loadProduk();
+        const el = document.getElementById("opnameTanggal");
+        if (el && !el.value) el.value = new Date().toISOString().slice(0,10);
+        resetStockOpnameForm(false);
+      } catch(error) {
+        showStatus("statusStockOpname", error.message || "Stock opname gagal dimuat.", "error");
+      }
+    })();
+  }
+
 
   if (
     pageId ===
@@ -11333,6 +11432,103 @@ async function transferBarang() {
 
   }
 
+}
+
+
+/* =========================================================
+   STOCK OPNAME
+   ========================================================= */
+
+let sedangAmbilStokOpname = false;
+let sedangSimpanOpname = false;
+let opnameClientRequestId = null;
+
+function resetStockOpnameForm(clearProduct = true) {
+  if (clearProduct) resetProductPicker("opname");
+  const sistem = document.getElementById("opnameStokSistem");
+  const fisik = document.getElementById("opnameStokFisik");
+  const selisih = document.getElementById("opnameSelisih");
+  const summary = document.getElementById("opnameSummary");
+  if (sistem) sistem.value = "";
+  if (fisik) fisik.value = "";
+  if (selisih) selisih.value = "";
+  if (summary) summary.textContent = "Pilih produk lalu ambil stok sistem.";
+  opnameClientRequestId = null;
+}
+
+function hitungSelisihOpname() {
+  const sistem = Number(document.getElementById("opnameStokSistem")?.value || 0);
+  const fisikRaw = document.getElementById("opnameStokFisik")?.value;
+  const fisik = Number(fisikRaw || 0);
+  const selisih = fisik - sistem;
+  const out = document.getElementById("opnameSelisih");
+  const summary = document.getElementById("opnameSummary");
+  if (out) out.value = fisikRaw === "" ? "" : selisih;
+  if (summary && fisikRaw !== "") {
+    if (selisih === 0) summary.textContent = "Stok cocok. Tidak ada adjustment.";
+    else if (selisih > 0) summary.textContent = "Selisih +" + selisih + " PCS. Stok akan ditambah melalui ADJUSTMENT.";
+    else summary.textContent = "Selisih " + selisih + " PCS. Stok akan dikurangi melalui ADJUSTMENT.";
+  }
+}
+
+async function ambilStokOpname() {
+  if (sedangAmbilStokOpname) return;
+  const produkId = String(document.getElementById("opnameProduk")?.value || "").trim();
+  const lokasiId = String(document.getElementById("opnameLokasi")?.value || "").trim();
+  if (!produkId) return showStatus("statusStockOpname", "Produk wajib dipilih.", "error");
+  if (!lokasiId) return showStatus("statusStockOpname", "Lokasi wajib dipilih.", "error");
+  sedangAmbilStokOpname = true;
+  lockButton("btnAmbilStokOpname", "MEMERIKSA...");
+  showStatus("statusStockOpname", "Mengambil stok sistem...", "loading");
+  try {
+    const hasil = await apiRequest({action:"STOK", produkId, lokasiId});
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Stok sistem tidak ditemukan.");
+    const stok = Number(hasil.data?.stok || 0);
+    document.getElementById("opnameStokSistem").value = stok;
+    document.getElementById("opnameStokFisik").value = "";
+    document.getElementById("opnameSelisih").value = "";
+    document.getElementById("opnameSummary").textContent = "Stok sistem: " + stok + " PCS. Silakan hitung stok fisik lalu simpan opname.";
+    showStatus("statusStockOpname", "Stok sistem berhasil diambil.", "success");
+  } catch (error) {
+    showStatus("statusStockOpname", error.message || "Gagal mengambil stok sistem.", "error");
+  } finally {
+    sedangAmbilStokOpname = false;
+    unlockButton("btnAmbilStokOpname");
+  }
+}
+
+async function simpanStockOpname() {
+  if (sedangSimpanOpname) return;
+  const produkId = String(document.getElementById("opnameProduk")?.value || "").trim();
+  const lokasiId = String(document.getElementById("opnameLokasi")?.value || "").trim();
+  const tanggal = String(document.getElementById("opnameTanggal")?.value || "").trim();
+  const fisikRaw = document.getElementById("opnameStokFisik")?.value;
+  const stokSistem = Number(document.getElementById("opnameStokSistem")?.value || 0);
+  const stokFisik = Number(fisikRaw || 0);
+  const keterangan = String(document.getElementById("opnameKeterangan")?.value || "").trim();
+  if (!produkId) return showStatus("statusStockOpname", "Produk wajib dipilih.", "error");
+  if (!lokasiId) return showStatus("statusStockOpname", "Lokasi wajib dipilih.", "error");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) return showStatus("statusStockOpname", "Tanggal opname tidak valid.", "error");
+  if (fisikRaw === "" || !isFinite(stokFisik) || stokFisik < 0 || Math.floor(stokFisik) !== stokFisik) return showStatus("statusStockOpname", "Stok fisik harus bilangan bulat 0 atau lebih.", "error");
+  if (stokSistem < 0 || !isFinite(stokSistem)) return showStatus("statusStockOpname", "Stok sistem tidak valid. Ambil stok sistem terlebih dahulu.", "error");
+  sedangSimpanOpname = true;
+  opnameClientRequestId = opnameClientRequestId || ("OPREQ-" + Date.now() + "-" + Math.random().toString(36).slice(2,10));
+  lockButton("btnSimpanOpname", "MENYIMPAN...");
+  showStatus("statusStockOpname", "Menyimpan opname dan adjustment jika ada...", "loading");
+  try {
+    const hasil = await apiRequest({action:"STOCK_OPNAME", tanggal, lokasiId, produkId, stokFisik, keterangan, clientRequestId:opnameClientRequestId});
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Stock opname gagal.");
+    const d = hasil.data || {};
+    showStatus("statusStockOpname", (hasil.message || "Stock opname berhasil.") + " ID: " + (d.idOpname || "-") + (d.adjustmentTransaksiId ? " · Adjustment: " + d.adjustmentTransaksiId : ""), "success");
+    document.getElementById("opnameKeterangan").value = "";
+    resetStockOpnameForm(true);
+    loadDashboardStock().catch(() => {});
+  } catch (error) {
+    showStatus("statusStockOpname", error.message || "Stock opname gagal.", "error");
+  } finally {
+    sedangSimpanOpname = false;
+    unlockButton("btnSimpanOpname");
+  }
 }
 
 
