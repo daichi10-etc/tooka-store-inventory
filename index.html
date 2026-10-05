@@ -2417,7 +2417,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         class="nav-btn"
         onclick="showPage('masuk', this)"
       >
-        📥 <span>Barang Masuk</span>
+        🧾 <span>Modal Barang</span>
       </button>
 
       <button
@@ -3878,11 +3878,11 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         <div class="title">
 
           <h2>
-            📥 <span>Barang Masuk</span>
+            🧾 <span>Modal Barang</span>
           </h2>
 
           <p>
-            Catat barang yang masuk ke lokasi inventory.
+            Catat barang yang masuk ke TOOKA menggunakan modal / uang di luar kas TOOKA.
           </p>
 
         </div>
@@ -3892,7 +3892,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         <div class="panel">
 
           <h3>
-            Input Barang Masuk
+            Input Modal Barang
           </h3>
 
           <div class="form-grid">
@@ -3988,15 +3988,11 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <div>
 
               <label>
-                Sumber
+                Sumber Modal
               </label>
 
               <select id="masukSumber">
-
-                <option value="SUPPLIER">
-                  SUPPLIER
-                </option>
-
+                <option value="MODAL_OWNER">MODAL OWNER</option>
               </select>
 
             </div>
@@ -4022,7 +4018,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
                 class="btn btn-success"
                 onclick="barangMasuk()"
               >
-                SIMPAN BARANG MASUK
+                SIMPAN MODAL BARANG
               </button>
 
             </div>
@@ -10987,7 +10983,7 @@ async function barangMasuk() {
 
   showStatus(
     "statusMasuk",
-    "Menyimpan barang masuk...",
+    "Menyimpan modal barang...",
     "loading"
   );
 
@@ -11010,7 +11006,7 @@ async function barangMasuk() {
           qty,
 
         tujuan:
-          "SUPPLIER",
+          (document.getElementById("masukSumber")?.value || "MODAL_OWNER"),
 
         harga:
           harga,
@@ -11028,7 +11024,7 @@ async function barangMasuk() {
 
       throw new Error(
         hasil?.message ||
-        "Barang masuk gagal."
+        "Modal barang gagal."
       );
 
     }
@@ -11037,7 +11033,7 @@ async function barangMasuk() {
     showStatus(
       "statusMasuk",
       hasil.message ||
-        "Barang masuk berhasil.",
+        "Modal barang berhasil.",
       "success"
     );
 
