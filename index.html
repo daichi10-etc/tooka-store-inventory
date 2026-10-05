@@ -2179,7 +2179,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
 <style>
 /* =====================================================
-   TOOKA FINANCE V1
+   TOOKA FINANCE V2
    Additive visual layer only.
    ===================================================== */
 .finance-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
@@ -2191,6 +2191,13 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 .finance-table th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#64748b;}
 @media(max-width:850px){.finance-filters,.finance-summary-cards{grid-template-columns:1fr 1fr;}}
 @media(max-width:560px){.finance-filters,.finance-summary-cards{grid-template-columns:1fr;}}
+.finance-v2-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:15px;}
+.finance-v2-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:15px;margin-top:15px;}
+.finance-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.finance-account-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.finance-account-card{padding:13px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;}
+@media(max-width:850px){.finance-v2-cards{grid-template-columns:1fr 1fr;}.finance-v2-grid{grid-template-columns:1fr;}}
+@media(max-width:560px){.finance-v2-cards,.finance-form-grid,.finance-account-list{grid-template-columns:1fr;}}
 </style>
 </head>
 
@@ -3537,7 +3544,8 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
         <div class="title">
           <h2>💼 <span>Finance</span></h2>
-          <p>Laporan penjualan POS berbasis transaksi yang sudah tercatat.</p>
+          <p>Laporan penjualan POS + cashflow usaha.
+            </p>
         </div>
 
         <div id="financeStatus" class="status"></div>
@@ -3603,6 +3611,51 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         <div class="panel">
           <h3>🏆 Produk Terlaris</h3>
           <div id="financeProductData" class="muted">Belum ada data.</div>
+        </div>
+
+        <div class="panel" style="margin-top:18px;">
+          <div class="finance-section-head">
+            <div><h3>💰 Cashflow & Saldo</h3><div class="muted">POS dihitung otomatis dari TRANSAKSI. Manual Finance dipakai untuk saldo awal, pemasukan/pengeluaran lain, dan transfer antar akun.</div></div>
+            <button class="btn btn-primary" onclick="loadFinanceV2()">🔄 MUAT CASHFLOW</button>
+          </div>
+
+          <div class="finance-v2-cards">
+            <div class="card"><small>TOTAL UANG</small><strong id="financeV2TotalMoney">Rp0</strong><span class="muted">Saldo seluruh akun</span></div>
+            <div class="card"><small>PEMASUKAN</small><strong id="financeV2Inflow">Rp0</strong><span class="muted">Periode terpilih</span></div>
+            <div class="card"><small>PENGELUARAN</small><strong id="financeV2Outflow">Rp0</strong><span class="muted">Periode terpilih</span></div>
+            <div class="card"><small>NET CASHFLOW</small><strong id="financeV2Net">Rp0</strong><span class="muted">Pemasukan - pengeluaran</span></div>
+          </div>
+
+          <div class="finance-v2-grid">
+            <div class="panel" style="margin:0;">
+              <h3>Saldo per Akun</h3>
+              <div id="financeV2Accounts" class="finance-account-list" style="margin-top:12px;"></div>
+            </div>
+            <div class="panel" style="margin:0;">
+              <h3>Catat Finance Manual</h3>
+              <div class="muted" style="margin:6px 0 12px;">Jangan input penjualan POS di sini karena POS sudah dihitung otomatis.</div>
+              <div class="finance-form-grid">
+                <div><label>Tanggal</label><input id="financeV2Date" type="date"></div>
+                <div><label>Jenis</label><select id="financeV2Jenis" onchange="financeV2SyncForm()"><option value="MASUK">Pemasukan</option><option value="KELUAR">Pengeluaran</option><option value="TRANSFER">Transfer Antar Akun</option></select></div>
+                <div><label>Akun</label><select id="financeV2Account"></select></div>
+                <div id="financeV2TargetWrap" class="hidden"><label>Akun Tujuan</label><select id="financeV2TargetAccount"></select></div>
+                <div><label>Kategori</label><select id="financeV2Category"></select></div>
+                <div><label>Lokasi</label><select id="financeV2Location"><option value="">-</option><option value="LOC001">TOOKA HUB METRO</option><option value="LOC002">TOOKA STORE JEPARA</option></select></div>
+                <div><label>Nominal</label><input id="financeV2Nominal" type="number" min="1" step="1" placeholder="Rp"></div>
+                <div><label>Referensi</label><input id="financeV2Ref" placeholder="MANUAL / NOTA / dll"></div>
+                <div style="grid-column:1/-1;"><label>Keterangan</label><input id="financeV2Note" placeholder="Contoh: beli kardus, listrik, saldo awal kas Metro..."></div>
+              </div>
+              <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="saveFinanceV2()">💾 SIMPAN FINANCE</button>
+                <span id="financeV2Status" class="muted"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top:15px;">
+            <h3>Ledger Finance Manual</h3>
+            <div id="financeV2Ledger" class="muted">Belum ada data.</div>
+          </div>
         </div>
 
       </section>
@@ -7361,6 +7414,7 @@ function setupFinanceReportPage() {
 
   loadFinanceUsers();
   loadFinanceReport();
+  initFinanceV2();
 }
 
 async function loadFinanceUsers() {
@@ -7479,6 +7533,121 @@ function renderFinanceTable(elementId, rows, columns) {
   }
 
   box.innerHTML = `<div style="overflow-x:auto;"><table class="finance-table"><thead><tr>${columns.map(c => `<th style="text-align:${c[2] || "left"};">${c[0]}</th>`).join("")}</tr></thead><tbody>${rows.map((row, i) => `<tr>${columns.map(c => `<td style="text-align:${c[2] || "left"};">${c[1](row, i)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+
+
+/* =========================================================
+   FINANCE V2 — CASHFLOW / LEDGER OWNER ONLY
+   ========================================================= */
+
+let financeV2Master = { akun: [], kategori: [] };
+
+function financeV2Today() {
+  return financeLocalDate();
+}
+
+async function initFinanceV2() {
+  if (!isOwner()) return;
+  const dateEl = document.getElementById("financeV2Date");
+  if (dateEl && !dateEl.value) dateEl.value = financeV2Today();
+  try {
+    const hasil = await apiRequest({ action: "FINANCE_INIT" });
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Master Finance gagal dimuat.");
+    financeV2Master = hasil.data || { akun: [], kategori: [] };
+    financeV2RenderMasters();
+    financeV2SyncForm();
+    await loadFinanceV2();
+  } catch (error) {
+    console.error("Finance V2 init:", error);
+    showStatus("financeV2Status", error.message || "Finance V2 gagal dimuat.", "error");
+  }
+}
+
+function financeV2RenderMasters() {
+  const akun = (financeV2Master.akun || []).filter(x => String(x.status || "").toUpperCase() === "AKTIF");
+  const accountSelect = document.getElementById("financeV2Account");
+  const targetSelect = document.getElementById("financeV2TargetAccount");
+  const current = accountSelect?.value || "";
+  const targetCurrent = targetSelect?.value || "";
+  const options = akun.map(x => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.nama)}${x.lokasi ? " — " + escapeHtml(x.lokasi) : ""}</option>`).join("");
+  if (accountSelect) accountSelect.innerHTML = options;
+  if (targetSelect) targetSelect.innerHTML = options;
+  if (current && akun.some(x => x.id === current)) accountSelect.value = current;
+  if (targetCurrent && akun.some(x => x.id === targetCurrent)) targetSelect.value = targetCurrent;
+  financeV2SyncForm();
+}
+
+function financeV2SyncForm() {
+  const jenis = document.getElementById("financeV2Jenis")?.value || "MASUK";
+  const targetWrap = document.getElementById("financeV2TargetWrap");
+  const cat = document.getElementById("financeV2Category");
+  if (targetWrap) targetWrap.classList.toggle("hidden", jenis !== "TRANSFER");
+  if (!cat) return;
+  const categories = (financeV2Master.kategori || []).filter(x => String(x.status || "").toUpperCase() === "AKTIF" && String(x.jenis || "").toUpperCase() === jenis);
+  const current = cat.value;
+  cat.innerHTML = categories.map(x => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.nama)}</option>`).join("");
+  if (current && categories.some(x => x.id === current)) cat.value = current;
+}
+
+async function loadFinanceV2() {
+  if (!isOwner()) return;
+  const start = document.getElementById("financeDateStart")?.value || financeV2Today();
+  const end = document.getElementById("financeDateEnd")?.value || start;
+  if (start > end) return;
+  try {
+    const hasil = await apiRequest({ action: "FINANCE_DATA", tanggalMulai: start, tanggalSelesai: end });
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Cashflow gagal dimuat.");
+    const data = hasil.data || {};
+    document.getElementById("financeV2TotalMoney").textContent = formatRupiahDashboard(data.totalMoney || 0);
+    document.getElementById("financeV2Inflow").textContent = formatRupiahDashboard(data.pemasukan || 0);
+    document.getElementById("financeV2Outflow").textContent = formatRupiahDashboard(data.pengeluaran || 0);
+    document.getElementById("financeV2Net").textContent = formatRupiahDashboard(data.netCashflow || 0);
+    const accounts = data.saldoAkun || [];
+    document.getElementById("financeV2Accounts").innerHTML = accounts.length ? accounts.map(x => `<div class="finance-account-card"><div class="muted" style="font-size:11px;">${escapeHtml(x.id)} · ${escapeHtml(x.tipe || "")}</div><strong style="display:block;margin-top:4px;">${escapeHtml(x.nama)}</strong><div style="font-size:18px;font-weight:700;margin-top:7px;">${formatRupiahDashboard(x.saldo)}</div></div>`).join("") : '<div class="muted">Belum ada akun.</div>';
+    renderFinanceTable("financeV2Ledger", data.ledger || [], [
+      ["Tanggal", x => escapeHtml(x.tanggal || "-")],
+      ["Jenis", x => escapeHtml(x.jenis || "-"), "left"],
+      ["Akun", x => escapeHtml(x.akunNama || x.akun || "-"), "left"],
+      ["Kategori", x => escapeHtml(x.kategoriNama || x.kategori || "-"), "left"],
+      ["Nominal", x => `<strong>${formatRupiahDashboard(x.nominal)}</strong>`, "right"],
+      ["Keterangan", x => escapeHtml(x.keterangan || x.referensi || "-"), "left"]
+    ]);
+    document.getElementById("financeV2Status").textContent = "Cashflow diperbarui: " + start + (start === end ? "" : " — " + end);
+  } catch (error) {
+    console.error("Finance V2 load:", error);
+    showStatus("financeV2Status", error.message || "Cashflow gagal dimuat.", "error");
+  }
+}
+
+async function saveFinanceV2() {
+  if (!isOwner()) return;
+  const btn = event?.currentTarget;
+  if (btn) btn.disabled = true;
+  try {
+    const payload = {
+      action: "FINANCE_SAVE",
+      tanggal: document.getElementById("financeV2Date")?.value || financeV2Today(),
+      jenis: document.getElementById("financeV2Jenis")?.value || "MASUK",
+      akun: document.getElementById("financeV2Account")?.value || "",
+      akunTujuan: document.getElementById("financeV2TargetAccount")?.value || "",
+      kategori: document.getElementById("financeV2Category")?.value || "",
+      lokasiId: document.getElementById("financeV2Location")?.value || "",
+      nominal: Number(document.getElementById("financeV2Nominal")?.value || 0),
+      referensi: document.getElementById("financeV2Ref")?.value || "MANUAL",
+      keterangan: document.getElementById("financeV2Note")?.value || ""
+    };
+    const hasil = await apiRequest(payload);
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Finance gagal disimpan.");
+    document.getElementById("financeV2Nominal").value = "";
+    document.getElementById("financeV2Note").value = "";
+    document.getElementById("financeV2Ref").value = "MANUAL";
+    showStatus("financeV2Status", "Finance berhasil disimpan.", "success");
+    await loadFinanceV2();
+  } catch (error) {
+    showStatus("financeV2Status", error.message || "Finance gagal disimpan.", "error");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 
