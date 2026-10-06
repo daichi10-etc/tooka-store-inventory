@@ -8111,7 +8111,7 @@ function showPage(
   }
 
   if (pageId === "masuk") {
-    (async function(){ try { await loadProduk(); await preloadPosPricing(false); renderModalBarangBentuk(document.getElementById("masukProduk")?.value||""); } catch(error){ showStatus("statusMasuk",error.message||"Modal barang gagal dimuat.","error"); } })();
+    (async function(){ try { await loadProduk(); renderModalBarangBentuk(document.getElementById("masukProduk")?.value||""); } catch(error){ showStatus("statusMasuk",error.message||"Modal barang gagal dimuat.","error"); } })();
   }
 
   if (pageId === "stockOpname") {
@@ -8756,7 +8756,33 @@ function refreshCurrentPosHargaIfNeeded() {
   }
 }
 
-async function preloadPosPricing(force) {
+const posProductPricingPromises = {};
+
+async function ensureProductPricing(produkId, buyer) {
+  const id = String(produkId || "").trim();
+  const pembeli = String(buyer || "KONSUMEN").trim().toUpperCase();
+  if (!id) return [];
+
+  posPricingCache[pembeli] = posPricingCache[pembeli] || {};
+  const cached = posPricingCache[pembeli][id];
+  if (Array.isArray(cached) && cached.length > 0) return cached;
+
+  const key = pembeli + "|" + id;
+  if (posProductPricingPromises[key]) return posProductPricingPromises[key];
+
+  posProductPricingPromises[key] = (async function() {
+    try {
+      const rows = await fetchPosHargaFallback(id, pembeli);
+      return Array.isArray(rows) ? rows : [];
+    } finally {
+      delete posProductPricingPromises[key];
+    }
+  })();
+
+  return posProductPricingPromises[key];
+}
+
+function preloadPosPricing(force) {
   if (posPricingLoading) return posPricingLoadingPromise || false;
   if (posPricingLoaded && !force) return true;
 
@@ -8867,9 +8893,9 @@ async function loadPosHarga(produkId) {
     return String(item.id || "").trim() === id;
   });
 
-  // Selalu punya minimal PCS dari MASTER_PRODUK, bahkan ketika endpoint
-  // pricing sedang gagal atau belum selesai.
   let options = (posPricingCache[buyer] && posPricingCache[buyer][id]) || [];
+
+  // Render PCS/base price IMMEDIATELY. Server tidak boleh menghalangi kasir.
   if (!options.length && product) {
     options = [{
       idHarga: "BASE-" + product.id,
@@ -8888,13 +8914,15 @@ async function loadPosHarga(produkId) {
   posHargaOptions = options.map(function(x) { return { ...x }; });
   renderPosHargaOptions(posHargaOptions, select, info);
 
-  // Bila preload global gagal, ambil hanya produk yang sedang dipilih.
-  // Tidak ada request server per klik pada jalur normal.
-  if (!posPricingPrimaryAvailable) {
-    const fallbackRows = await fetchPosHargaFallback(id, buyer);
-    if (fallbackRows.length) {
-      options = fallbackRows;
-      posHargaOptions = options.map(function(x) { return { ...x }; });
+  // Kalau bentuk khusus belum ada, ambil hanya produk ini. Begitu selesai,
+  // dropdown langsung diperbarui menjadi RENCENG/PACK/DUS/PROMO bila ada.
+  const hasSpecial = options.some(function(x) {
+    return ["RENCENG", "PACK", "DUS", "PROMO"].includes(String(x.bentukJual || "").toUpperCase());
+  });
+  if (!hasSpecial) {
+    const rows = await ensureProductPricing(id, buyer);
+    if (rows.length) {
+      posHargaOptions = rows.map(function(x) { return { ...x }; });
       renderPosHargaOptions(posHargaOptions, select, info);
     }
   }
@@ -9532,8 +9560,6 @@ async function loadPosDrafts() {
 async function loadPosDraft(draftId) {
 
   showStatus("statusPOS", "Membuka pesanan tersimpan...", "loading");
-  await loadProduk();
-  await preloadPosPricing(false);
 
   try {
     const hasil = await apiRequest({
@@ -10902,8 +10928,9 @@ function getTodayLocalTOOKA() {
 }
 
 async function setupPembelianPage() {
+  // MASTER_PRODUK saja yang wajib ditunggu. Master Harga dimuat per produk
+  // saat produk dipilih supaya halaman Pembelian tidak ikut menunggu pricing global.
   await loadProduk();
-  await preloadPosPricing(false);
 
   const tanggal = document.getElementById("pembelianTanggal");
   if (tanggal && !tanggal.value) tanggal.value = getTodayLocalTOOKA();
@@ -10951,6 +10978,8 @@ function renderPembelianBentuk(produkId) {
   const info = document.getElementById("pembelianProdukInfo");
   if (!select) return;
 
+  // Selalu render PCS dulu dari MASTER_PRODUK. Jangan pernah membuat kasir
+  // menunggu endpoint Master Harga untuk melihat pilihan dasar.
   const options = getPembelianPricingOptions(produkId);
   if (!options.length) {
     select.innerHTML = '<option value="PCS|1">PCS · 1 PCS</option>';
@@ -10968,6 +10997,16 @@ function renderPembelianBentuk(produkId) {
     info.textContent = product ? "Satuan: " + (product.satuan || "-") + " · Harga jual PCS: " + formatRupiah(product.hargaJual || 0) : "";
   }
   syncPembelianBentuk();
+
+  // Ambil hanya pricing produk yang dipilih bila cache belum punya bentuk khusus.
+  if (produkId && options.length <= 1) {
+    ensureProductPricing(produkId, "KONSUMEN").then(function(rows) {
+      if (!rows.length) return;
+      renderPembelianBentuk(produkId);
+    }).catch(function(error) {
+      console.warn("Pricing Pembelian produk gagal dimuat:", error);
+    });
+  }
 }
 
 function syncPembelianBentuk() {
@@ -11103,7 +11142,7 @@ function getModalBarangBentukOptions(produkId) {
   const order={PCS:1,RENCENG:2,PACK:3,DUS:4}; unique.sort((a,b)=>(order[a.bentukJual]||99)-(order[b.bentukJual]||99)||a.isiPcs-b.isiPcs);
   return unique;
 }
-function renderModalBarangBentuk(produkId){ const select=document.getElementById('masukBentuk'); if(!select)return; const options=getModalBarangBentukOptions(produkId); select.innerHTML=options.map(x=>`<option value="${escapeHtml(x.bentukJual+'|'+x.isiPcs)}">${escapeHtml(x.bentukJual)} · ${escapeHtml(x.isiPcs)} PCS</option>`).join(''); syncModalBarangBentuk(); }
+function renderModalBarangBentuk(produkId){ const select=document.getElementById('masukBentuk'); if(!select)return; const options=getModalBarangBentukOptions(produkId); select.innerHTML=options.map(x=>`<option value="${escapeHtml(x.bentukJual+'|'+x.isiPcs)}">${escapeHtml(x.bentukJual)} · ${escapeHtml(x.isiPcs)} PCS</option>`).join(''); syncModalBarangBentuk(); if(produkId && options.length<=1){ ensureProductPricing(produkId,'KONSUMEN').then(function(rows){ if(rows.length) renderModalBarangBentuk(produkId); }).catch(function(error){ console.warn('Pricing Modal Barang gagal dimuat:',error); }); } }
 function syncModalBarangBentuk(){ const select=document.getElementById('masukBentuk'), isi=document.getElementById('masukIsiPcs'); if(!select||!isi)return; const p=String(select.value||'PCS|1').split('|'); const n=Number(p[1]||1); isi.value=isFinite(n)&&n>0?n:1; hitungModalBarang(); }
 function hitungModalBarang(){ const q=Number(document.getElementById('masukQty')?.value||0), i=Number(document.getElementById('masukIsiPcs')?.value||1), h=Number(document.getElementById('masukHarga')?.value||0), qp=q*i; const out=document.getElementById('masukQtyPcs'), sum=document.getElementById('masukSummary'); if(out)out.value=qp>0?qp:0; if(sum)sum.textContent=q>0?'Stok masuk: '+qp+' PCS · Nilai modal: '+formatRupiah(q*h)+' · Tidak mengurangi kas TOOKA.':'Masukkan qty kemasan untuk menghitung stok.'; }
 
