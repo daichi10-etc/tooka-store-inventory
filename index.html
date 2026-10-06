@@ -4846,8 +4846,22 @@ async function apiRequest(data, options = {}) {
 
 
   let response;
+  const controller =
+    typeof AbortController !== "undefined"
+      ? new AbortController()
+      : null;
+  const timeoutMs =
+    Number(options.timeoutMs || 45000);
+  let timeoutId = null;
 
   try {
+
+    if (controller) {
+      timeoutId = setTimeout(
+        () => controller.abort(),
+        timeoutMs
+      );
+    }
 
     response =
       await fetch(
@@ -4861,20 +4875,55 @@ async function apiRequest(data, options = {}) {
           },
 
           body:
-            JSON.stringify(payload)
+            JSON.stringify(payload),
+
+          signal:
+            controller
+              ? controller.signal
+              : undefined
         }
       );
 
   } catch (error) {
 
-    throw new Error(
-      "Tidak dapat terhubung ke server."
-    );
+    const isTimeout =
+      error &&
+      error.name === "AbortError";
 
+    if (publicActions.includes(payload.action)) {
+      throw new Error(
+        isTimeout
+          ? "Server terlalu lama merespons. Coba login/muat ulang sekali lagi."
+          : "Tidak dapat terhubung ke server."
+      );
+    }
+
+    const uncertainError = new Error(
+      isTimeout
+        ? "Server belum memberi konfirmasi dalam 45 detik. JANGAN input ulang dulu. Periksa riwayat transaksi sebelum mencoba lagi."
+        : "Koneksi ke server terputus. Transaksi mungkin sudah diproses. JANGAN input ulang dulu. Periksa riwayat transaksi."
+    );
+    uncertainError.code = "REQUEST_UNCERTAIN";
+    uncertainError.uncertain = true;
+    throw uncertainError;
+
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 
 
   if (!response.ok) {
+
+    if (!publicActions.includes(payload.action)) {
+      const uncertainError = new Error(
+        "Server API mengembalikan HTTP " +
+        response.status +
+        ". Jangan input ulang dulu; periksa riwayat transaksi."
+      );
+      uncertainError.code = "API_HTTP_ERROR";
+      uncertainError.uncertain = true;
+      throw uncertainError;
+    }
 
     throw new Error(
       "Server API gagal merespons. HTTP " +
@@ -9813,6 +9862,7 @@ async function cancelPosDraft(draftId) {
 let checkoutRunning =
   false;
 
+let posClientRequestId = null;
 let lastPosReceipt = null;
 
 
@@ -9960,6 +10010,11 @@ async function checkoutPOS() {
     true;
 
 
+  if (!posClientRequestId) {
+    posClientRequestId = "POSREQ-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+  }
+
+
   const button =
     document.getElementById(
       "btnCheckout"
@@ -10012,6 +10067,9 @@ async function checkoutPOS() {
         draftId:
           currentPosDraftId || "",
 
+        clientRequestId:
+          posClientRequestId,
+
         items:
           items
 
@@ -10044,6 +10102,7 @@ async function checkoutPOS() {
      */
     resetPosAfterSuccessfulSale();
     currentPosDraftId = null;
+    posClientRequestId = null;
     loadPosDrafts();
 
 
