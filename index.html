@@ -3683,7 +3683,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
         <div class="title">
           <h2>Master Produk</h2>
-          <p>Cari produk berdasarkan ID Barang atau Nama Barang. Satuan dasar TOOKA = PCS.</p>
+          <p>Cari produk berdasarkan ID Barang atau Nama Barang. Satuan dasar produk bisa PCS atau KG.</p>
         </div>
 
         <div id="produkAdminStatus" class="status"></div>
@@ -3725,7 +3725,10 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             </div>
             <div>
               <label>Satuan Dasar</label>
-              <input id="adminProdukSatuan" value="PCS" readonly>
+              <select id="adminProdukSatuan">
+                <option value="PCS">PCS</option>
+                <option value="KG">KG</option>
+              </select>
             </div>
             <div>
               <label>Harga Jual Retail</label>
@@ -3790,9 +3793,10 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
                 <option value="DUS">DUS</option>
                 <option value="PROMO">PROMO</option>
               </select>
+              <div id="adminHargaBentukHint" class="muted" style="margin-top:5px;"></div>
             </div>
             <div>
-              <label>Isi (PCS)</label>
+              <label id="adminHargaIsiLabel">Isi (PCS)</label>
               <input id="adminHargaIsi" type="number" min="1" step="1" value="1">
             </div>
             <div id="adminHargaPromoArea" class="hidden">
@@ -4104,8 +4108,8 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
             <div>
               <label>Isi</label>
-              <input id="pembelianIsiPcs" type="number" value="1" min="1" step="1" readonly>
-              <div class="muted">PCS per kemasan</div>
+              <input id="pembelianIsiPcs" type="number" value="1" min="0.01" step="0.01" readonly>
+              <div id="pembelianIsiLabel" class="muted">PCS per kemasan</div>
             </div>
 
             <div>
@@ -4522,7 +4526,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
 
             <div>
               <label>Stok Fisik</label>
-              <input id="opnameStokFisik" type="number" min="0" step="1" placeholder="Jumlah hasil hitung fisik" oninput="hitungSelisihOpname()">
+              <input id="opnameStokFisik" type="number" min="0" step="0.01" placeholder="Jumlah hasil hitung fisik" oninput="hitungSelisihOpname()">
             </div>
 
             <div>
@@ -7233,7 +7237,7 @@ function editAdminProduk(id) {
   document.getElementById("adminProdukId").readOnly = true;
   document.getElementById("adminProdukNama").value = p.nama || "";
   document.getElementById("adminProdukKategori").value = p.kategori || "";
-  document.getElementById("adminProdukSatuan").value = "PCS";
+  document.getElementById("adminProdukSatuan").value = String(p.satuan || "PCS").toUpperCase();
   document.getElementById("adminProdukHarga").value = Number(p.hargaJual || 0);
   document.getElementById("adminProdukStokMinimum").value = Number(p.stokMinimum || 0);
   document.getElementById("adminProdukStatus").value = String(p.status || "AKTIF").toUpperCase();
@@ -7265,7 +7269,7 @@ async function saveAdminProduk() {
     idBarang: document.getElementById("adminProdukId").value.trim(),
     nama: document.getElementById("adminProdukNama").value.trim(),
     kategori: document.getElementById("adminProdukKategori").value.trim(),
-    satuan: "PCS",
+    satuan: document.getElementById("adminProdukSatuan").value || "PCS",
     hargaJual: Number(document.getElementById("adminProdukHarga").value || 0),
     stokMinimum: Number(document.getElementById("adminProdukStokMinimum").value || 0),
     status: document.getElementById("adminProdukStatus").value
@@ -7297,10 +7301,51 @@ async function saveAdminProduk() {
 }
 
 
+function getAdminHargaProductUnit() {
+  const id = document.getElementById("adminHargaProduk")?.value || "";
+  const p = adminProdukData.find(function(x){ return String(x.id || "").trim() === String(id).trim(); });
+  return String(p?.satuan || "PCS").trim().toUpperCase() || "PCS";
+}
+
+function syncMasterHargaBentukOptions(preferredValue) {
+  const select = document.getElementById("adminHargaBentuk");
+  if (!select) return;
+  const unit = getAdminHargaProductUnit();
+  const current = preferredValue || select.value || "PCS";
+  let options;
+  if (unit === "KG") {
+    options = [
+      ["0.25 KG", "1/4 KG"],
+      ["0.5 KG", "1/2 KG"],
+      ["1 KG", "1 KG"]
+    ];
+  } else {
+    options = [["PCS","PCS"],["RENCENG","RENCENG"],["PACK","PACK"],["DUS","DUS"],["PROMO","PROMO"]];
+  }
+  select.innerHTML = options.map(function(x){ return '<option value="'+escapeAdminHtml(x[0])+'">'+escapeAdminHtml(x[1])+'</option>'; }).join("");
+  const exists = options.some(function(x){ return x[0] === current; });
+  select.value = exists ? current : options[0][0];
+  const label = document.getElementById("adminHargaIsiLabel");
+  const hint = document.getElementById("adminHargaBentukHint");
+  if (unit === "KG") {
+    if (label) label.textContent = "Isi (KG)";
+    if (hint) hint.textContent = "Produk KG: pilih ¼ KG, ½ KG, atau 1 KG. Untuk 2 KG tinggal qty 2 × 1 KG.";
+  } else {
+    if (label) label.textContent = "Isi (PCS)";
+    if (hint) hint.textContent = "Produk PCS: bentuk kemasan memakai konversi PCS seperti biasa.";
+  }
+  syncHargaIsiPCS();
+}
+
+function getCurrentMasterHargaUnit() {
+  return getAdminHargaProductUnit();
+}
+
 function syncHargaIsiPCS() {
   const bentuk = document.getElementById("adminHargaBentuk")?.value || "PCS";
+  const unit = getCurrentMasterHargaUnit();
   const isi = document.getElementById("adminHargaIsi");
-  const promo = bentuk === "PROMO";
+  const promo = bentuk === "PROMO" && unit === "PCS";
   const promoArea = document.getElementById("adminHargaPromoArea");
   const bayarArea = document.getElementById("adminHargaPromoBayarArea");
   const bonusArea = document.getElementById("adminHargaPromoBonusArea");
@@ -7312,8 +7357,10 @@ function syncHargaIsiPCS() {
     if (bonus && Number(bonus.value || 0) < 1) bonus.value = 1;
     const total = Number(bayar?.value || 0) + Number(bonus?.value || 0);
     if (isi) { isi.value = total > 0 ? total : 1; isi.readOnly = true; }
+  } else if (unit === "KG") {
+    if (isi) { isi.readOnly = true; isi.step = "0.01"; isi.value = bentuk === "0.25 KG" ? 0.25 : (bentuk === "0.5 KG" ? 0.5 : 1); }
   } else {
-    if (isi) { isi.readOnly = bentuk === "PCS"; if (bentuk === "PCS") isi.value = 1; else if (Number(isi.value || 0) <= 1) isi.value = ""; }
+    if (isi) { isi.readOnly = bentuk === "PCS"; isi.step = "1"; if (bentuk === "PCS") isi.value = 1; else if (Number(isi.value || 0) <= 1) isi.value = ""; }
   }
 }
 
@@ -7381,6 +7428,7 @@ function editAdminHarga(idHarga) {
   document.getElementById("adminHargaId").value = h.idHarga || "";
   document.getElementById("adminHargaProduk").value = h.idBarang || "";
   document.getElementById("adminHargaPembeli").value = h.kategoriPembeli || "KONSUMEN";
+  syncMasterHargaBentukOptions(h.bentukJual || "PCS");
   document.getElementById("adminHargaBentuk").value = h.bentukJual || "PCS";
   document.getElementById("adminHargaIsi").value = Number(h.isiPcs || 1);
   document.getElementById("adminHargaNilai").value = Number(h.harga || 0);
@@ -7397,6 +7445,7 @@ function resetAdminHargaForm() {
   document.getElementById("adminHargaId").value = "";
   document.getElementById("adminHargaProduk").value = "";
   document.getElementById("adminHargaPembeli").value = "KONSUMEN";
+  syncMasterHargaBentukOptions("PCS");
   document.getElementById("adminHargaBentuk").value = "PCS";
   document.getElementById("adminHargaIsi").value = 1;
   document.getElementById("adminHargaNilai").value = "";
@@ -7415,6 +7464,8 @@ function invalidatePosPricingCache() {
   posPricingLoadingPromise = null;
 }
 
+
+document.getElementById("adminHargaProduk")?.addEventListener("change", function(){ syncMasterHargaBentukOptions(); });
 
 async function saveAdminHarga() {
   if (!isOwner()) return;
@@ -10954,7 +11005,7 @@ function getPembelianPricingOptions(produkId) {
     (Array.isArray(options) ? options : []).forEach(function(item) {
       const bentuk = String(item.bentukJual || "PCS").trim().toUpperCase();
       const isi = Number(item.isiPcs || 1);
-      if (!["PCS", "RENCENG", "PACK", "DUS"].includes(bentuk)) return;
+      if (!["PCS", "RENCENG", "PACK", "DUS", "0.25 KG", "0.5 KG", "1 KG"].includes(bentuk)) return;
       if (!isFinite(isi) || isi <= 0) return;
       const key = bentuk + "|" + isi;
       if (seen.has(key)) return;
@@ -10975,8 +11026,9 @@ function getPembelianPricingOptions(produkId) {
       return String(x.id || "").trim() === id;
     });
     if (product) {
+      const unit = String(product.satuan || "PCS").toUpperCase();
       unique.unshift({
-        bentukJual: "PCS",
+        bentukJual: unit === "KG" ? "1 KG" : "PCS",
         isiPcs: 1,
         harga: Number(product.hargaJual || 0),
         idHarga: "BASE-" + product.id,
@@ -11005,7 +11057,9 @@ function renderPembelianBentuk(produkId) {
     select.value = "PCS|1";
   } else {
     select.innerHTML = '<option value="">Pilih bentuk...</option>' + options.map(function(item) {
-      return `<option value="${escapeHtml(item.bentukJual + "|" + item.isiPcs)}">${escapeHtml(item.bentukJual)} · ${escapeHtml(item.isiPcs)} PCS</option>`;
+      const unit = String((produkMaster.find(x => String(x.id).trim() === String(produkId).trim()) || {}).satuan || "PCS").toUpperCase();
+      const isiLabel = unit === "KG" ? (Number(item.isiPcs) + " KG") : (Number(item.isiPcs) + " PCS");
+      return `<option value="${escapeHtml(item.bentukJual + "|" + item.isiPcs)}">${escapeHtml(item.bentukJual)} · ${escapeHtml(isiLabel)}</option>`;
     }).join("");
     const pcs = options.find(x => x.bentukJual === "PCS") || options[0];
     select.value = pcs.bentukJual + "|" + pcs.isiPcs;
@@ -11013,7 +11067,7 @@ function renderPembelianBentuk(produkId) {
 
   if (info) {
     const product = produkMaster.find(x => String(x.id).trim() === String(produkId).trim());
-    info.textContent = product ? "Satuan: " + (product.satuan || "-") + " · Harga jual PCS: " + formatRupiah(product.hargaJual || 0) : "";
+    info.textContent = product ? "Satuan: " + (product.satuan || "-") + " · Harga dasar: " + formatRupiah(product.hargaJual || 0) + " / " + String(product.satuan || "PCS").toUpperCase() : "";
   }
   syncPembelianBentuk();
 
@@ -11050,6 +11104,11 @@ function syncPembelianBentuk() {
   const isiPcs = Number(parts[1] || 1);
   isi.value = isFinite(isiPcs) && isiPcs > 0 ? isiPcs : 1;
   if (bentuk === "PCS") isi.value = 1;
+  const product = produkMaster.find(x => String(x.id).trim() === String(document.getElementById("pembelianProduk")?.value || "").trim());
+  const unit = String(product?.satuan || "PCS").toUpperCase();
+  const label = document.getElementById("pembelianIsiLabel");
+  if (label) label.textContent = unit === "KG" ? "KG per kemasan" : "PCS per kemasan";
+  isi.step = unit === "KG" ? "0.01" : "1";
   hitungTotalPembelian();
 }
 
@@ -11066,7 +11125,9 @@ function hitungTotalPembelian() {
     if (!qty || !harga) {
       summary.textContent = "Belum ada nilai pembelian.";
     } else {
-      summary.textContent = "Stok masuk: " + qtyPcs + " PCS · Total pembayaran: " + formatRupiah(total) + " · Status: LUNAS";
+      const product = produkMaster.find(x => String(x.id).trim() === String(document.getElementById("pembelianProduk")?.value || "").trim());
+      const unit = String(product?.satuan || "PCS").toUpperCase();
+      summary.textContent = "Stok masuk: " + qtyPcs + " " + unit + " · Total pembayaran: " + formatRupiah(total) + " · Status: LUNAS";
     }
   }
 }
@@ -11628,7 +11689,9 @@ async function ambilStokOpname() {
     document.getElementById("opnameStokSistem").value = stok;
     document.getElementById("opnameStokFisik").value = "";
     document.getElementById("opnameSelisih").value = "";
-    document.getElementById("opnameSummary").textContent = "Stok sistem: " + stok + " PCS. Silakan hitung stok fisik lalu simpan opname.";
+    const p = produkMaster.find(x => String(x.id).trim() === String(produkId).trim());
+    const unit = String(p?.satuan || "PCS").toUpperCase();
+    document.getElementById("opnameSummary").textContent = "Stok sistem: " + stok + " " + unit + ". Silakan hitung stok fisik lalu simpan opname.";
     showStatus("statusStockOpname", "Stok sistem berhasil diambil.", "success");
   } catch (error) {
     showStatus("statusStockOpname", error.message || "Gagal mengambil stok sistem.", "error");
@@ -11650,7 +11713,7 @@ async function simpanStockOpname() {
   if (!produkId) return showStatus("statusStockOpname", "Produk wajib dipilih.", "error");
   if (!lokasiId) return showStatus("statusStockOpname", "Lokasi wajib dipilih.", "error");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) return showStatus("statusStockOpname", "Tanggal opname tidak valid.", "error");
-  if (fisikRaw === "" || !isFinite(stokFisik) || stokFisik < 0 || Math.floor(stokFisik) !== stokFisik) return showStatus("statusStockOpname", "Stok fisik harus bilangan bulat 0 atau lebih.", "error");
+  if (fisikRaw === "" || !isFinite(stokFisik) || stokFisik < 0) return showStatus("statusStockOpname", "Stok fisik harus 0 atau lebih.", "error");
   if (stokSistem < 0 || !isFinite(stokSistem)) return showStatus("statusStockOpname", "Stok sistem tidak valid. Ambil stok sistem terlebih dahulu.", "error");
   sedangSimpanOpname = true;
   opnameClientRequestId = opnameClientRequestId || ("OPREQ-" + Date.now() + "-" + Math.random().toString(36).slice(2,10));
