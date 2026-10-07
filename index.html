@@ -8583,23 +8583,9 @@ function selectProduk(
   }
 
   if (type === "pembelian") {
-    // Gunakan cache global terlebih dahulu. Jika hanya PCS yang tersedia,
-    // ambil pricing produk secara targeted agar RENCENG/PACK/DUS tetap
-    // muncul meskipun POS_PRICING_ALL sedang tidak tersedia/sinkron.
-    (async function() {
-      try {
-        const cached = getPembelianPricingOptions(product.id);
-        const hasPackaging = cached.some(function(item) {
-          return String(item.bentukJual || "").toUpperCase() !== "PCS";
-        });
-        if (!hasPackaging) {
-          await fetchPosHargaFallback(product.id, "KONSUMEN");
-        }
-      } catch (error) {
-        console.warn("Fallback harga pembelian gagal:", error);
-      }
-      renderPembelianBentuk(product.id);
-    })();
+    // Render PCS seketika. Setelah itu baru cari bentuk beli dari INTERNAL,
+    // lalu RESELLER bila INTERNAL tidak punya bentuk packaging.
+    renderPembelianBentuk(product.id);
   }
   if (type === "masuk") {
     (async function(){
@@ -8764,20 +8750,8 @@ async function ensureProductPricing(produkId, buyer) {
   if (!id) return [];
 
   posPricingCache[pembeli] = posPricingCache[pembeli] || {};
-  const cached = Array.isArray(posPricingCache[pembeli][id])
-    ? posPricingCache[pembeli][id]
-    : [];
-
-  // Cache PCS saja BUKAN berarti pricing produk sudah lengkap.
-  // MASTER_PRODUK memang selalu membuat PCS tersedia, tetapi bentuk khusus
-  // seperti RENCENG / PACK / DUS / PROMO tetap harus dicari ke MASTER_HARGA.
-  const hasSpecialForm = cached.some(function(item) {
-    return ["RENCENG", "PACK", "DUS", "PROMO"].includes(
-      String(item.bentukJual || "").trim().toUpperCase()
-    );
-  });
-
-  if (hasSpecialForm) return cached;
+  const cached = posPricingCache[pembeli][id];
+  if (Array.isArray(cached) && cached.length > 0) return cached;
 
   const key = pembeli + "|" + id;
   if (posProductPricingPromises[key]) return posProductPricingPromises[key];
@@ -8785,10 +8759,7 @@ async function ensureProductPricing(produkId, buyer) {
   posProductPricingPromises[key] = (async function() {
     try {
       const rows = await fetchPosHargaFallback(id, pembeli);
-      if (Array.isArray(rows) && rows.length) {
-        return rows;
-      }
-      return cached;
+      return Array.isArray(rows) ? rows : [];
     } finally {
       delete posProductPricingPromises[key];
     }
@@ -10968,21 +10939,54 @@ async function setupPembelianPage() {
 function getPembelianPricingOptions(produkId) {
   const id = String(produkId || "").trim();
   if (!id) return [];
-  const options = (posPricingCache.KONSUMEN && posPricingCache.KONSUMEN[id]) || [];
+
+  // PEMBELIAN TIDAK memakai KONSUMEN.
+  // Prioritas bentuk beli: INTERNAL -> RESELLER.
+  // PCS dasar tetap berasal dari MASTER_PRODUK.
+  const sources = [
+    posPricingCache.INTERNAL && posPricingCache.INTERNAL[id],
+    posPricingCache.RESELLER && posPricingCache.RESELLER[id]
+  ];
+
   const unique = [];
   const seen = new Set();
-  options.forEach(function(item) {
-    const bentuk = String(item.bentukJual || "PCS").trim().toUpperCase();
-    const isi = Number(item.isiPcs || 1);
-    if (!["PCS", "RENCENG", "PACK", "DUS"].includes(bentuk)) return;
-    if (!isFinite(isi) || isi <= 0) return;
-    const key = bentuk + "|" + isi;
-    if (seen.has(key)) return;
-    seen.add(key);
-    unique.push({ bentukJual: bentuk, isiPcs: isi, harga: Number(item.harga || 0), idHarga: item.idHarga || "" });
+  sources.forEach(function(options) {
+    (Array.isArray(options) ? options : []).forEach(function(item) {
+      const bentuk = String(item.bentukJual || "PCS").trim().toUpperCase();
+      const isi = Number(item.isiPcs || 1);
+      if (!["PCS", "RENCENG", "PACK", "DUS"].includes(bentuk)) return;
+      if (!isFinite(isi) || isi <= 0) return;
+      const key = bentuk + "|" + isi;
+      if (seen.has(key)) return;
+      seen.add(key);
+      unique.push({
+        bentukJual: bentuk,
+        isiPcs: isi,
+        harga: Number(item.harga || 0),
+        idHarga: item.idHarga || "",
+        sumberHarga: String(item.kategoriPembeli || "").toUpperCase()
+      });
+    });
   });
+
+  // PCS selalu ada, meskipun INTERNAL/RESELLER belum pernah diisi.
+  if (!unique.some(function(x) { return x.bentukJual === "PCS"; })) {
+    const product = produkMaster.find(function(x) {
+      return String(x.id || "").trim() === id;
+    });
+    if (product) {
+      unique.unshift({
+        bentukJual: "PCS",
+        isiPcs: 1,
+        harga: Number(product.hargaJual || 0),
+        idHarga: "BASE-" + product.id,
+        sumberHarga: "MASTER_PRODUK"
+      });
+    }
+  }
+
+  const order = {PCS:1, RENCENG:2, PACK:3, DUS:4};
   unique.sort(function(a, b) {
-    const order = {PCS:1, PROMO:2, RENCENG:3, PACK:4, DUS:5};
     return (order[a.bentukJual] || 99) - (order[b.bentukJual] || 99) || a.isiPcs - b.isiPcs;
   });
   return unique;
@@ -11013,14 +11017,26 @@ function renderPembelianBentuk(produkId) {
   }
   syncPembelianBentuk();
 
-  // Ambil hanya pricing produk yang dipilih bila cache belum punya bentuk khusus.
-  if (produkId && options.length <= 1) {
-    ensureProductPricing(produkId, "KONSUMEN").then(function(rows) {
-      if (!rows.length) return;
-      renderPembelianBentuk(produkId);
-    }).catch(function(error) {
-      console.warn("Pricing Pembelian produk gagal dimuat:", error);
-    });
+  // Jika bentuk khusus belum ada, ambil hanya produk ini.
+  // INTERNAL adalah sumber utama. RESELLER hanya fallback.
+  // Request berjalan setelah PCS sudah tampil, jadi UI tidak menunggu server.
+  if (produkId && !options.some(function(x) {
+    return ["RENCENG", "PACK", "DUS"].includes(String(x.bentukJual || "").toUpperCase());
+  })) {
+    (async function() {
+      try {
+        let rows = await ensureProductPricing(produkId, "INTERNAL");
+        let hasPackaging = Array.isArray(rows) && rows.some(function(x) {
+          return ["RENCENG", "PACK", "DUS"].includes(String(x.bentukJual || "").toUpperCase());
+        });
+        if (!hasPackaging) {
+          await ensureProductPricing(produkId, "RESELLER");
+        }
+        renderPembelianBentuk(produkId);
+      } catch (error) {
+        console.warn("Pricing Pembelian produk gagal dimuat:", error);
+      }
+    })();
   }
 }
 
