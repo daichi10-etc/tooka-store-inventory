@@ -9638,8 +9638,10 @@ async function loadPosDraft(draftId) {
 
     // priceType adalah legacy compatibility saja; harga tetap mengikuti MASTER_HARGA/MASTER_PRODUK.
     setPaymentMethod("CASH");
-    await refreshPosCartPrices();
 
+    // Draft menyimpan harga + bentuk jual yang dipakai saat disimpan.
+    // Jangan menahan pembukaan draft untuk lookup harga/server tambahan.
+    // Validasi harga final tetap dilakukan backend saat CHECKOUT.
     const lokasi = document.getElementById("posLokasi");
     if (lokasi && data.lokasiId) lokasi.value = data.lokasiId;
 
@@ -9652,6 +9654,14 @@ async function loadPosDraft(draftId) {
     );
 
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Refresh harga dilakukan di background setelah draft sudah tampil.
+    // Jadi kasir tidak tertahan di "Membuka pesanan tersimpan...".
+    setTimeout(function() {
+      refreshPosCartPrices().catch(function(error) {
+        console.warn("Refresh harga draft di background gagal:", error);
+      });
+    }, 0);
 
   } catch (error) {
     showStatus("statusPOS", error.message || "Pesanan gagal dibuka.", "error");
