@@ -8764,8 +8764,20 @@ async function ensureProductPricing(produkId, buyer) {
   if (!id) return [];
 
   posPricingCache[pembeli] = posPricingCache[pembeli] || {};
-  const cached = posPricingCache[pembeli][id];
-  if (Array.isArray(cached) && cached.length > 0) return cached;
+  const cached = Array.isArray(posPricingCache[pembeli][id])
+    ? posPricingCache[pembeli][id]
+    : [];
+
+  // Cache PCS saja BUKAN berarti pricing produk sudah lengkap.
+  // MASTER_PRODUK memang selalu membuat PCS tersedia, tetapi bentuk khusus
+  // seperti RENCENG / PACK / DUS / PROMO tetap harus dicari ke MASTER_HARGA.
+  const hasSpecialForm = cached.some(function(item) {
+    return ["RENCENG", "PACK", "DUS", "PROMO"].includes(
+      String(item.bentukJual || "").trim().toUpperCase()
+    );
+  });
+
+  if (hasSpecialForm) return cached;
 
   const key = pembeli + "|" + id;
   if (posProductPricingPromises[key]) return posProductPricingPromises[key];
@@ -8773,7 +8785,10 @@ async function ensureProductPricing(produkId, buyer) {
   posProductPricingPromises[key] = (async function() {
     try {
       const rows = await fetchPosHargaFallback(id, pembeli);
-      return Array.isArray(rows) ? rows : [];
+      if (Array.isArray(rows) && rows.length) {
+        return rows;
+      }
+      return cached;
     } finally {
       delete posProductPricingPromises[key];
     }
