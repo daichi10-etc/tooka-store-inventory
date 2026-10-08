@@ -8634,8 +8634,8 @@ function selectProduk(
   }
 
   if (type === "pembelian") {
-    // Render dasar terlebih dahulu. Pricing khusus dimuat terpisah dan tidak
-    // boleh dipicu dari render, agar input Qty/Harga tidak pernah terganggu.
+    // Render PCS seketika. Setelah itu baru cari bentuk beli dari INTERNAL,
+    // lalu RESELLER bila INTERNAL tidak punya bentuk packaging.
     renderPembelianBentuk(product.id);
   }
   if (type === "masuk") {
@@ -8787,11 +8787,8 @@ function refreshCurrentPosHargaIfNeeded() {
 
   const buyer = posBuyerType || "KONSUMEN";
   const options = (posPricingCache[buyer] && posPricingCache[buyer][String(posSelectedProduct.id)]) || [];
-  const exact = options.filter(function(x) {
-    return String(x.kategoriPembeli || "").trim().toUpperCase() === buyer;
-  });
-  if (exact.length) {
-    posHargaOptions = exact.map(function(x) { return { ...x }; });
+  if (options.length) {
+    posHargaOptions = options.map(function(x) { return { ...x }; });
     renderPosHargaOptions(posHargaOptions, select, document.getElementById("posHargaInfo"));
   }
 }
@@ -8928,53 +8925,41 @@ async function loadPosHarga(produkId) {
   if (!select) return [];
 
   const id = String(produkId || "").trim();
-  const buyer = String(posBuyerType || "KONSUMEN").trim().toUpperCase();
+  const buyer = posBuyerType || "KONSUMEN";
   const product = produkMaster.find(function(item) {
     return String(item.id || "").trim() === id;
   });
-  if (!id) return [];
 
-  // Cache bisa berisi fallback KONSUMEN. Untuk POS, kita wajib memastikan
-  // bentuk/harga yang benar-benar berasal dari kategori buyer aktif sudah
-  // diambil terlebih dahulu. Ini penting terutama INTERNAL/RESELLER.
-  let cached = (posPricingCache[buyer] && posPricingCache[buyer][id]) || [];
-  let exactBuyerRows = cached.filter(function(row) {
-    return String(row.kategoriPembeli || "").trim().toUpperCase() === buyer;
-  });
+  let options = (posPricingCache[buyer] && posPricingCache[buyer][id]) || [];
 
-  // Base PCS/1 dari MASTER_PRODUK selalu boleh dipakai sebagai fallback dasar.
-  if (!exactBuyerRows.length && product) {
-    exactBuyerRows = [{
+  // Render PCS/base price IMMEDIATELY. Server tidak boleh menghalangi kasir.
+  if (!options.length && product) {
+    options = [{
       idHarga: "BASE-" + product.id,
       idBarang: product.id,
       kategoriPembeli: buyer,
-      bentukJual: String(product.satuan || "PCS").toUpperCase() === "KG" ? "1 KG" : "PCS",
+      bentukJual: "PCS",
       isiPcs: 1,
       harga: Number(product.hargaJual || 0),
       status: "AKTIF",
       source: "MASTER_PRODUK"
     }];
+    posPricingCache[buyer] = posPricingCache[buyer] || {};
+    posPricingCache[buyer][id] = options;
   }
 
-  // Tampilkan cache exact buyer/base terlebih dahulu agar kasir tidak blank.
-  posHargaOptions = exactBuyerRows.map(function(x) { return { ...x }; });
+  posHargaOptions = options.map(function(x) { return { ...x }; });
   renderPosHargaOptions(posHargaOptions, select, info);
 
-  // WAJIB cek MASTER_HARGA kategori buyer aktif jika cache belum punya
-  // baris MASTER_HARGA exact. Jangan tertipu oleh fallback KONSUMEN.
-  const hasExactMasterHarga = exactBuyerRows.some(function(x) {
-    return String(x.kategoriPembeli || "").trim().toUpperCase() === buyer &&
-           String(x.source || "").toUpperCase() === "MASTER_HARGA";
+  // Kalau bentuk khusus belum ada, ambil hanya produk ini. Begitu selesai,
+  // dropdown langsung diperbarui menjadi RENCENG/PACK/DUS/PROMO bila ada.
+  const hasSpecial = options.some(function(x) {
+    return ["RENCENG", "PACK", "DUS", "PROMO"].includes(String(x.bentukJual || "").toUpperCase());
   });
-
-  if (!hasExactMasterHarga) {
+  if (!hasSpecial) {
     const rows = await ensureProductPricing(id, buyer);
-    const exactRows = (Array.isArray(rows) ? rows : []).filter(function(x) {
-      return String(x.kategoriPembeli || "").trim().toUpperCase() === buyer;
-    });
-
-    if (exactRows.length) {
-      posHargaOptions = exactRows.map(function(x) { return { ...x }; });
+    if (rows.length) {
+      posHargaOptions = rows.map(function(x) { return { ...x }; });
       renderPosHargaOptions(posHargaOptions, select, info);
     }
   }
@@ -11016,11 +11001,20 @@ function getPembelianPricingOptions(produkId) {
   const id = String(produkId || "").trim();
   if (!id) return [];
 
+  // MASTER_PRODUK.SATUAN adalah sumber kebenaran tunggal.
+  // Nama/kategori/cache Master Harga TIDAK BOLEH menentukan PCS vs KG.
   const product = produkMaster.find(function(x) {
     return String(x.id || "").trim() === id;
   });
-  const unit = String(product?.satuan || "PCS").trim().toUpperCase();
+  const unit = String(product?.satuan || "PCS").trim().toUpperCase() || "PCS";
+  const isKg = unit === "KG";
 
+  const allowedForms = isKg
+    ? ["0.25 KG", "0.5 KG", "1 KG"]
+    : ["PCS", "RENCENG", "PACK", "DUS"];
+
+  // PEMBELIAN: INTERNAL -> RESELLER.
+  // Tetapi setiap row Master Harga tetap wajib lolos filter SATUAN produk.
   const sources = [
     posPricingCache.INTERNAL && posPricingCache.INTERNAL[id],
     posPricingCache.RESELLER && posPricingCache.RESELLER[id]
@@ -11028,25 +11022,16 @@ function getPembelianPricingOptions(produkId) {
 
   const unique = [];
   const seen = new Set();
-
   sources.forEach(function(options) {
     (Array.isArray(options) ? options : []).forEach(function(item) {
-      let bentuk = String(item.bentukJual || "PCS").trim().toUpperCase();
-      let isi = Number(item.isiPcs || 1);
+      const bentuk = String(item.bentukJual || "").trim().toUpperCase();
+      const isi = Number(item.isiPcs || 0);
 
+      // HARD GATE: bentuk harus sesuai satuan MASTER_PRODUK.
+      if (!allowedForms.includes(bentuk)) return;
       if (!isFinite(isi) || isi <= 0) return;
-
-      if (unit === "KG") {
-        // Produk KG tidak boleh masuk jalur PCS.
-        // PCS|1 dari data lama dinormalisasi menjadi 1 KG.
-        if (bentuk === "PCS" && isi === 1) bentuk = "1 KG";
-        if (!["0.25 KG", "0.5 KG", "1 KG"].includes(bentuk)) return;
-        const kgMap = {"0.25 KG":0.25,"0.5 KG":0.5,"1 KG":1};
-        isi = kgMap[bentuk] || isi;
-      } else {
-        if (!["PCS", "RENCENG", "PACK", "DUS"].includes(bentuk)) return;
-        if (bentuk === "PCS") isi = 1;
-      }
+      if (!isKg && (!Number.isInteger(isi) || isi < 1)) return;
+      if (isKg && ![0.25, 0.5, 1].includes(isi)) return;
 
       const key = bentuk + "|" + isi;
       if (seen.has(key)) return;
@@ -11061,30 +11046,31 @@ function getPembelianPricingOptions(produkId) {
     });
   });
 
-  if (unit === "KG") {
-    if (!unique.some(function(x) { return x.bentukJual === "1 KG"; })) {
-      unique.push({
+  // Bentuk dasar selalu berasal dari MASTER_PRODUK.
+  if (isKg) {
+    if (!unique.some(function(x) { return x.bentukJual === "1 KG" && Number(x.isiPcs) === 1; })) {
+      unique.unshift({
         bentukJual: "1 KG",
         isiPcs: 1,
         harga: Number(product?.hargaJual || 0),
-        idHarga: "BASE-" + (product?.id || ""),
+        idHarga: "BASE-" + id,
         sumberHarga: "MASTER_PRODUK"
       });
     }
-  } else if (!unique.some(function(x) { return x.bentukJual === "PCS"; })) {
+  } else if (!unique.some(function(x) { return x.bentukJual === "PCS" && Number(x.isiPcs) === 1; })) {
     unique.unshift({
       bentukJual: "PCS",
       isiPcs: 1,
       harga: Number(product?.hargaJual || 0),
-      idHarga: "BASE-" + (product?.id || ""),
+      idHarga: "BASE-" + id,
       sumberHarga: "MASTER_PRODUK"
     });
   }
 
-  const orderPCS = {PCS:1, RENCENG:2, PACK:3, DUS:4};
-  const orderKG = {"0.25 KG":1, "0.5 KG":2, "1 KG":3};
+  const order = isKg
+    ? {"0.25 KG":1, "0.5 KG":2, "1 KG":3}
+    : {PCS:1, RENCENG:2, PACK:3, DUS:4};
   unique.sort(function(a, b) {
-    const order = unit === "KG" ? orderKG : orderPCS;
     return (order[a.bentukJual] || 99) - (order[b.bentukJual] || 99) || a.isiPcs - b.isiPcs;
   });
   return unique;
@@ -11095,34 +11081,49 @@ function renderPembelianBentuk(produkId) {
   const info = document.getElementById("pembelianProdukInfo");
   if (!select) return;
 
-  const product = produkMaster.find(function(x) {
-    return String(x.id).trim() === String(produkId).trim();
-  });
-  const unit = String(product?.satuan || "PCS").trim().toUpperCase();
+  const product = produkMaster.find(x => String(x.id || "").trim() === String(produkId || "").trim());
+  const unit = String(product?.satuan || "PCS").trim().toUpperCase() || "PCS";
+  const isKg = unit === "KG";
   const options = getPembelianPricingOptions(produkId);
 
   select.innerHTML = options.map(function(item) {
-    const label = unit === "KG"
-      ? item.bentukJual
-      : item.bentukJual + " · " + Number(item.isiPcs) + " PCS";
-    return `<option value="${escapeHtml(item.bentukJual + "|" + item.isiPcs)}">${escapeHtml(label)}</option>`;
+    const isiLabel = isKg ? (Number(item.isiPcs) + " KG") : (Number(item.isiPcs) + " PCS");
+    return `<option value="${escapeHtml(item.bentukJual + "|" + item.isiPcs)}">${escapeHtml(item.bentukJual)} · ${escapeHtml(isiLabel)}</option>`;
   }).join("");
 
-  if (!options.length) {
-    select.innerHTML = unit === "KG"
-      ? '<option value="1 KG|1">1 KG</option>'
-      : '<option value="PCS|1">PCS · 1 PCS</option>';
+  // Default harus sesuai unit produk, tidak boleh mempertahankan value lama.
+  const defaultOption = isKg
+    ? options.find(x => x.bentukJual === "1 KG" && Number(x.isiPcs) === 1)
+    : options.find(x => x.bentukJual === "PCS" && Number(x.isiPcs) === 1);
+  if (defaultOption) {
+    select.value = defaultOption.bentukJual + "|" + defaultOption.isiPcs;
   }
-
-  select.value = unit === "KG" ? "1 KG|1" : "PCS|1";
 
   if (info) {
     info.textContent = product
-      ? "Satuan: " + (product.satuan || "-") + " · Harga dasar: " + formatRupiah(product.hargaJual || 0) + " / " + unit
+      ? "Satuan: " + unit + " · Harga dasar: " + formatRupiah(product.hargaJual || 0) + " / " + unit
       : "";
   }
-
   syncPembelianBentuk();
+
+  // Ambil bentuk khusus hanya untuk produk ini.
+  // Tidak mengubah identitas satuan produk.
+  if (produkId && !options.some(function(x) {
+    return ["RENCENG", "PACK", "DUS"].includes(String(x.bentukJual || "").toUpperCase());
+  }) && !isKg) {
+    (async function() {
+      try {
+        let rows = await ensureProductPricing(produkId, "INTERNAL");
+        let hasPackaging = Array.isArray(rows) && rows.some(function(x) {
+          return ["RENCENG", "PACK", "DUS"].includes(String(x.bentukJual || "").toUpperCase());
+        });
+        if (!hasPackaging) await ensureProductPricing(produkId, "RESELLER");
+        renderPembelianBentuk(produkId);
+      } catch (error) {
+        console.warn("Pricing Pembelian produk gagal dimuat:", error);
+      }
+    })();
+  }
 }
 
 function syncPembelianBentuk() {
@@ -11130,28 +11131,42 @@ function syncPembelianBentuk() {
   const isi = document.getElementById("pembelianIsiPcs");
   if (!select || !isi) return;
 
-  const product = produkMaster.find(function(x) {
-    return String(x.id).trim() === String(document.getElementById("pembelianProduk")?.value || "").trim();
-  });
-  const unit = String(product?.satuan || "PCS").trim().toUpperCase();
-  const value = String(select.value || (unit === "KG" ? "1 KG|1" : "PCS|1"));
-  const parts = value.split("|");
-  const bentuk = parts[0] || (unit === "KG" ? "1 KG" : "PCS");
-  let isiValue = Number(parts[1] || 1);
+  const product = produkMaster.find(x => String(x.id || "").trim() === String(document.getElementById("pembelianProduk")?.value || "").trim());
+  const unit = String(product?.satuan || "PCS").trim().toUpperCase() || "PCS";
+  const isKg = unit === "KG";
 
-  if (unit === "KG") {
-    const kgMap = {"0.25 KG":0.25,"0.5 KG":0.5,"1 KG":1};
-    isiValue = kgMap[bentuk] || 1;
-  } else if (bentuk === "PCS") {
-    isiValue = 1;
-  } else if (!isFinite(isiValue) || isiValue <= 0) {
-    isiValue = 1;
+  // Jangan pernah biarkan value lama dari produk sebelumnya lolos.
+  let value = String(select.value || "").trim();
+  let parts = value.split("|");
+  let bentuk = String(parts[0] || "").trim().toUpperCase();
+  let isiPcs = Number(parts[1] || 0);
+
+  const allowed = isKg
+    ? ["0.25 KG", "0.5 KG", "1 KG"]
+    : ["PCS", "RENCENG", "PACK", "DUS"];
+
+  if (!allowed.includes(bentuk)) {
+    bentuk = isKg ? "1 KG" : "PCS";
+    isiPcs = 1;
+    select.value = bentuk + "|" + isiPcs;
   }
 
-  isi.value = isiValue;
+  if (!isFinite(isiPcs) || isiPcs <= 0) {
+    isiPcs = bentuk === "0.25 KG" ? 0.25 : (bentuk === "0.5 KG" ? 0.5 : 1);
+    select.value = bentuk + "|" + isiPcs;
+  }
+
+  if (!isKg && bentuk === "PCS") isiPcs = 1;
+  if (isKg && ![0.25, 0.5, 1].includes(isiPcs)) {
+    bentuk = "1 KG";
+    isiPcs = 1;
+    select.value = "1 KG|1";
+  }
+
+  isi.value = isiPcs;
   const label = document.getElementById("pembelianIsiLabel");
-  if (label) label.textContent = unit === "KG" ? "KG per pembelian" : "PCS per kemasan";
-  isi.step = unit === "KG" ? "0.01" : "1";
+  if (label) label.textContent = isKg ? "KG per kemasan" : "PCS per kemasan";
+  isi.step = isKg ? "0.01" : "1";
   hitungTotalPembelian();
 }
 
@@ -11159,23 +11174,18 @@ function hitungTotalPembelian() {
   const qty = Number(document.getElementById("pembelianQty")?.value || 0);
   const harga = Number(document.getElementById("pembelianHarga")?.value || 0);
   const isi = Number(document.getElementById("pembelianIsiPcs")?.value || 1);
-  const product = produkMaster.find(function(x) {
-    return String(x.id).trim() === String(document.getElementById("pembelianProduk")?.value || "").trim();
-  });
-  const unit = String(product?.satuan || "PCS").trim().toUpperCase();
   const total = qty * harga;
-  const qtyStok = qty * isi;
+  const qtyPcs = qty * isi;
   const totalEl = document.getElementById("pembelianTotal");
   const summary = document.getElementById("pembelianSummary");
-
   if (totalEl) totalEl.value = total > 0 ? formatRupiah(total) : "";
   if (summary) {
     if (!qty || !harga) {
       summary.textContent = "Belum ada nilai pembelian.";
     } else {
-      summary.textContent = unit === "KG"
-        ? "Stok masuk: " + qtyStok + " KG · Total pembayaran: " + formatRupiah(total) + " · Status: LUNAS"
-        : "Stok masuk: " + qtyStok + " PCS · Total pembayaran: " + formatRupiah(total) + " · Status: LUNAS";
+      const product = produkMaster.find(x => String(x.id).trim() === String(document.getElementById("pembelianProduk")?.value || "").trim());
+      const unit = String(product?.satuan || "PCS").toUpperCase();
+      summary.textContent = "Stok masuk: " + qtyPcs + " " + unit + " · Total pembayaran: " + formatRupiah(total) + " · Status: LUNAS";
     }
   }
 }
