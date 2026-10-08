@@ -11020,8 +11020,20 @@ function getPembelianPricingOptions(produkId) {
       const key = bentuk + "|" + isi;
       if (seen.has(key)) return;
       seen.add(key);
+      const productForPricing = produkMaster.find(function(x) {
+        return String(x.id || "").trim() === id;
+      });
+      const productUnitForPricing = String(productForPricing?.satuan || "PCS").trim().toUpperCase();
+
+      // Master Harga lama bisa menyimpan baris dasar KG sebagai PCS + isi 1.
+      // Di Pembelian, nilai tersebut harus direpresentasikan sebagai 1 KG.
+      const normalizedBentuk =
+        productUnitForPricing === "KG" && bentuk === "PCS" && isi === 1
+          ? "1 KG"
+          : bentuk;
+
       unique.push({
-        bentukJual: bentuk,
+        bentukJual: normalizedBentuk,
         isiPcs: isi,
         harga: Number(item.harga || 0),
         idHarga: item.idHarga || "",
@@ -11083,40 +11095,20 @@ function renderPembelianBentuk(produkId) {
 
   // Jika bentuk khusus belum ada, ambil hanya produk ini.
   // INTERNAL adalah sumber utama. RESELLER hanya fallback.
-  // PENTING: produk KG memakai 0.25 KG / 0.5 KG / 1 KG sebagai bentuk beli.
-  // Jangan menganggap KG "tidak punya bentuk khusus", karena itu akan
-  // memanggil renderPembelianBentuk() berulang-ulang dan membuat UI berat.
-  const productForPembelian = produkMaster.find(function(x) {
-    return String(x.id || "").trim() === String(produkId || "").trim();
-  });
-  const unitPembelian = String(productForPembelian?.satuan || "PCS").trim().toUpperCase();
-  const specialForms = unitPembelian === "KG"
-    ? ["0.25 KG", "0.5 KG", "1 KG"]
-    : ["RENCENG", "PACK", "DUS"];
-
-  const hasSpecialForms = options.some(function(x) {
-    return specialForms.includes(String(x.bentukJual || "").trim().toUpperCase());
-  });
-
-  if (produkId && !hasSpecialForms) {
+  // Request berjalan setelah PCS sudah tampil, jadi UI tidak menunggu server.
+  if (produkId && !options.some(function(x) {
+    return ["RENCENG", "PACK", "DUS"].includes(String(x.bentukJual || "").toUpperCase());
+  })) {
     (async function() {
       try {
         let rows = await ensureProductPricing(produkId, "INTERNAL");
-        let hasSpecialAfterInternal = Array.isArray(rows) && rows.some(function(x) {
-          return specialForms.includes(String(x.bentukJual || "").trim().toUpperCase());
+        let hasPackaging = Array.isArray(rows) && rows.some(function(x) {
+          return ["RENCENG", "PACK", "DUS"].includes(String(x.bentukJual || "").toUpperCase());
         });
-
-        if (!hasSpecialAfterInternal) {
-          rows = await ensureProductPricing(produkId, "RESELLER");
-          hasSpecialAfterInternal = Array.isArray(rows) && rows.some(function(x) {
-            return specialForms.includes(String(x.bentukJual || "").trim().toUpperCase());
-          });
+        if (!hasPackaging) {
+          await ensureProductPricing(produkId, "RESELLER");
         }
-
-        // Render ulang hanya jika pricing khusus benar-benar ditemukan.
-        if (hasSpecialAfterInternal) {
-          renderPembelianBentuk(produkId);
-        }
+        renderPembelianBentuk(produkId);
       } catch (error) {
         console.warn("Pricing Pembelian produk gagal dimuat:", error);
       }
@@ -11130,12 +11122,18 @@ function syncPembelianBentuk() {
   if (!select || !isi) return;
   const value = String(select.value || "PCS|1");
   const parts = value.split("|");
-  const bentuk = parts[0] || "PCS";
+  let bentuk = parts[0] || "PCS";
   const isiPcs = Number(parts[1] || 1);
-  isi.value = isFinite(isiPcs) && isiPcs > 0 ? isiPcs : 1;
-  if (bentuk === "PCS") isi.value = 1;
   const product = produkMaster.find(x => String(x.id).trim() === String(document.getElementById("pembelianProduk")?.value || "").trim());
   const unit = String(product?.satuan || "PCS").toUpperCase();
+
+  if (unit === "KG" && bentuk.trim().toUpperCase() === "PCS" && isiPcs === 1) {
+    bentuk = "1 KG";
+    select.value = "1 KG|1";
+  }
+
+  isi.value = isFinite(isiPcs) && isiPcs > 0 ? isiPcs : 1;
+  if (bentuk === "PCS" && unit !== "KG") isi.value = 1;
   const label = document.getElementById("pembelianIsiLabel");
   if (label) label.textContent = unit === "KG" ? "KG per kemasan" : "PCS per kemasan";
   isi.step = unit === "KG" ? "0.01" : "1";
