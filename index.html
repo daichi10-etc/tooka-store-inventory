@@ -11083,20 +11083,40 @@ function renderPembelianBentuk(produkId) {
 
   // Jika bentuk khusus belum ada, ambil hanya produk ini.
   // INTERNAL adalah sumber utama. RESELLER hanya fallback.
-  // Request berjalan setelah PCS sudah tampil, jadi UI tidak menunggu server.
-  if (produkId && !options.some(function(x) {
-    return ["RENCENG", "PACK", "DUS"].includes(String(x.bentukJual || "").toUpperCase());
-  })) {
+  // PENTING: produk KG memakai 0.25 KG / 0.5 KG / 1 KG sebagai bentuk beli.
+  // Jangan menganggap KG "tidak punya bentuk khusus", karena itu akan
+  // memanggil renderPembelianBentuk() berulang-ulang dan membuat UI berat.
+  const productForPembelian = produkMaster.find(function(x) {
+    return String(x.id || "").trim() === String(produkId || "").trim();
+  });
+  const unitPembelian = String(productForPembelian?.satuan || "PCS").trim().toUpperCase();
+  const specialForms = unitPembelian === "KG"
+    ? ["0.25 KG", "0.5 KG", "1 KG"]
+    : ["RENCENG", "PACK", "DUS"];
+
+  const hasSpecialForms = options.some(function(x) {
+    return specialForms.includes(String(x.bentukJual || "").trim().toUpperCase());
+  });
+
+  if (produkId && !hasSpecialForms) {
     (async function() {
       try {
         let rows = await ensureProductPricing(produkId, "INTERNAL");
-        let hasPackaging = Array.isArray(rows) && rows.some(function(x) {
-          return ["RENCENG", "PACK", "DUS"].includes(String(x.bentukJual || "").toUpperCase());
+        let hasSpecialAfterInternal = Array.isArray(rows) && rows.some(function(x) {
+          return specialForms.includes(String(x.bentukJual || "").trim().toUpperCase());
         });
-        if (!hasPackaging) {
-          await ensureProductPricing(produkId, "RESELLER");
+
+        if (!hasSpecialAfterInternal) {
+          rows = await ensureProductPricing(produkId, "RESELLER");
+          hasSpecialAfterInternal = Array.isArray(rows) && rows.some(function(x) {
+            return specialForms.includes(String(x.bentukJual || "").trim().toUpperCase());
+          });
         }
-        renderPembelianBentuk(produkId);
+
+        // Render ulang hanya jika pricing khusus benar-benar ditemukan.
+        if (hasSpecialAfterInternal) {
+          renderPembelianBentuk(produkId);
+        }
       } catch (error) {
         console.warn("Pricing Pembelian produk gagal dimuat:", error);
       }
