@@ -8380,162 +8380,97 @@ async function loadProduk() {
    PRODUCT SEARCH
    ========================================================= */
 
-async function filterProduk(type) {
+function renderProductSearchResults(type, keyword) {
+  const results = document.getElementById(type + "ProdukResults");
+  if (!results) return;
 
-  const searchInput =
-    document.getElementById(
-      type +
-      "ProdukCari"
-    );
+  const q = String(keyword || "").trim().toLowerCase();
+  const products = Array.isArray(produkMaster) ? produkMaster : [];
+  const filtered = products.filter(function(product) {
+    const id = String(product.id || "").toLowerCase();
+    const nama = String(product.nama || "").toLowerCase();
+    const kategori = String(product.kategori || "").toLowerCase();
+    return !q || id.includes(q) || nama.includes(q) || kategori.includes(q);
+  }).slice(0, 50);
 
-
-  const results =
-    document.getElementById(
-      type +
-      "ProdukResults"
-    );
-
-
-  if (
-    !searchInput ||
-    !results
-  ) {
+  if (!filtered.length) {
+    results.innerHTML = '<div class="product-empty">Produk tidak ditemukan.</div>';
     return;
   }
 
-
-  const keyword =
-    searchInput.value
-      .trim()
-      .toLowerCase();
-
-
-  results.classList.add(
-    "show"
-  );
-
-
-  try {
-
-    const products =
-      await loadProduk();
-
-
-    const filtered =
-      products
-        .filter(
-          product => {
-
-            const id =
-              String(
-                product.id || ""
-              )
-                .toLowerCase();
-
-            const nama =
-              String(
-                product.nama || ""
-              )
-                .toLowerCase();
-
-            const kategori =
-              String(
-                product.kategori || ""
-              )
-                .toLowerCase();
-
-            return (
-              !keyword ||
-              id.includes(
-                keyword
-              ) ||
-              nama.includes(
-                keyword
-              ) ||
-              kategori.includes(
-                keyword
-              )
-            );
-
-          }
-        )
-        .slice(
-          0,
-          50
-        );
-
-
-    if (
-      filtered.length ===
-      0
-    ) {
-
-      results.innerHTML =
-        '<div class="product-empty">Produk tidak ditemukan.</div>';
-
-      return;
-
-    }
-
-
-    results.innerHTML =
-      filtered
-        .map(
-          product => `
-
-            <div
-              class="product-option"
-              onclick="selectProduk(
-                '${type}',
-                '${escapeJs(product.id)}'
-              )"
-            >
-
-              <strong>
-                ${escapeHtml(
-                  product.id
-                )}
-                —
-                ${escapeHtml(
-                  product.nama
-                )}
-              </strong>
-
-              <span>
-                ${escapeHtml(
-                  product.kategori ||
-                  "Tanpa kategori"
-                )}
-                ·
-                ${escapeHtml(
-                  product.satuan ||
-                  "-"
-                )}
-                ·
-                ${escapeHtml(
-                  formatRupiah(
-                    product.hargaJual ||
-                    0
-                  )
-                )}
-              </span>
-
-            </div>
-
-          `
-        )
-        .join("");
-
-
-  } catch (error) {
-
-    results.innerHTML =
-      '<div class="product-empty">Gagal memuat produk.</div>';
-
-  }
-
+  results.innerHTML = filtered.map(function(product) {
+    return `
+      <div class="product-option" onclick="selectProduk('${type}', '${escapeJs(product.id)}')">
+        <strong>${escapeHtml(product.id)} — ${escapeHtml(product.nama)}</strong>
+        <span>${escapeHtml(product.kategori || "Tanpa kategori")} · ${escapeHtml(product.satuan || "-")} · ${escapeHtml(formatRupiah(product.hargaJual || 0))}</span>
+      </div>
+    `;
+  }).join("");
 }
 
+function showProductSearchLoading(type) {
+  const results = document.getElementById(type + "ProdukResults");
+  if (results) {
+    results.classList.add("show");
+    results.innerHTML = '<div class="product-empty">Memuat produk...</div>';
+  }
+}
+
+async function filterProduk(type) {
+  const searchInput = document.getElementById(type + "ProdukCari");
+  const results = document.getElementById(type + "ProdukResults");
+  if (!searchInput || !results) return;
+
+  const keyword = searchInput.value.trim();
+  results.classList.add("show");
+
+  // Pembelian: MASTER_PRODUK hanya dimuat sekali. Setelah tersedia,
+  // pencarian 100% lokal agar ketikan tidak menunggu Apps Script.
+  if (type === "pembelian") {
+    if (produkLoaded && Array.isArray(produkMaster)) {
+      renderProductSearchResults(type, keyword);
+      return;
+    }
+
+    showProductSearchLoading(type);
+    try {
+      await loadProduk();
+      // Abaikan hasil lama bila user sudah mengetik keyword baru saat request berjalan.
+      const latestInput = document.getElementById(type + "ProdukCari");
+      renderProductSearchResults(type, latestInput ? latestInput.value : keyword);
+    } catch (error) {
+      results.innerHTML = '<div class="product-empty">Gagal memuat produk. Coba klik lagi.</div>';
+    }
+    return;
+  }
+
+  // Search halaman lain tetap memakai perilaku existing.
+  try {
+    const products = await loadProduk();
+    const filtered = products.filter(function(product) {
+      const id = String(product.id || "").toLowerCase();
+      const nama = String(product.nama || "").toLowerCase();
+      const kategori = String(product.kategori || "").toLowerCase();
+      return !keyword || id.includes(keyword) || nama.includes(keyword) || kategori.includes(keyword);
+    }).slice(0, 50);
+
+    if (!filtered.length) {
+      results.innerHTML = '<div class="product-empty">Produk tidak ditemukan.</div>';
+      return;
+    }
+
+    results.innerHTML = filtered.map(function(product) {
+      return `
+        <div class="product-option" onclick="selectProduk('${type}', '${escapeJs(product.id)}')">
+          <strong>${escapeHtml(product.id)} — ${escapeHtml(product.nama)}</strong>
+          <span>${escapeHtml(product.kategori || "Tanpa kategori")} · ${escapeHtml(product.satuan || "-")} · ${escapeHtml(formatRupiah(product.hargaJual || 0))}</span>
+        </div>
+      `;
+    }).join("");
+  } catch (error) {
+    results.innerHTML = '<div class="product-empty">Gagal memuat produk.</div>';
+  }
+}
 
 function selectProduk(
   type,
