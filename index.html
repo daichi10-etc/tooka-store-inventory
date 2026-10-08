@@ -8569,8 +8569,8 @@ function selectProduk(
   }
 
   if (type === "pembelian") {
-    // Render PCS seketika. Setelah itu baru cari bentuk beli dari INTERNAL,
-    // lalu RESELLER bila INTERNAL tidak punya bentuk packaging.
+    // Ganti konteks produk. Request pricing produk lama tidak boleh menyentuh UI.
+    pembelianPricingRunId++;
     renderPembelianBentuk(product.id);
   }
   if (type === "masuk") {
@@ -10918,6 +10918,8 @@ function newPosTransaction() {
 
 let sedangPembelian = false;
 let pembelianClientRequestId = null;
+let pembelianPricingAttempted = {};
+let pembelianPricingRunId = 0;
 
 function getTodayLocalTOOKA() {
   const now = new Date();
@@ -10927,6 +10929,8 @@ function getTodayLocalTOOKA() {
 }
 
 async function setupPembelianPage() {
+  pembelianPricingRunId++;
+  pembelianPricingAttempted = {};
   // MASTER_PRODUK saja yang wajib ditunggu. Master Harga dimuat per produk
   // saat produk dipilih supaya halaman Pembelian tidak ikut menunggu pricing global.
   await loadProduk();
@@ -11011,51 +11015,84 @@ function renderPembelianBentuk(produkId) {
   const info = document.getElementById("pembelianProdukInfo");
   if (!select) return;
 
-  // Selalu render PCS dulu dari MASTER_PRODUK. Jangan pernah membuat kasir
-  // menunggu endpoint Master Harga untuk melihat pilihan dasar.
-  const options = getPembelianPricingOptions(produkId);
+  const id = String(produkId || "").trim();
+  if (!id) return;
+
+  const product = produkMaster.find(function(x) {
+    return String(x.id || "").trim() === id;
+  });
+  if (!product) return;
+
+  const unit = String(product.satuan || "PCS").trim().toUpperCase() || "PCS";
+  const options = getPembelianPricingOptions(id);
+
+  // Render lokal SECEPATNYA. Tidak ada await dan tidak ada request server
+  // di jalur klik produk.
   if (!options.length) {
-    select.innerHTML = '<option value="PCS|1">PCS · 1 PCS</option>';
-    select.value = "PCS|1";
+    const baseLabel = unit === "KG" ? "1 KG · 1 KG" : "PCS · 1 PCS";
+    select.innerHTML = '<option value="' + (unit === "KG" ? '1 KG|1' : 'PCS|1') + '">' + baseLabel + '</option>';
+    select.value = unit === "KG" ? "1 KG|1" : "PCS|1";
   } else {
     select.innerHTML = '<option value="">Pilih bentuk...</option>' + options.map(function(item) {
-      const unit = String((produkMaster.find(x => String(x.id).trim() === String(produkId).trim()) || {}).satuan || "PCS").toUpperCase();
       const isiLabel = unit === "KG" ? (Number(item.isiPcs) + " KG") : (Number(item.isiPcs) + " PCS");
-      return `<option value="${escapeHtml(item.bentukJual + "|" + item.isiPcs)}">${escapeHtml(item.bentukJual)} · ${escapeHtml(isiLabel)}</option>`;
+      return '<option value="' + escapeHtml(item.bentukJual + "|" + item.isiPcs) + '">' +
+        escapeHtml(item.bentukJual) + ' · ' + escapeHtml(isiLabel) + '</option>';
     }).join("");
-    const pcs = options.find(x => x.bentukJual === "PCS") || options[0];
-    select.value = pcs.bentukJual + "|" + pcs.isiPcs;
+
+    const base = unit === "KG"
+      ? (options.find(function(x) { return x.bentukJual === "1 KG" && Number(x.isiPcs) === 1; }) || options[0])
+      : (options.find(function(x) { return x.bentukJual === "PCS" && Number(x.isiPcs) === 1; }) || options[0]);
+    select.value = base.bentukJual + "|" + base.isiPcs;
   }
 
   if (info) {
-    const product = produkMaster.find(x => String(x.id).trim() === String(produkId).trim());
-    info.textContent = product ? "Satuan: " + (product.satuan || "-") + " · Harga dasar: " + formatRupiah(product.hargaJual || 0) + " / " + String(product.satuan || "PCS").toUpperCase() : "";
+    info.textContent = "Satuan: " + (product.satuan || "-") +
+      " · Harga dasar: " + formatRupiah(product.hargaJual || 0) +
+      " / " + unit;
   }
+
   syncPembelianBentuk();
 
-  // Jika bentuk khusus belum ada, ambil hanya produk ini.
-  // INTERNAL adalah sumber utama. RESELLER hanya fallback.
-  // Request berjalan setelah PCS sudah tampil, jadi UI tidak menunggu server.
-  if (produkId && !options.some(function(x) {
-    return ["RENCENG", "PACK", "DUS"].includes(String(x.bentukJual || "").toUpperCase());
-  })) {
-    (async function() {
-      try {
-        let rows = await ensureProductPricing(produkId, "INTERNAL");
-        let hasPackaging = Array.isArray(rows) && rows.some(function(x) {
-          return ["RENCENG", "PACK", "DUS"].includes(String(x.bentukJual || "").toUpperCase());
-        });
-        if (!hasPackaging) {
-          await ensureProductPricing(produkId, "RESELLER");
-        }
-        renderPembelianBentuk(produkId);
-      } catch (error) {
-        console.warn("Pricing Pembelian produk gagal dimuat:", error);
-      }
-    })();
-  }
-}
+  // JANGAN memanggil renderPembelianBentuk() dari request yang sama tanpa
+  // guard. Bug sebelumnya membuat siklus:
+  // render -> request -> render -> request -> ... dan browser freeze.
+  const hasPackaging = options.some(function(x) {
+    return ["RENCENG", "PACK", "DUS", "0.25 KG", "0.5 KG", "1 KG"].includes(
+      String(x.bentukJual || "").toUpperCase()
+    );
+  });
 
+  const attemptKey = id + "|" + unit;
+  if (hasPackaging || pembelianPricingAttempted[attemptKey]) return;
+
+  pembelianPricingAttempted[attemptKey] = true;
+  const runId = ++pembelianPricingRunId;
+
+  (async function() {
+    try {
+      let rows = await ensureProductPricing(id, "INTERNAL");
+      let packaging = Array.isArray(rows) && rows.some(function(x) {
+        return ["RENCENG", "PACK", "DUS", "0.25 KG", "0.5 KG", "1 KG"].includes(
+          String(x.bentukJual || "").toUpperCase()
+        );
+      });
+
+      if (!packaging) {
+        rows = await ensureProductPricing(id, "RESELLER");
+      }
+
+      // Kalau user sudah memilih produk lain, jangan sentuh UI produk lama.
+      const currentId = String(document.getElementById("pembelianProduk")?.value || "").trim();
+      if (runId !== pembelianPricingRunId || currentId !== id) return;
+
+      // Render sekali untuk memasukkan hasil cache yang baru.
+      // Guard di atas memastikan render ini TIDAK memicu request baru.
+      renderPembelianBentuk(id);
+    } catch (error) {
+      console.warn("Pricing Pembelian produk gagal dimuat:", error);
+    }
+  })();
+}
 function syncPembelianBentuk() {
   const select = document.getElementById("pembelianBentuk");
   const isi = document.getElementById("pembelianIsiPcs");
