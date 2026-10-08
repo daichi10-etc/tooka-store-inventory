@@ -8787,8 +8787,11 @@ function refreshCurrentPosHargaIfNeeded() {
 
   const buyer = posBuyerType || "KONSUMEN";
   const options = (posPricingCache[buyer] && posPricingCache[buyer][String(posSelectedProduct.id)]) || [];
-  if (options.length) {
-    posHargaOptions = options.map(function(x) { return { ...x }; });
+  const exact = options.filter(function(x) {
+    return String(x.kategoriPembeli || "").trim().toUpperCase() === buyer;
+  });
+  if (exact.length) {
+    posHargaOptions = exact.map(function(x) { return { ...x }; });
     renderPosHargaOptions(posHargaOptions, select, document.getElementById("posHargaInfo"));
   }
 }
@@ -8925,41 +8928,53 @@ async function loadPosHarga(produkId) {
   if (!select) return [];
 
   const id = String(produkId || "").trim();
-  const buyer = posBuyerType || "KONSUMEN";
+  const buyer = String(posBuyerType || "KONSUMEN").trim().toUpperCase();
   const product = produkMaster.find(function(item) {
     return String(item.id || "").trim() === id;
   });
+  if (!id) return [];
 
-  let options = (posPricingCache[buyer] && posPricingCache[buyer][id]) || [];
+  // Cache bisa berisi fallback KONSUMEN. Untuk POS, kita wajib memastikan
+  // bentuk/harga yang benar-benar berasal dari kategori buyer aktif sudah
+  // diambil terlebih dahulu. Ini penting terutama INTERNAL/RESELLER.
+  let cached = (posPricingCache[buyer] && posPricingCache[buyer][id]) || [];
+  let exactBuyerRows = cached.filter(function(row) {
+    return String(row.kategoriPembeli || "").trim().toUpperCase() === buyer;
+  });
 
-  // Render PCS/base price IMMEDIATELY. Server tidak boleh menghalangi kasir.
-  if (!options.length && product) {
-    options = [{
+  // Base PCS/1 dari MASTER_PRODUK selalu boleh dipakai sebagai fallback dasar.
+  if (!exactBuyerRows.length && product) {
+    exactBuyerRows = [{
       idHarga: "BASE-" + product.id,
       idBarang: product.id,
       kategoriPembeli: buyer,
-      bentukJual: "PCS",
+      bentukJual: String(product.satuan || "PCS").toUpperCase() === "KG" ? "1 KG" : "PCS",
       isiPcs: 1,
       harga: Number(product.hargaJual || 0),
       status: "AKTIF",
       source: "MASTER_PRODUK"
     }];
-    posPricingCache[buyer] = posPricingCache[buyer] || {};
-    posPricingCache[buyer][id] = options;
   }
 
-  posHargaOptions = options.map(function(x) { return { ...x }; });
+  // Tampilkan cache exact buyer/base terlebih dahulu agar kasir tidak blank.
+  posHargaOptions = exactBuyerRows.map(function(x) { return { ...x }; });
   renderPosHargaOptions(posHargaOptions, select, info);
 
-  // Kalau bentuk khusus belum ada, ambil hanya produk ini. Begitu selesai,
-  // dropdown langsung diperbarui menjadi RENCENG/PACK/DUS/PROMO bila ada.
-  const hasSpecial = options.some(function(x) {
-    return ["RENCENG", "PACK", "DUS", "PROMO"].includes(String(x.bentukJual || "").toUpperCase());
+  // WAJIB cek MASTER_HARGA kategori buyer aktif jika cache belum punya
+  // baris MASTER_HARGA exact. Jangan tertipu oleh fallback KONSUMEN.
+  const hasExactMasterHarga = exactBuyerRows.some(function(x) {
+    return String(x.kategoriPembeli || "").trim().toUpperCase() === buyer &&
+           String(x.source || "").toUpperCase() === "MASTER_HARGA";
   });
-  if (!hasSpecial) {
+
+  if (!hasExactMasterHarga) {
     const rows = await ensureProductPricing(id, buyer);
-    if (rows.length) {
-      posHargaOptions = rows.map(function(x) { return { ...x }; });
+    const exactRows = (Array.isArray(rows) ? rows : []).filter(function(x) {
+      return String(x.kategoriPembeli || "").trim().toUpperCase() === buyer;
+    });
+
+    if (exactRows.length) {
+      posHargaOptions = exactRows.map(function(x) { return { ...x }; });
       renderPosHargaOptions(posHargaOptions, select, info);
     }
   }
