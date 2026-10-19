@@ -4554,6 +4554,31 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
           </div>
         </div>
 
+        <div class="panel" id="stockAuditPrintPanel">
+          <h3>🖨️ Cetak Lembar Audit Fisik</h3>
+          <p class="muted" style="margin-bottom:14px;">Cetak daftar SKU dan stok sistem per lokasi untuk dihitung manual. Hasil hitung fisik ditulis di kertas, lalu selisih yang sudah diverifikasi dimasukkan ke Stock Opname.</p>
+          <div class="form-grid">
+            <div>
+              <label for="stockAuditLokasi">Lokasi Audit</label>
+              <select id="stockAuditLokasi">
+                <option value="LOC001">TOOKA HUB METRO</option>
+                <option value="LOC002">TOOKA STORE JEPARA</option>
+              </select>
+            </div>
+            <div>
+              <label for="stockAuditKategori">Kategori Barang</label>
+              <select id="stockAuditKategori">
+                <option value="__ALL__">Semua kategori</option>
+              </select>
+            </div>
+            <div class="full" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <button id="btnCetakLembarAudit" class="btn btn-dark" onclick="cetakLembarAuditStok()">CETAK LEMBAR AUDIT</button>
+              <span class="muted">Daftar mencakup SKU aktif dan nonaktif agar barang lama tidak terlewat.</span>
+            </div>
+          </div>
+          <div id="stockAuditPrintStatus" class="status" style="margin-top:14px;"></div>
+        </div>
+
         <div class="panel">
           <h3>Catatan</h3>
           <div class="muted">Simpan opname hanya mencatat hasil pemeriksaan. Jika ada selisih, sistem otomatis membuat transaksi ADJUSTMENT tanpa memengaruhi Finance.</div>
@@ -8176,6 +8201,7 @@ function showPage(
         const el = document.getElementById("opnameTanggal");
         if (el && !el.value) el.value = new Date().toISOString().slice(0,10);
         resetStockOpnameForm(false);
+      siapkanKategoriCetakAudit().catch(error => console.warn("Kategori lembar audit belum dimuat:", error));
       } catch(error) {
         showStatus("statusStockOpname", error.message || "Stock opname gagal dimuat.", "error");
       }
@@ -11734,6 +11760,88 @@ async function simpanStockOpname() {
   }
 }
 
+
+/* =========================================================
+   CETAK LEMBAR AUDIT STOK FISIK — FRONTEND ONLY
+   Menggunakan action STOK mode semua posisi yang sudah tersedia.
+   Tidak mengubah backend, transaksi, Finance, atau stok.
+   ========================================================= */
+let stockAuditCategoriesReady = false;
+
+async function siapkanKategoriCetakAudit() {
+  await loadProduk();
+  const select = document.getElementById("stockAuditKategori");
+  if (!select) return;
+  const current = select.value || "__ALL__";
+  const categories = [...new Set((produkMaster || [])
+    .map(p => String(p.kategori || "").trim())
+    .filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "id"));
+  select.innerHTML = '<option value="__ALL__">Semua kategori</option>' +
+    categories.map(k => '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>').join("");
+  if ([...select.options].some(o => o.value === current)) select.value = current;
+  stockAuditCategoriesReady = true;
+}
+
+async function cetakLembarAuditStok() {
+  const button = document.getElementById("btnCetakLembarAudit");
+  const statusId = "stockAuditPrintStatus";
+  const lokasiId = String(document.getElementById("stockAuditLokasi")?.value || "").trim();
+  const kategori = String(document.getElementById("stockAuditKategori")?.value || "__ALL__");
+  if (!lokasiId) return showStatus(statusId, "Pilih lokasi audit terlebih dahulu.", "error");
+
+  // Buka jendela langsung dari klik agar tidak diblokir browser saat request berjalan.
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return showStatus(statusId, "Popup diblokir browser. Izinkan popup untuk TOOKA lalu coba lagi.", "error");
+  printWindow.document.open();
+  printWindow.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Lembar Audit Stok TOOKA</title></head><body style="font-family:Arial,sans-serif;padding:24px">Menyiapkan daftar SKU dan stok sistem...</body></html>');
+  printWindow.document.close();
+  if (button) button.disabled = true;
+  showStatus(statusId, "Memuat master produk dan snapshot stok sistem...", "loading");
+
+  try {
+    await loadProduk();
+    if (!stockAuditCategoriesReady) await siapkanKategoriCetakAudit();
+    const hasil = await apiRequest({ action: "STOK" }, { timeoutMs: 90000 });
+    if (!hasil || hasil.success !== true || !Array.isArray(hasil.data)) {
+      throw new Error(hasil?.message || "Data stok sistem gagal dimuat.");
+    }
+
+    const lokasi = hasil.data.filter(r => String(r.lokasiId || "").trim().toUpperCase() === lokasiId.toUpperCase());
+    const masterById = new Map((produkMaster || []).map(p => [String(p.id || "").trim().toUpperCase(), p]));
+    let rows = lokasi.map(r => {
+      const p = masterById.get(String(r.produkId || "").trim().toUpperCase()) || {};
+      return {
+        id: String(r.produkId || p.id || "").trim(),
+        nama: String(r.nama || p.nama || "").trim(),
+        kategori: String(p.kategori || "Tanpa kategori").trim() || "Tanpa kategori",
+        satuan: String(r.satuan || p.satuan || "PCS").trim() || "PCS",
+        stok: Number(r.stok || 0),
+        status: String(r.status || p.status || "").trim()
+      };
+    });
+    if (kategori !== "__ALL__") rows = rows.filter(r => r.kategori === kategori);
+    rows.sort((a, b) => a.kategori.localeCompare(b.kategori, "id") || a.nama.localeCompare(b.nama, "id") || a.id.localeCompare(b.id, "id"));
+    if (!rows.length) throw new Error("Tidak ada SKU untuk pilihan lokasi/kategori ini.");
+
+    const lokasiNama = String(lokasi[0]?.lokasi || (lokasiId === "LOC001" ? "TOOKA HUB METRO" : lokasiId === "LOC002" ? "TOOKA STORE JEPARA" : lokasiId));
+    const tanggal = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+    const esc = value => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    const bodyRows = rows.map((r, i) => '<tr><td class="num">' + (i + 1) + '</td><td>' + esc(r.id) + '</td><td>' + esc(r.nama) + '</td><td>' + esc(r.kategori) + '</td><td class="center">' + esc(r.satuan) + '</td><td class="num">' + esc(r.stok) + '</td><td class="write"></td><td class="write"></td><td class="write note"></td></tr>').join("");
+    const html = '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Lembar Audit Stok TOOKA</title><style>' +
+      ' *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111;margin:0;font-size:10px}h1{font-size:19px;margin:0 0 4px}p{margin:3px 0}.meta{display:flex;justify-content:space-between;gap:16px;margin:14px 0 10px}.line{display:inline-block;min-width:130px;border-bottom:1px solid #555;height:14px}.hint{font-size:9px;margin:8px 0 12px;color:#333}table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{border:1px solid #555;padding:5px 4px;vertical-align:middle;overflow-wrap:anywhere}th{background:#eee;text-align:center;font-size:9px}td{height:27px}.num{text-align:right}.center{text-align:center}.write{background:#fff}.note{width:15%}th:nth-child(1){width:4%}th:nth-child(2){width:11%}th:nth-child(3){width:23%}th:nth-child(4){width:13%}th:nth-child(5){width:6%}th:nth-child(6){width:8%}th:nth-child(7){width:9%}th:nth-child(8){width:9%}th:nth-child(9){width:17%}.sign{display:flex;justify-content:space-between;margin-top:24px;gap:30px}.sign div{width:32%;border-top:1px solid #555;padding-top:5px;text-align:center}.foot{margin-top:10px;font-size:8px;color:#444}@page{size:A4 landscape;margin:8mm}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.no-print{display:none}}' +
+      '</style></head><body><h1>TOOKA STORE — LEMBAR AUDIT STOK FISIK</h1><p><b>Lokasi:</b> ' + esc(lokasiNama) + ' &nbsp; <b>Kategori:</b> ' + esc(kategori === "__ALL__" ? "Semua kategori" : kategori) + '</p><div class="meta"><div>Tanggal audit: <span class="line"></span></div><div>Nama pemeriksa: <span class="line"></span></div><div>Halaman: ______</div></div><p class="hint">Petunjuk: isi kolom Fisik berdasarkan hitung nyata. Jika berbeda, tulis selisih (+/-) dan catatan. Jangan mengubah stok sistem dari lembar ini; verifikasi hasil sebelum input Stock Opname/Adjustment.</p><table><thead><tr><th>No.</th><th>SKU / ID Barang</th><th>Nama Barang</th><th>Kategori</th><th>Satuan</th><th>Stok Sistem</th><th>Stok Fisik</th><th>Selisih</th><th>Catatan</th></tr></thead><tbody>' + bodyRows + '</tbody></table><div class="sign"><div>Pemeriksa</div><div>Verifikator</div><div>Penanggung jawab lokasi</div></div><p class="foot">Snapshot stok sistem dicetak pada ' + esc(tanggal) + '. Total SKU dalam lembar ini: ' + rows.length + '. Stok sistem hanya sebagai angka pembanding pada saat pencetakan.</p><script>window.onload=function(){setTimeout(function(){window.print()},300)};<\/script></body></html>';
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    showStatus(statusId, "Lembar audit siap dicetak. Total SKU: " + rows.length + ".", "success");
+  } catch (error) {
+    try { printWindow.document.body.innerHTML = '<p style="font-family:Arial;color:#991b1b">Gagal menyiapkan lembar audit: ' + String(error.message || error).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) + '</p>'; } catch (_) {}
+    showStatus(statusId, error.message || "Gagal menyiapkan lembar audit.", "error");
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
 
 /* =========================================================
    LIHAT STOK (READ ONLY)
