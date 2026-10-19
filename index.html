@@ -3655,10 +3655,11 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
               <div class="finance-form-grid">
                 <div><label>Tanggal</label><input id="financeV2Date" type="date"></div>
                 <div><label>Jenis</label><select id="financeV2Jenis" onchange="financeV2SyncForm()"><option value="MASUK">Pemasukan</option><option value="KELUAR">Pengeluaran</option><option value="TRANSFER">Transfer Antar Akun</option></select></div>
-                <div><label>Akun</label><select id="financeV2Account"></select></div>
+                <div id="financeV2PaymentMethodWrap" class="hidden"><label>Metode Pembayaran Pengeluaran</label><select id="financeV2PaymentMethod" onchange="financeV2SyncPaymentAccount()"><option value="CASH">Tunai / Kas</option><option value="QRIS">QRIS</option><option value="TRANSFER">Transfer Bank</option></select><div class="muted" style="margin-top:5px;font-size:11px;">Akun sumber akan disesuaikan otomatis dengan metode dan lokasi.</div></div>
+                <div><label id="financeV2AccountLabel">Akun</label><select id="financeV2Account"></select></div>
                 <div id="financeV2TargetWrap" class="hidden"><label>Akun Tujuan</label><select id="financeV2TargetAccount"></select></div>
                 <div><label>Kategori</label><select id="financeV2Category"></select></div>
-                <div><label>Lokasi</label><select id="financeV2Location"><option value="">-</option><option value="LOC001">TOOKA HUB METRO</option><option value="LOC002">TOOKA STORE JEPARA</option></select></div>
+                <div><label>Lokasi</label><select id="financeV2Location" onchange="financeV2SyncPaymentAccount()"><option value="">-</option><option value="LOC001">TOOKA HUB METRO</option><option value="LOC002">TOOKA STORE JEPARA</option></select></div>
                 <div><label>Nominal</label><input id="financeV2Nominal" type="number" min="1" step="1" placeholder="Rp"></div>
                 <div><label>Referensi</label><input id="financeV2Ref" placeholder="MANUAL / NOTA / dll"></div>
                 <div style="grid-column:1/-1;"><label>Keterangan</label><input id="financeV2Note" placeholder="Contoh: beli kardus, listrik, saldo awal kas Metro..."></div>
@@ -7937,13 +7938,51 @@ function financeV2RenderMasters() {
 function financeV2SyncForm() {
   const jenis = document.getElementById("financeV2Jenis")?.value || "MASUK";
   const targetWrap = document.getElementById("financeV2TargetWrap");
+  const paymentWrap = document.getElementById("financeV2PaymentMethodWrap");
+  const accountSelect = document.getElementById("financeV2Account");
+  const accountLabel = document.getElementById("financeV2AccountLabel");
   const cat = document.getElementById("financeV2Category");
   if (targetWrap) targetWrap.classList.toggle("hidden", jenis !== "TRANSFER");
-  if (!cat) return;
-  const categories = (financeV2Master.kategori || []).filter(x => String(x.status || "").toUpperCase() === "AKTIF" && String(x.jenis || "").toUpperCase() === jenis);
-  const current = cat.value;
-  cat.innerHTML = categories.map(x => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.nama)}</option>`).join("");
-  if (current && categories.some(x => x.id === current)) cat.value = current;
+  if (paymentWrap) paymentWrap.classList.toggle("hidden", jenis !== "KELUAR");
+  if (accountLabel) accountLabel.textContent = jenis === "KELUAR" ? "Akun Sumber (otomatis)" : "Akun";
+  if (accountSelect) accountSelect.disabled = jenis === "KELUAR";
+  if (cat) {
+    const categories = (financeV2Master.kategori || []).filter(x => String(x.status || "").toUpperCase() === "AKTIF" && String(x.jenis || "").toUpperCase() === jenis);
+    const current = cat.value;
+    cat.innerHTML = categories.map(x => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.nama)}</option>`).join("");
+    if (current && categories.some(x => x.id === current)) cat.value = current;
+  }
+  financeV2SyncPaymentAccount();
+}
+
+function financeV2SyncPaymentAccount() {
+  const jenis = document.getElementById("financeV2Jenis")?.value || "MASUK";
+  if (jenis !== "KELUAR") return;
+  const method = String(document.getElementById("financeV2PaymentMethod")?.value || "CASH").trim().toUpperCase();
+  const lokasi = String(document.getElementById("financeV2Location")?.value || "").trim().toUpperCase();
+  const accounts = (financeV2Master.akun || []).filter(x => String(x.status || "").trim().toUpperCase() === "AKTIF");
+  const norm = value => String(value || "").trim().toUpperCase();
+  let account = null;
+  if (method === "QRIS") {
+    account = accounts.find(x => norm(x.tipe) === "QRIS") || accounts.find(x => /QRIS/.test(norm(x.nama)));
+  } else if (method === "TRANSFER") {
+    account = accounts.find(x => norm(x.tipe) === "BANK") || accounts.find(x => /BANK|TRANSFER/.test(norm(x.nama)));
+  } else {
+    const cashAccounts = accounts.filter(x => norm(x.tipe) === "KAS" || /KAS|CASH|TUNAI/.test(norm(x.nama)));
+    account = cashAccounts.find(x => lokasi && norm(x.lokasi) === lokasi);
+    if (!account && lokasi === "LOC001") account = cashAccounts.find(x => /METRO/.test(norm(x.nama)));
+    if (!account && lokasi === "LOC002") account = cashAccounts.find(x => /JEPARA/.test(norm(x.nama)));
+    if (!account) account = cashAccounts[0] || null;
+  }
+  const select = document.getElementById("financeV2Account");
+  if (!select) return;
+  if (account) {
+    select.value = account.id;
+    select.title = "Akun otomatis berdasarkan metode pembayaran dan lokasi.";
+  } else {
+    select.value = "";
+    select.title = "Akun aktif yang cocok belum ditemukan. Periksa master FINANCE_AKUN.";
+  }
 }
 
 async function loadFinanceV2() {
