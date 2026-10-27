@@ -3574,6 +3574,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <button type="button" class="btn btn-primary finance-tab-btn active" data-finance-tab="overview" onclick="showFinanceTab('overview',this)">Ringkasan</button>
             <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="sales" onclick="showFinanceTab('sales',this)">Penjualan</button>
             <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="condition" onclick="showFinanceTab('condition',this)">Kondisi TOOKA</button>
+            <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="hpp" onclick="showFinanceTab('hpp',this)">HPP & Nilai Stok</button>
             <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="manual" onclick="showFinanceTab('manual',this)">Catat Transaksi</button>
             <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="profit" onclick="showFinanceTab('profit',this)">Laba Rugi</button>
           </div>
@@ -3645,6 +3646,24 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <div class="card"><small>PIUTANG</small><strong>Belum tersedia</strong><span class="muted">Belum ada ledger piutang yang tervalidasi</span></div>
             <div class="card"><small>KEBUTUHAN MODAL KERJA</small><strong>Belum tersedia</strong><span class="muted">Nilai stok dan kewajiban belum lengkap</span></div>
           </div></div>
+        </div>
+
+        <div id="financeTab-hpp" class="finance-tab-panel hidden">
+          <div class="panel">
+            <div class="finance-section-head"><div><h3>HPP Moving Average</h3><div class="muted">Isi HPP unit awal yang dapat dipertanggungjawabkan untuk stok saat ini. Jumlah stok diambil otomatis ketika disimpan. Harga jual tidak digunakan sebagai HPP.</div></div><button type="button" class="btn btn-primary" onclick="loadHppData()">🔄 Perbarui</button></div>
+            <div class="finance-filters" style="margin-top:12px;">
+              <div><label>Lokasi Cabang</label><select id="hppLocation" onchange="loadHppData()"><option value="">Semua Cabang</option><option value="LOC001">TOOKA HUB METRO</option><option value="LOC002">TOOKA STORE JEPARA</option></select></div>
+              <div><label>Cari Produk</label><input id="hppSearch" type="search" placeholder="Nama atau ID produk" oninput="renderHppRows()"></div>
+            </div>
+            <div id="hppStatus" class="muted" aria-live="polite" style="margin-top:10px;">Belum dimuat.</div>
+          </div>
+          <div class="finance-summary-cards">
+            <div class="card"><small>STOK BERISI</small><strong id="hppStockCount">—</strong></div>
+            <div class="card"><small>HPP VALID</small><strong id="hppValidCount">—</strong></div>
+            <div class="card"><small>HPP BELUM VALID</small><strong id="hppMissingCount">—</strong></div>
+            <div class="card"><small>NILAI PERSEDIAAN</small><strong id="hppInventoryValue">Belum lengkap</strong></div>
+          </div>
+          <div class="panel"><p class="muted">Baseline yang sudah tersimpan tidak ditimpa otomatis. Jika biaya awal belum bisa dibuktikan, biarkan kosong. Setelah baseline tersimpan, pembelian baru dan pengeluaran stok baru akan dihitung dengan moving average; stok masuk tanpa biaya yang valid akan menandai HPP perlu pemeriksaan.</p><div id="hppTable" class="muted">Belum dimuat.</div><div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><button type="button" class="btn btn-primary" onclick="saveHppBaselines()">💾 Simpan HPP Awal yang Diisi</button><span id="hppSaveStatus" class="muted" aria-live="polite"></span></div></div>
         </div>
 
         <div id="financeTab-manual" class="finance-tab-panel hidden">
@@ -7874,6 +7893,74 @@ function showFinanceTab(tab, button) {
   if (tab === "overview") loadFinanceV2();
   if (tab === "sales") loadFinanceReport();
   if (tab === "condition") loadKondisiTooka();
+  if (tab === "hpp") loadHppData();
+}
+
+let hppRowsCache = [];
+
+function hppFormatRp(value) {
+  return value === null || value === undefined || !Number.isFinite(Number(value)) ? "Belum tersedia" : "Rp" + Number(value).toLocaleString("id-ID", {maximumFractionDigits:2});
+}
+
+async function loadHppData() {
+  if (!isOwner()) return;
+  const status = document.getElementById("hppStatus");
+  if (status) status.textContent = "Memuat data HPP dan stok...";
+  try {
+    const locationId = document.getElementById("hppLocation")?.value || "";
+    const result = await apiRequest({action:"HPP_DATA", lokasiId:locationId});
+    if (!result || result.success !== true) throw new Error(result?.message || "Data HPP gagal dimuat.");
+    const data = result.data || {};
+    hppRowsCache = Array.isArray(data.stok) ? data.stok : [];
+    const summary = data.ringkasan || {};
+    const setText = (id,value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
+    setText("hppStockCount", Number(summary.stokBerisi||0).toLocaleString("id-ID"));
+    setText("hppValidCount", Number(summary.hppValid||0).toLocaleString("id-ID"));
+    setText("hppMissingCount", Number(summary.hppBelumValid||0).toLocaleString("id-ID"));
+    setText("hppInventoryValue", summary.lengkap ? hppFormatRp(summary.nilaiPersediaan) : "Belum lengkap");
+    renderHppRows();
+    if (status) status.textContent = data.catatan || "Data HPP dimuat. Isi HPP awal untuk produk yang biayanya sudah dapat diverifikasi.";
+  } catch (error) {
+    console.error("HPP TOOKA:",error);
+    if (status) status.textContent = error.message || "Data HPP gagal dimuat.";
+  }
+}
+
+function renderHppRows() {
+  const target = document.getElementById("hppTable");
+  if (!target) return;
+  const q = String(document.getElementById("hppSearch")?.value || "").trim().toLowerCase();
+  const rows = hppRowsCache.filter(x => String(x.status||"").toUpperCase()==="AKTIF" && (Number(x.stok||0)>0 || x.baselineAda))
+    .filter(x => !q || String(x.nama||"").toLowerCase().includes(q) || String(x.produkId||"").toLowerCase().includes(q));
+  if (!rows.length) { target.innerHTML = '<p class="muted">Tidak ada produk yang cocok.</p>'; return; }
+  target.innerHTML = '<div style="overflow:auto"><table class="finance-table"><thead><tr><th>Produk</th><th>Cabang</th><th style="text-align:right">Stok</th><th style="text-align:right">HPP unit awal</th><th style="text-align:right">HPP berjalan</th><th style="text-align:right">Nilai stok</th><th>Status</th></tr></thead><tbody>' + rows.map((x,i) => {
+    const input = x.baselineAda ? '<span class="muted">Tersimpan</span>' : '<input type="number" min="0.01" step="any" inputmode="decimal" placeholder="HPP per '+escapeHtml(x.satuan||'unit')+'" data-hpp-index="'+i+'" style="max-width:160px;width:100%">';
+    const state = x.coverage === "VALID" ? "Valid" : x.baselineAda ? "Perlu pemeriksaan" : "Belum diisi";
+    const value = x.nilaiPersediaan === null ? "Belum tersedia" : hppFormatRp(x.nilaiPersediaan);
+    const current = x.hppSekarang === null ? "Belum tersedia" : hppFormatRp(x.hppSekarang);
+    return '<tr><td><strong>'+escapeHtml(x.nama||x.produkId)+'</strong><div class="muted">'+escapeHtml(x.produkId)+'</div></td><td>'+escapeHtml(x.lokasi||x.lokasiId)+'</td><td style="text-align:right">'+Number(x.stok||0).toLocaleString("id-ID")+' '+escapeHtml(x.satuan||'')+'</td><td style="text-align:right">'+input+'</td><td style="text-align:right">'+current+'</td><td style="text-align:right">'+value+'</td><td><span title="'+escapeHtml(x.catatan||'')+'">'+state+'</span></td></tr>';
+  }).join('') + '</tbody></table></div>';
+  target.querySelectorAll("input[data-hpp-index]").forEach(input => { input.dataset.produkId = rows[Number(input.dataset.hppIndex)].produkId; input.dataset.lokasiId = rows[Number(input.dataset.hppIndex)].lokasiId; });
+}
+
+async function saveHppBaselines() {
+  if (!isOwner()) return;
+  const status = document.getElementById("hppSaveStatus");
+  const target = document.getElementById("hppTable");
+  const entries = target ? Array.from(target.querySelectorAll("input[data-hpp-index]" )).filter(el => String(el.value||"").trim() !== "").map(el => ({produkId:el.dataset.produkId,lokasiId:el.dataset.lokasiId,hppUnit:Number(el.value)})) : [];
+  if (!entries.length) { if(status) status.textContent = "Isi minimal satu HPP unit awal terlebih dahulu."; return; }
+  if (!confirm("Simpan HPP awal untuk " + entries.length + " kombinasi produk/lokasi? Jumlah stok diambil otomatis saat disimpan. HPP awal yang sudah tersimpan tidak ditimpa otomatis.")) return;
+  if (status) status.textContent = "Menyimpan baseline HPP...";
+  try {
+    const result = await apiRequest({action:"HPP_SAVE_BASELINE",entries:entries});
+    if (!result || result.success !== true) throw new Error(result?.message || "Gagal menyimpan HPP awal.");
+    const d = result.data || {};
+    if (status) status.textContent = (result.message || "Selesai.") + (d.ditolak ? " Baris ditolak: " + d.ditolak + ". Periksa catatan bila ada baris yang tidak tersimpan." : "");
+    await loadHppData();
+  } catch(error) {
+    console.error("Simpan HPP:",error);
+    if (status) status.textContent = error.message || "Gagal menyimpan HPP awal.";
+  }
 }
 
 async function loadKondisiTooka() {
@@ -7895,7 +7982,13 @@ async function loadKondisiTooka() {
     setText("conditionStockRows", Number(summary.barisStok || 0).toLocaleString("id-ID"));
     setText("conditionLowStock", Number(summary.stokMenipis || 0).toLocaleString("id-ID"));
     setText("conditionNoMinimum", Number(summary.minimumBelumDiatur || 0).toLocaleString("id-ID"));
-    setText("conditionInventoryValue", "Belum tersedia");
+    const allHppRows = Array.isArray(data.hppStok) ? data.hppStok : [];
+    const filteredHppRows = locationId ? allHppRows.filter(x => String(x.lokasiId||"").toUpperCase() === locationId.toUpperCase()) : allHppRows;
+    const activeHppRows = filteredHppRows.filter(x => String(x.status||"").toUpperCase() === "AKTIF" && Number(x.stok||0) > 0);
+    const validHppRows = activeHppRows.filter(x => x.coverage === "VALID" && x.nilaiPersediaan !== null);
+    const hppValueComplete = activeHppRows.length > 0 && validHppRows.length === activeHppRows.length;
+    const hppValueTotal = validHppRows.reduce((sum,x) => sum + Number(x.nilaiPersediaan||0), 0);
+    setText("conditionInventoryValue", hppValueComplete ? hppFormatRp(hppValueTotal) : "Belum lengkap (" + validHppRows.length.toLocaleString("id-ID") + "/" + activeHppRows.length.toLocaleString("id-ID") + ")");
     const allRecommendations = Array.isArray(data.rekomendasiPembelian) ? data.rekomendasiPembelian : [];
     const recommendations = locationId ? allRecommendations.filter(x => String(x.lokasiId || "").toUpperCase() === locationId.toUpperCase()) : allRecommendations;
     renderFinanceTable("conditionRecommendations", recommendations, [
@@ -7913,7 +8006,7 @@ async function loadKondisiTooka() {
       ["Status", x => { const s = Number(x.minimum || 0); const q = Number(x.stok || 0); return s <= 0 ? "Minimum belum diatur" : q < s ? "Menipis" : "Cukup"; }]
     ]);
     const locationLabel = locationId === "LOC001" ? "TOOKA HUB METRO" : locationId === "LOC002" ? "TOOKA STORE JEPARA" : "semua cabang";
-    if (status) status.textContent = "Data stok dimuat untuk " + locationLabel + ". Nilai persediaan, anggaran pembelian, utang, piutang, dan modal kerja belum dihitung tanpa data biaya/kewajiban yang valid.";
+    if (status) status.textContent = "Data stok dimuat untuk " + locationLabel + ". Nilai persediaan hanya ditampilkan penuh jika semua produk dengan stok memiliki HPP yang valid; isi HPP awal melalui tab HPP & Nilai Stok. Utang, piutang, dan modal kerja tetap belum tersedia tanpa ledger yang valid.";
   } catch (error) {
     console.error("Kondisi TOOKA:", error);
     if (status) status.textContent = error.message || "Kondisi TOOKA gagal dimuat.";
