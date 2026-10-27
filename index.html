@@ -3573,6 +3573,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
           <div class="finance-tabbar" role="tablist" aria-label="Menu Finance" style="display:flex;gap:8px;flex-wrap:wrap;">
             <button type="button" class="btn btn-primary finance-tab-btn active" data-finance-tab="overview" onclick="showFinanceTab('overview',this)">Ringkasan</button>
             <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="sales" onclick="showFinanceTab('sales',this)">Penjualan</button>
+            <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="condition" onclick="showFinanceTab('condition',this)">Kondisi TOOKA</button>
             <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="manual" onclick="showFinanceTab('manual',this)">Catat Transaksi</button>
             <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="profit" onclick="showFinanceTab('profit',this)">Laba Rugi</button>
           </div>
@@ -3622,6 +3623,26 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
           <div class="panel"><h3>🏪 Omzet per Cabang</h3><div id="financeLocationData" class="muted">Belum ada data.</div></div>
           <div class="panel"><h3>👤 Omzet per Kasir</h3><div id="financeUserData" class="muted">Belum ada data.</div></div>
           <div class="panel"><h3>🏆 Produk Terlaris</h3><div id="financeProductData" class="muted">Belum ada data.</div></div>
+        </div>
+
+        <div id="financeTab-condition" class="finance-tab-panel hidden">
+          <div class="panel">
+            <div class="finance-section-head"><div><h3>Kondisi TOOKA</h3><div class="muted">Ringkasan stok dan modal kerja berdasarkan data yang tersedia. Bagian yang belum tercatat tidak diasumsikan nol.</div></div><button type="button" class="btn btn-primary" onclick="loadKondisiTooka()">🔄 Perbarui</button></div>
+            <div id="conditionStatus" class="muted" aria-live="polite" style="margin-top:8px;">Belum dimuat.</div>
+          </div>
+          <div class="finance-summary-cards">
+            <div class="card"><small>BARIS STOK</small><strong id="conditionStockRows">—</strong><span class="muted">Produk per lokasi</span></div>
+            <div class="card"><small>STOK MENIPIS</small><strong id="conditionLowStock">—</strong><span class="muted">Di bawah minimum yang diatur</span></div>
+            <div class="card"><small>MINIMUM BELUM DIATUR</small><strong id="conditionNoMinimum">—</strong><span class="muted">Perlu set batas stok</span></div>
+            <div class="card"><small>NILAI PERSEDIAAN</small><strong id="conditionInventoryValue">Belum tersedia</strong><span class="muted">Menunggu HPP valid</span></div>
+          </div>
+          <div class="panel"><h3>Rekomendasi Pembelian</h3><p class="muted">Jumlah rekomendasi adalah selisih stok ke batas minimum, bukan prediksi permintaan. Anggaran rupiah belum ditampilkan karena HPP valid belum tersedia.</p><div id="conditionRecommendations" class="muted">Belum dimuat.</div></div>
+          <div class="panel"><h3>Daftar Stok per Lokasi</h3><div id="conditionInventoryTable" class="muted">Belum dimuat.</div></div>
+          <div class="panel"><h3>Utang, Piutang, dan Modal Kerja</h3><div class="finance-summary-cards">
+            <div class="card"><small>UTANG SUPPLIER</small><strong>Belum tersedia</strong><span class="muted">Belum ada ledger utang supplier yang tervalidasi</span></div>
+            <div class="card"><small>PIUTANG</small><strong>Belum tersedia</strong><span class="muted">Belum ada ledger piutang yang tervalidasi</span></div>
+            <div class="card"><small>KEBUTUHAN MODAL KERJA</small><strong>Belum tersedia</strong><span class="muted">Nilai stok dan kewajiban belum lengkap</span></div>
+          </div></div>
         </div>
 
         <div id="financeTab-manual" class="finance-tab-panel hidden">
@@ -7850,7 +7871,46 @@ function showFinanceTab(tab, button) {
   }
   if (tab === "overview") loadFinanceV2();
   if (tab === "sales") loadFinanceReport();
+  if (tab === "condition") loadKondisiTooka();
 }
+
+async function loadKondisiTooka() {
+  if (!isOwner()) return;
+  const status = document.getElementById("conditionStatus");
+  if (status) status.textContent = "Memuat kondisi stok...";
+  try {
+    const result = await apiRequest({ action: "KONDISI_TOOKA" });
+    if (!result || result.success !== true) throw new Error(result?.message || "Kondisi TOOKA gagal dimuat.");
+    const data = result.data || {};
+    const summary = data.ringkasan || {};
+    const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    setText("conditionStockRows", Number(summary.barisStok || 0).toLocaleString("id-ID"));
+    setText("conditionLowStock", Number(summary.stokMenipis || 0).toLocaleString("id-ID"));
+    setText("conditionNoMinimum", Number(summary.minimumBelumDiatur || 0).toLocaleString("id-ID"));
+    setText("conditionInventoryValue", "Belum tersedia");
+    const recommendations = Array.isArray(data.rekomendasiPembelian) ? data.rekomendasiPembelian : [];
+    renderFinanceTable("conditionRecommendations", recommendations, [
+      ["Produk", x => `<strong>${escapeHtml(x.nama || x.produkId || "-")}</strong><div class=\"muted\">${escapeHtml(x.produkId || "-")}</div>`],
+      ["Lokasi", x => escapeHtml(x.lokasi || x.lokasiId || "-")],
+      ["Stok", x => `${Number(x.stok || 0).toLocaleString("id-ID")} ${escapeHtml(x.satuan || "")}`, "right"],
+      ["Minimum", x => `${Number(x.minimum || 0).toLocaleString("id-ID")} ${escapeHtml(x.satuan || "")}`, "right"],
+      ["Saran tambah", x => `<strong>${Number(x.rekomendasiQty || 0).toLocaleString("id-ID")} ${escapeHtml(x.satuan || "")}</strong>`, "right"]
+    ]);
+    const stockRows = Array.isArray(data.stok) ? data.stok : [];
+    renderFinanceTable("conditionInventoryTable", stockRows, [
+      ["Produk", x => `<strong>${escapeHtml(x.nama || x.produkId || "-")}</strong><div class=\"muted\">${escapeHtml(x.produkId || "-")}</div>`],
+      ["Lokasi", x => escapeHtml(x.lokasi || x.lokasiId || "-")],
+      ["Stok", x => `${Number(x.stok || 0).toLocaleString("id-ID")} ${escapeHtml(x.satuan || "")}`, "right"],
+      ["Minimum", x => Number(x.minimum || 0) > 0 ? `${Number(x.minimum).toLocaleString("id-ID")} ${escapeHtml(x.satuan || "")}` : "Belum diatur", "right"],
+      ["Status", x => { const s = Number(x.minimum || 0); const q = Number(x.stok || 0); return s <= 0 ? "Minimum belum diatur" : q < s ? "Menipis" : "Cukup"; }]
+    ]);
+    if (status) status.textContent = "Data stok dimuat. Nilai persediaan, anggaran pembelian, utang, piutang, dan modal kerja belum dihitung tanpa data biaya/kewajiban yang valid.";
+  } catch (error) {
+    console.error("Kondisi TOOKA:", error);
+    if (status) status.textContent = error.message || "Kondisi TOOKA gagal dimuat.";
+  }
+}
+
 
 /* =========================================================
    FINANCE V2 — CASHFLOW / LEDGER OWNER ONLY
