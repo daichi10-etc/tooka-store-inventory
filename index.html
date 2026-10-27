@@ -3565,7 +3565,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
       <section id="financeReport" class="page">
         <div class="title">
           <h2>💼 <span>Finance TOOKA</span></h2>
-          <p>Satu tempat untuk melihat penjualan, arus kas, dan catatan keuangan.</p>
+          <p>Ringkasan saldo, pergerakan uang, penjualan, dan pencatatan keuangan TOOKA.</p>
         </div>
         <div id="financeStatus" class="status"></div>
 
@@ -3573,13 +3573,20 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
           <div class="finance-tabbar" role="tablist" aria-label="Menu Finance" style="display:flex;gap:8px;flex-wrap:wrap;">
             <button type="button" class="btn btn-primary finance-tab-btn active" data-finance-tab="overview" onclick="showFinanceTab('overview',this)">Ringkasan</button>
             <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="sales" onclick="showFinanceTab('sales',this)">Penjualan</button>
-            <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="cashflow" onclick="showFinanceTab('cashflow',this)">Arus Kas</button>
             <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="manual" onclick="showFinanceTab('manual',this)">Catat Transaksi</button>
             <button type="button" class="btn btn-secondary finance-tab-btn" data-finance-tab="profit" onclick="showFinanceTab('profit',this)">Laba Rugi</button>
           </div>
         </div>
 
         <div id="financeTab-overview" class="finance-tab-panel">
+          <div class="panel">
+            <div class="finance-section-head"><div><h3>Periode Ringkasan</h3><div class="muted">Pilih rentang tanggal untuk pemasukan, pengeluaran, net arus kas, dan riwayat transaksi. Saldo akun dihitung sampai tanggal selesai.</div></div></div>
+            <div class="finance-filters">
+              <div><label>Tanggal Mulai</label><input id="financeSummaryDateStart" type="date"></div>
+              <div><label>Tanggal Selesai</label><input id="financeSummaryDateEnd" type="date"></div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><button type="button" class="btn btn-primary" onclick="loadFinanceV2()">📅 Terapkan Tanggal</button><span id="financeV2Status" class="muted" aria-live="polite"></span></div>
+          </div>
           <div class="finance-summary-cards">
             <div class="card"><small>OMZET</small><strong id="financeOmzet">Rp0</strong><span class="muted">Total penjualan POS</span></div>
             <div class="card"><small>TRANSAKSI</small><strong id="financeTransaksi">0</strong><span class="muted">Checkout berhasil</span></div>
@@ -3597,6 +3604,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
             <div class="muted" style="margin-top:10px;">Periode penjualan: <strong id="financePeriodLabel">-</strong></div>
           </div>
           <div class="panel"><h3>Saldo per Akun</h3><div id="financeV2Accounts" class="finance-account-list" style="margin-top:12px;"></div></div>
+          <div class="panel"><div class="finance-section-head"><div><h3>Riwayat Arus Kas</h3><div class="muted">Riwayat transaksi Finance dalam periode yang dipilih.</div></div><button type="button" class="btn btn-secondary" onclick="loadFinanceV2()">🔄 Perbarui</button></div><div id="financeV2Ledger" class="muted">Belum ada data.</div></div>
         </div>
 
         <div id="financeTab-sales" class="finance-tab-panel hidden">
@@ -3614,14 +3622,6 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
           <div class="panel"><h3>🏪 Omzet per Cabang</h3><div id="financeLocationData" class="muted">Belum ada data.</div></div>
           <div class="panel"><h3>👤 Omzet per Kasir</h3><div id="financeUserData" class="muted">Belum ada data.</div></div>
           <div class="panel"><h3>🏆 Produk Terlaris</h3><div id="financeProductData" class="muted">Belum ada data.</div></div>
-        </div>
-
-        <div id="financeTab-cashflow" class="finance-tab-panel hidden">
-          <div class="panel"><div class="finance-section-head"><div><h3>Arus Kas & Saldo</h3><div class="muted">POS dihitung otomatis. Catatan manual tampil di tab Catat Transaksi.</div></div><button class="btn btn-primary" onclick="loadFinanceV2()">🔄 Muat Arus Kas</button></div>
-            <div class="finance-v2-cards"><div class="card"><small>PEMASUKAN</small><strong id="financeV2InflowCash">Rp0</strong></div><div class="card"><small>PENGELUARAN</small><strong id="financeV2OutflowCash">Rp0</strong></div><div class="card"><small>NET CASHFLOW</small><strong id="financeV2NetCash">Rp0</strong></div></div>
-            <div id="financeV2Status" class="muted" style="margin:8px 0;"></div>
-          </div>
-          <div class="panel"><h3>Riwayat Arus Kas</h3><div id="financeV2Ledger" class="muted">Belum ada data.</div></div>
         </div>
 
         <div id="financeTab-manual" class="finance-tab-panel hidden">
@@ -3642,7 +3642,7 @@ button.primary,.primary-btn,.checkout-btn,[onclick*="checkoutPOS"]{
         </div>
 
         <div id="financeTab-profit" class="finance-tab-panel hidden">
-          <div class="panel"><h3>Laba Rugi belum bisa dihitung dengan akurat</h3><p>Data yang ada sekarang mendukung omzet dan arus kas. Untuk laba rugi, TOOKA perlu HPP/modal barang terjual yang valid serta biaya operasional yang tercatat lengkap. Kalau dipaksakan dari omzet saja, hasilnya bisa menyesatkan.</p><p class="muted">Untuk sementara gunakan Ringkasan dan Arus Kas. Tab ini belum mengklaim laba bersih.</p></div>
+          <div class="panel"><h3>Laba Rugi belum bisa dihitung dengan akurat</h3><p>Data yang ada sekarang mendukung omzet dan arus kas. Untuk laba rugi, TOOKA perlu HPP/modal barang terjual yang valid serta biaya operasional yang tercatat lengkap. Kalau dipaksakan dari omzet saja, hasilnya bisa menyesatkan.</p><p class="muted">Untuk sementara gunakan Ringkasan. Tab ini belum mengklaim laba bersih.</p></div>
         </div>
       </section>
 
@@ -7848,7 +7848,7 @@ function showFinanceTab(tab, button) {
     button.classList.add("active", "btn-primary");
     button.classList.remove("btn-secondary");
   }
-  if (tab === "cashflow" || tab === "overview") loadFinanceV2();
+  if (tab === "overview") loadFinanceV2();
   if (tab === "sales") loadFinanceReport();
 }
 
@@ -7866,6 +7866,10 @@ async function initFinanceV2() {
   if (!isOwner()) return;
   const dateEl = document.getElementById("financeV2Date");
   if (dateEl && !dateEl.value) dateEl.value = financeV2Today();
+  const summaryStart = document.getElementById("financeSummaryDateStart");
+  const summaryEnd = document.getElementById("financeSummaryDateEnd");
+  if (summaryStart && !summaryStart.value) summaryStart.value = financeV2Today();
+  if (summaryEnd && !summaryEnd.value) summaryEnd.value = financeV2Today();
   try {
     const hasil = await apiRequest({ action: "FINANCE_INIT" });
     if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Master Finance gagal dimuat.");
@@ -7907,9 +7911,12 @@ function financeV2SyncForm() {
 
 async function loadFinanceV2() {
   if (!isOwner()) return;
-  const start = document.getElementById("financeDateStart")?.value || financeV2Today();
-  const end = document.getElementById("financeDateEnd")?.value || start;
-  if (start > end) return;
+  const start = document.getElementById("financeSummaryDateStart")?.value || financeV2Today();
+  const end = document.getElementById("financeSummaryDateEnd")?.value || start;
+  if (start > end) {
+    showStatus("financeV2Status", "Tanggal mulai tidak boleh melewati tanggal selesai.", "error");
+    return;
+  }
   try {
     const hasil = await apiRequest({ action: "FINANCE_DATA", tanggalMulai: start, tanggalSelesai: end });
     if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Cashflow gagal dimuat.");
@@ -7934,10 +7941,42 @@ async function loadFinanceV2() {
       ["Nominal", x => `<strong>${formatRupiahDashboard(x.nominal)}</strong>`, "right"],
       ["Keterangan", x => escapeHtml(x.keterangan || x.referensi || "-"), "left"]
     ]);
-    document.getElementById("financeV2Status").textContent = "Cashflow diperbarui: " + start + (start === end ? "" : " — " + end);
+    const financeStatusEl = document.getElementById("financeV2Status");
+    if (financeStatusEl) financeStatusEl.textContent = "Ringkasan diperbarui: " + start + (start === end ? "" : " — " + end);
+    await loadFinanceSummarySales(start, end);
   } catch (error) {
     console.error("Finance V2 load:", error);
     showStatus("financeV2Status", error.message || "Cashflow gagal dimuat.", "error");
+  }
+}
+
+async function loadFinanceSummarySales(start, end) {
+  if (!isOwner()) return;
+  try {
+    const hasil = await apiRequest({
+      action: "FINANCE_REPORT",
+      tanggalMulai: start,
+      tanggalSelesai: end,
+      lokasiId: "",
+      userId: ""
+    });
+    if (!hasil || hasil.success !== true) throw new Error(hasil?.message || "Ringkasan penjualan gagal dimuat.");
+    const data = hasil.data || {};
+    const omzetEl = document.getElementById("financeOmzet");
+    const trxEl = document.getElementById("financeTransaksi");
+    const itemEl = document.getElementById("financeItemTerjual");
+    const avgEl = document.getElementById("financeAvgTrx");
+    const periodEl = document.getElementById("financePeriodLabel");
+    if (omzetEl) omzetEl.textContent = formatRupiahDashboard(data.omzet || 0);
+    if (trxEl) trxEl.textContent = Number(data.transaksi || 0).toLocaleString("id-ID");
+    if (itemEl) itemEl.textContent = Number(data.itemTerjual || 0).toLocaleString("id-ID");
+    if (avgEl) avgEl.textContent = formatRupiahDashboard(data.rataRataTransaksi || 0);
+    if (periodEl) periodEl.textContent = data.tanggalMulai === data.tanggalSelesai
+      ? "Periode: " + data.tanggalMulai
+      : "Periode: " + data.tanggalMulai + " — " + data.tanggalSelesai;
+  } catch (error) {
+    console.error("Finance summary sales:", error);
+    showStatus("financeStatus", error.message || "Ringkasan penjualan gagal dimuat.", "error");
   }
 }
 
